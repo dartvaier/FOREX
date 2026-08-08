@@ -104,3 +104,12 @@ class EndOfBacktestPolicy(StrEnum):
     )
 
     LEAVE_OPEN = "LEAVE_OPEN"
+
+class SimulationPhase(StrEnum):
+    """
+    Phase of the bar currently being processed by
+    the historical simulation clock.
+    """
+
+    BAR_OPEN = "BAR_OPEN"
+    BAR_CLOSE = "BAR_CLOSE"

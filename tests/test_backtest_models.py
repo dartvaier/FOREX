@@ -29,6 +29,7 @@ from backtest.models.enums import (
     SignalAction,
     EndOfBacktestPolicy,
     Timeframe,
+    SimulationPhase,
 )
 
 
@@ -2555,3 +2556,9 @@ def test_backtest_config_is_immutable():
 
     with pytest.raises(AttributeError):
         config.initial_capital = 50000.0  # type: ignore[misc]
+        
+def test_simulation_phase_values():
+    assert list(SimulationPhase) == [
+        SimulationPhase.BAR_OPEN,
+        SimulationPhase.BAR_CLOSE,
+    ]

@@ -348,8 +348,24 @@ fill_time = abertura da próxima barra disponível
 Portanto:
 
 ```text
-fill_time > signal_time
+fill_time >= signal_time
 ```
+
+A igualdade de timestamps é permitida porque o fechamento da barra `t`
+e a abertura da barra `t+1` podem compartilhar a mesma fronteira temporal.
+
+Nesse caso, a proteção contra look-ahead depende da ordem dos eventos:
+
+```text
+BAR t CLOSE
+    ↓
+Signal
+    ↓
+Order
+    ↓
+BAR t+1 OPEN
+    ↓
+Fill
 
 na implementação baseline.
 
