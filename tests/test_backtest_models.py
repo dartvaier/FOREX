@@ -1,3 +1,5 @@
+from backtest.models.trade import Trade
+
 from dataclasses import replace
 
 from backtest.models.position import Position
@@ -1219,3 +1221,652 @@ def test_position_metadata_is_immutable_and_copied():
 
     with pytest.raises(TypeError):
         position.metadata["strategy_id"] = "OTHER"  # type: ignore[index]
+        
+def test_trade_is_created_with_valid_data():
+    entry_time = datetime(
+        2026,
+        8,
+        8,
+        12,
+        15,
+        tzinfo=timezone.utc,
+    )
+
+    exit_time = entry_time + timedelta(hours=2)
+
+    trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="EMA-TREND-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-ENTRY-001",
+        exit_fill_id="FILL-EXIT-001",
+        entry_time=entry_time,
+        exit_time=exit_time,
+        entry_price=1.16000,
+        exit_price=1.16500,
+        quantity=0.01,
+        gross_pnl=5.00,
+        net_pnl=4.72,
+        spread_cost=0.10,
+        slippage_cost=0.03,
+        commission=0.15,
+        swap=0.0,
+        bars_held=8,
+        exit_reason=ExitReason.STRATEGY_EXIT,
+        metadata={"experiment_id": "EXP-001"},
+    )
+
+    assert trade.trade_id == "TRD-001"
+    assert trade.position_id == "POS-001"
+
+    assert trade.strategy_id == "EMA-TREND-001"
+    assert trade.symbol == "EURUSD"
+    assert trade.side == PositionSide.LONG
+
+    assert trade.entry_fill_id == "FILL-ENTRY-001"
+    assert trade.exit_fill_id == "FILL-EXIT-001"
+
+    assert trade.entry_time == entry_time
+    assert trade.exit_time == exit_time
+
+    assert trade.entry_price == 1.16000
+    assert trade.exit_price == 1.16500
+    assert trade.quantity == 0.01
+
+    assert trade.gross_pnl == 5.00
+    assert trade.net_pnl == 4.72
+
+    assert trade.spread_cost == 0.10
+    assert trade.slippage_cost == 0.03
+    assert trade.commission == 0.15
+    assert trade.swap == 0.0
+
+    assert trade.bars_held == 8
+    assert trade.exit_reason == ExitReason.STRATEGY_EXIT
+
+    assert trade.metadata["experiment_id"] == "EXP-001"
+
+
+def test_trade_costs_default_to_zero():
+    timestamp = datetime.now(timezone.utc)
+
+    trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-001",
+        exit_fill_id="FILL-002",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.16000,
+        quantity=0.01,
+        gross_pnl=0.0,
+        net_pnl=0.0,
+    )
+
+    assert trade.spread_cost == 0.0
+    assert trade.slippage_cost == 0.0
+    assert trade.commission == 0.0
+    assert trade.swap == 0.0
+
+
+def test_trade_allows_negative_pnl():
+    timestamp = datetime.now(timezone.utc)
+
+    trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-001",
+        exit_fill_id="FILL-002",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.15500,
+        quantity=0.01,
+        gross_pnl=-5.00,
+        net_pnl=-5.25,
+    )
+
+    assert trade.gross_pnl == -5.00
+    assert trade.net_pnl == -5.25
+
+
+def test_trade_allows_signed_swap():
+    timestamp = datetime.now(timezone.utc)
+
+    debit_trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-001",
+        exit_fill_id="FILL-002",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.16100,
+        quantity=0.01,
+        gross_pnl=1.00,
+        net_pnl=0.50,
+        swap=-0.50,
+    )
+
+    credit_trade = Trade(
+        trade_id="TRD-002",
+        position_id="POS-002",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.SHORT,
+        entry_fill_id="FILL-003",
+        exit_fill_id="FILL-004",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.15900,
+        quantity=0.01,
+        gross_pnl=1.00,
+        net_pnl=1.20,
+        swap=0.20,
+    )
+
+    assert debit_trade.swap == -0.50
+    assert credit_trade.swap == 0.20
+
+
+def test_trade_allows_same_entry_and_exit_time():
+    timestamp = datetime.now(timezone.utc)
+
+    trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-001",
+        exit_fill_id="FILL-002",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.16050,
+        quantity=0.01,
+        gross_pnl=0.50,
+        net_pnl=0.50,
+        bars_held=0,
+    )
+
+    assert trade.exit_time == trade.entry_time
+    assert trade.bars_held == 0
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_value"),
+    [
+        ("trade_id", ""),
+        ("position_id", ""),
+        ("strategy_id", ""),
+        ("symbol", ""),
+        ("entry_fill_id", ""),
+        ("exit_fill_id", ""),
+    ],
+)
+def test_trade_requires_non_empty_identifiers(
+    field_name,
+    field_value,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    kwargs = {
+        "trade_id": "TRD-001",
+        "position_id": "POS-001",
+        "strategy_id": "TEST",
+        "symbol": "EURUSD",
+        "side": PositionSide.LONG,
+        "entry_fill_id": "FILL-001",
+        "exit_fill_id": "FILL-002",
+        "entry_time": timestamp,
+        "exit_time": timestamp,
+        "entry_price": 1.16000,
+        "exit_price": 1.16100,
+        "quantity": 0.01,
+        "gross_pnl": 1.00,
+        "net_pnl": 1.00,
+    }
+
+    kwargs[field_name] = field_value
+
+    with pytest.raises(ValueError, match=field_name):
+        Trade(**kwargs)
+
+
+def test_trade_requires_position_side_enum():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(TypeError, match="PositionSide"):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side="LONG",  # type: ignore[arg-type]
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=timestamp,
+            exit_time=timestamp,
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+def test_trade_requires_exit_reason_enum():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(TypeError, match="ExitReason"):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=timestamp,
+            exit_time=timestamp,
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+            exit_reason="STOP_LOSS",  # type: ignore[arg-type]
+        )
+
+
+def test_trade_requires_timezone_aware_entry_time():
+    naive_time = datetime(2026, 8, 8, 12, 0)
+
+    with pytest.raises(
+        ValueError,
+        match="entry_time",
+    ):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=naive_time,
+            exit_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+def test_trade_requires_timezone_aware_exit_time():
+    entry_time = datetime(
+        2026,
+        8,
+        8,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    naive_exit = datetime(
+        2026,
+        8,
+        8,
+        13,
+        0,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="exit_time",
+    ):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=entry_time,
+            exit_time=naive_exit,
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+def test_trade_exit_cannot_precede_entry():
+    entry_time = datetime(
+        2026,
+        8,
+        8,
+        13,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    exit_time = entry_time - timedelta(minutes=15)
+
+    with pytest.raises(
+        ValueError,
+        match="exit_time",
+    ):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=entry_time,
+            exit_time=exit_time,
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+@pytest.mark.parametrize(
+    "entry_price",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_trade_requires_positive_finite_entry_price(
+    entry_price,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="entry_price"):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=timestamp,
+            exit_time=timestamp,
+            entry_price=entry_price,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+@pytest.mark.parametrize(
+    "exit_price",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_trade_requires_positive_finite_exit_price(
+    exit_price,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="exit_price"):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=timestamp,
+            exit_time=timestamp,
+            entry_price=1.16000,
+            exit_price=exit_price,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+@pytest.mark.parametrize(
+    "quantity",
+    [
+        0,
+        -0.01,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_trade_requires_positive_finite_quantity(
+    quantity,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="quantity"):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=timestamp,
+            exit_time=timestamp,
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=quantity,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_value"),
+    [
+        ("gross_pnl", float("inf")),
+        ("gross_pnl", float("-inf")),
+        ("gross_pnl", float("nan")),
+        ("net_pnl", float("inf")),
+        ("net_pnl", float("-inf")),
+        ("net_pnl", float("nan")),
+        ("swap", float("inf")),
+        ("swap", float("-inf")),
+        ("swap", float("nan")),
+    ],
+)
+def test_trade_requires_finite_signed_values(
+    field_name,
+    field_value,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    kwargs = {
+        "trade_id": "TRD-001",
+        "position_id": "POS-001",
+        "strategy_id": "TEST",
+        "symbol": "EURUSD",
+        "side": PositionSide.LONG,
+        "entry_fill_id": "FILL-001",
+        "exit_fill_id": "FILL-002",
+        "entry_time": timestamp,
+        "exit_time": timestamp,
+        "entry_price": 1.16000,
+        "exit_price": 1.16100,
+        "quantity": 0.01,
+        "gross_pnl": 1.00,
+        "net_pnl": 1.00,
+    }
+
+    kwargs[field_name] = field_value
+
+    with pytest.raises(ValueError, match=field_name):
+        Trade(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_value"),
+    [
+        ("spread_cost", -0.01),
+        ("spread_cost", float("inf")),
+        ("spread_cost", float("nan")),
+        ("slippage_cost", -0.01),
+        ("slippage_cost", float("inf")),
+        ("slippage_cost", float("nan")),
+        ("commission", -0.01),
+        ("commission", float("inf")),
+        ("commission", float("nan")),
+    ],
+)
+def test_trade_requires_non_negative_costs(
+    field_name,
+    field_value,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    kwargs = {
+        "trade_id": "TRD-001",
+        "position_id": "POS-001",
+        "strategy_id": "TEST",
+        "symbol": "EURUSD",
+        "side": PositionSide.LONG,
+        "entry_fill_id": "FILL-001",
+        "exit_fill_id": "FILL-002",
+        "entry_time": timestamp,
+        "exit_time": timestamp,
+        "entry_price": 1.16000,
+        "exit_price": 1.16100,
+        "quantity": 0.01,
+        "gross_pnl": 1.00,
+        "net_pnl": 1.00,
+    }
+
+    kwargs[field_name] = field_value
+
+    with pytest.raises(ValueError, match=field_name):
+        Trade(**kwargs)
+
+
+@pytest.mark.parametrize(
+    "bars_held",
+    [
+        -1,
+        1.5,
+        True,
+    ],
+)
+def test_trade_requires_non_negative_integer_bars_held(
+    bars_held,
+):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="bars_held"):
+        Trade(
+            trade_id="TRD-001",
+            position_id="POS-001",
+            strategy_id="TEST",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            entry_fill_id="FILL-001",
+            exit_fill_id="FILL-002",
+            entry_time=timestamp,
+            exit_time=timestamp,
+            entry_price=1.16000,
+            exit_price=1.16100,
+            quantity=0.01,
+            gross_pnl=1.00,
+            net_pnl=1.00,
+            bars_held=bars_held,
+        )
+
+
+def test_trade_is_immutable():
+    timestamp = datetime.now(timezone.utc)
+
+    trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-001",
+        exit_fill_id="FILL-002",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.16100,
+        quantity=0.01,
+        gross_pnl=1.00,
+        net_pnl=1.00,
+    )
+
+    with pytest.raises(AttributeError):
+        trade.net_pnl = 999.0  # type: ignore[misc]
+
+
+def test_trade_metadata_is_immutable_and_copied():
+    timestamp = datetime.now(timezone.utc)
+
+    metadata = {
+        "experiment_id": "EXP-001",
+    }
+
+    trade = Trade(
+        trade_id="TRD-001",
+        position_id="POS-001",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        entry_fill_id="FILL-001",
+        exit_fill_id="FILL-002",
+        entry_time=timestamp,
+        exit_time=timestamp,
+        entry_price=1.16000,
+        exit_price=1.16100,
+        quantity=0.01,
+        gross_pnl=1.00,
+        net_pnl=1.00,
+        metadata=metadata,
+    )
+
+    metadata["experiment_id"] = "CHANGED"
+
+    assert (
+        trade.metadata["experiment_id"]
+        == "EXP-001"
+    )
+
+    with pytest.raises(TypeError):
+        trade.metadata["experiment_id"] = "OTHER"  # type: ignore[index]
