@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import pandas as pd
 import pytest
 
+from backtest.costs import ZeroCostModel
 from backtest.clock import SimulationClock
 from backtest.context import (
     BacktestContext,
@@ -287,6 +288,9 @@ def run_portfolio_pipeline(
 
     execution = SimulatedExecution(
         config=config,
+        cost_model=ZeroCostModel(
+            instrument=instrument,
+        ),
     )
 
     portfolio = Portfolio(

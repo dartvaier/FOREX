@@ -1,3 +1,5 @@
+from backtest.costs import CostModel
+
 from dataclasses import dataclass, replace
 
 from backtest.clock import ClockEvent
@@ -78,27 +80,27 @@ class SimulatedExecution:
     PendingOrderQueue and fills them at the opening price of
     the current historical bar.
 
-    Baseline execution model:
+    The MarketBar open is treated as the frictionless
+    reference price.
 
-        reference_price = bar.open
-        execution_price = bar.open
-        spread_impact   = 0
-        slippage        = 0
-        commission      = 0
+    The configured CostModel is responsible for converting
+    that reference into:
 
-    Costs are intentionally neutral here because the official
-    CostModel belongs to F5.5.
+        execution_price
+        spread_impact
+        slippage
+        commission
 
-    The execution layer receives MarketBar directly because it
-    is internal BacktestEngine infrastructure.
+    Cost configuration is mandatory.
 
-    Strategy code never receives the opening MarketBar object
-    during BAR_OPEN.
+    Frictionless execution must therefore be declared
+    explicitly through ZeroCostModel.
     """
 
     def __init__(
         self,
         config: BacktestConfig,
+        cost_model: CostModel,
     ) -> None:
         if not isinstance(
             config,
@@ -108,11 +110,33 @@ class SimulatedExecution:
                 "config must be a BacktestConfig"
             )
 
+        if not isinstance(
+            cost_model,
+            CostModel,
+        ):
+            raise TypeError(
+                "cost_model must satisfy the CostModel protocol"
+            )
+
+        if (
+            cost_model.instrument.symbol
+            != config.symbol
+        ):
+            raise ValueError(
+                "cost_model instrument symbol does not match "
+                "BacktestConfig"
+            )
+
         self._config = config
+        self._cost_model = cost_model
 
     @property
     def config(self) -> BacktestConfig:
         return self._config
+
+    @property
+    def cost_model(self) -> CostModel:
+        return self._cost_model
 
     def execute(
         self,
@@ -186,19 +210,21 @@ class SimulatedExecution:
                 "Order is not yet eligible for execution"
             )
 
-        reference_price = bar.open
-        execution_price = reference_price
+        cost = self._cost_model.calculate(
+            order,
+            reference_price=bar.open,
+        )
 
         fill = Fill(
             fill_id=self._make_fill_id(order),
             order_id=order.order_id,
             fill_time=event.timestamp,
-            reference_price=reference_price,
-            execution_price=execution_price,
+            reference_price=cost.reference_price,
+            execution_price=cost.execution_price,
             quantity=order.quantity,
-            spread_impact=0.0,
-            slippage=0.0,
-            commission=0.0,
+            spread_impact=cost.spread_impact,
+            slippage=cost.slippage,
+            commission=cost.commission,
         )
 
         filled_order = replace(
@@ -215,14 +241,4 @@ class SimulatedExecution:
     def _make_fill_id(
         order: Order,
     ) -> str:
-        """
-        Deterministic baseline Fill identifier.
-
-        Current baseline:
-
-            one Order
-                ↓
-            one Fill
-        """
-
         return f"FILL-{order.order_id}"

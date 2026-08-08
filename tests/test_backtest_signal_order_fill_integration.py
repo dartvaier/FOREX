@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from backtest.costs import ZeroCostModel
 from backtest.clock import SimulationClock
 from backtest.context import BacktestContext, BacktestContextBuilder
 from backtest.execution import SimulatedExecution
@@ -176,6 +177,7 @@ def run_signal_order_fill_pipeline(
     strategy,
 ):
     config = make_config()
+    instrument = make_instrument()
 
     feed = HistoricalBarFeed(
         dataframe=dataframe,
@@ -197,7 +199,7 @@ def run_signal_order_fill_pipeline(
     )
 
     risk_gate = FixedSizeRiskGate(
-        instrument=make_instrument(),
+        instrument=instrument,
         fixed_quantity=0.01,
     )
 
@@ -209,6 +211,9 @@ def run_signal_order_fill_pipeline(
 
     execution = SimulatedExecution(
         config=config,
+        cost_model=ZeroCostModel(
+            instrument=instrument,
+        ),
     )
 
     signals = []
