@@ -101,6 +101,15 @@ explicit CostModel
 Look-ahead:
 prohibited
 ```
+# [0.1.1] - 2026-08-08
+
+## Documentation Completion
+
+Patch release destinado a completar a documentação do marco:
+
+```text
+FOREX v0.1
+Data & Infrastructure Foundation
 
 ---
 
