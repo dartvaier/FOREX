@@ -1,0 +1,43 @@
+{
+    "project_version": "0.1.0",
+    "created_at": "2026-08-08",
+    "datasets": {
+        "EURUSD_M15": {
+            "path": "data/raw/EURUSD/M15.parquet",
+            "source": "MetaQuotes-Demo",
+            "timeframe": "M15",
+            "timezone": "UTC",
+            "first_bar": "2015-01-02T09:00:00Z",
+            "last_bar": "2026-08-07T23:45:00Z",
+            "bars": 288223,
+            "sha256": "6D3255D2898DFF402E2DD10945114FAE6143C759280A7B72F6D2DF82DD6BB09E"
+        },
+        "EURUSD_H1": {
+            "path": "data/processed/EURUSD/H1.parquet",
+            "source_dataset": "EURUSD_M15",
+            "timeframe": "H1",
+            "timezone": "UTC",
+            "bars": 72080,
+            "complete_bars": 72018,
+            "incomplete_bars": 62,
+            "sha256": "EC4CB29AB195A0B173E77D080C20088B419F3CA36ADB143D1BDD69C436F0D016"
+        },
+        "EURUSD_H4": {
+            "path": "data/processed/EURUSD/H4.parquet",
+            "source_dataset": "EURUSD_M15",
+            "timeframe": "H4",
+            "timezone": "UTC",
+            "bars": 18046,
+            "complete_bars": 17929,
+            "incomplete_bars": 117,
+            "sha256": "BAD643E79E03B5E519100CE12AD8E1CF75615483BA4E017B27610CA3CFD05B72"
+        }
+    },
+    "notes": [
+        "M15 is the canonical intraday source dataset.",
+        "H1 and H4 are derived from M15 using TimeframeBuilder.",
+        "Historical MT5 candle spread is not the official execution CostModel.",
+        "real_volume is not approved as a strategy feature.",
+        "Incomplete derived candles are preserved for auditing."
+    ]
+}

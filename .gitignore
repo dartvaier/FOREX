@@ -1,17 +1,26 @@
+# Virtual environment
 .venv/
+
+# Environment secrets
 .env
 
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
+# VS Code
 .vscode/
 
+# Tests
+.pytest_cache/
+
+# Logs
 logs/
 *.log
 
+# Market datasets
 data/raw/
+data/processed/
 data/cache/
-
-.pytest_cache/
