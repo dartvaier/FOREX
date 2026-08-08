@@ -1,3 +1,5 @@
+from backtest.models.instrument import InstrumentSpecification
+
 from backtest.models.trade import Trade
 
 from dataclasses import replace
@@ -1870,3 +1872,283 @@ def test_trade_metadata_is_immutable_and_copied():
 
     with pytest.raises(TypeError):
         trade.metadata["experiment_id"] = "OTHER"  # type: ignore[index]
+        
+def test_instrument_specification_is_created_with_valid_data():
+    instrument = InstrumentSpecification(
+        symbol="EURUSD",
+        digits=5,
+        point=0.00001,
+        pip_size=0.00010,
+        contract_size=100000,
+        volume_min=0.01,
+        volume_max=500.0,
+        volume_step=0.01,
+        tick_size=0.00001,
+        tick_value=1.0,
+    )
+
+    assert instrument.symbol == "EURUSD"
+
+    assert instrument.digits == 5
+
+    assert instrument.point == 0.00001
+    assert instrument.pip_size == 0.00010
+
+    assert instrument.contract_size == 100000
+
+    assert instrument.volume_min == 0.01
+    assert instrument.volume_max == 500.0
+    assert instrument.volume_step == 0.01
+
+    assert instrument.tick_size == 0.00001
+    assert instrument.tick_value == 1.0
+
+
+def test_instrument_tick_value_is_optional():
+    instrument = InstrumentSpecification(
+        symbol="EURUSD",
+        digits=5,
+        point=0.00001,
+        pip_size=0.00010,
+        contract_size=100000,
+        volume_min=0.01,
+        volume_max=500.0,
+        volume_step=0.01,
+        tick_size=0.00001,
+    )
+
+    assert instrument.tick_value is None
+
+
+def test_instrument_calculates_points_per_pip():
+    instrument = InstrumentSpecification(
+        symbol="EURUSD",
+        digits=5,
+        point=0.00001,
+        pip_size=0.00010,
+        contract_size=100000,
+        volume_min=0.01,
+        volume_max=500.0,
+        volume_step=0.01,
+        tick_size=0.00001,
+    )
+
+    assert instrument.points_per_pip == pytest.approx(10.0)
+
+
+def test_instrument_requires_non_empty_symbol():
+    with pytest.raises(ValueError, match="symbol"):
+        InstrumentSpecification(
+            symbol="",
+            digits=5,
+            point=0.00001,
+            pip_size=0.00010,
+            contract_size=100000,
+            volume_min=0.01,
+            volume_max=500.0,
+            volume_step=0.01,
+            tick_size=0.00001,
+        )
+
+
+@pytest.mark.parametrize(
+    "digits",
+    [
+        -1,
+        1.5,
+        True,
+    ],
+)
+def test_instrument_requires_non_negative_integer_digits(
+    digits,
+):
+    with pytest.raises(ValueError, match="digits"):
+        InstrumentSpecification(
+            symbol="EURUSD",
+            digits=digits,
+            point=0.00001,
+            pip_size=0.00010,
+            contract_size=100000,
+            volume_min=0.01,
+            volume_max=500.0,
+            volume_step=0.01,
+            tick_size=0.00001,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_value"),
+    [
+        ("point", 0),
+        ("point", -0.00001),
+        ("point", float("inf")),
+        ("point", float("nan")),
+
+        ("pip_size", 0),
+        ("pip_size", -0.0001),
+        ("pip_size", float("inf")),
+        ("pip_size", float("nan")),
+
+        ("contract_size", 0),
+        ("contract_size", -100000),
+        ("contract_size", float("inf")),
+        ("contract_size", float("nan")),
+
+        ("volume_min", 0),
+        ("volume_min", -0.01),
+        ("volume_min", float("inf")),
+        ("volume_min", float("nan")),
+
+        ("volume_max", 0),
+        ("volume_max", -1),
+        ("volume_max", float("inf")),
+        ("volume_max", float("nan")),
+
+        ("volume_step", 0),
+        ("volume_step", -0.01),
+        ("volume_step", float("inf")),
+        ("volume_step", float("nan")),
+
+        ("tick_size", 0),
+        ("tick_size", -0.00001),
+        ("tick_size", float("inf")),
+        ("tick_size", float("nan")),
+    ],
+)
+def test_instrument_requires_positive_finite_numeric_fields(
+    field_name,
+    field_value,
+):
+    kwargs = {
+        "symbol": "EURUSD",
+        "digits": 5,
+        "point": 0.00001,
+        "pip_size": 0.00010,
+        "contract_size": 100000,
+        "volume_min": 0.01,
+        "volume_max": 500.0,
+        "volume_step": 0.01,
+        "tick_size": 0.00001,
+    }
+
+    kwargs[field_name] = field_value
+
+    with pytest.raises(ValueError, match=field_name):
+        InstrumentSpecification(**kwargs)
+
+
+@pytest.mark.parametrize(
+    "tick_value",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_instrument_validates_tick_value_when_provided(
+    tick_value,
+):
+    with pytest.raises(ValueError, match="tick_value"):
+        InstrumentSpecification(
+            symbol="EURUSD",
+            digits=5,
+            point=0.00001,
+            pip_size=0.00010,
+            contract_size=100000,
+            volume_min=0.01,
+            volume_max=500.0,
+            volume_step=0.01,
+            tick_size=0.00001,
+            tick_value=tick_value,
+        )
+
+
+def test_instrument_volume_max_cannot_be_smaller_than_min():
+    with pytest.raises(
+        ValueError,
+        match="volume_max",
+    ):
+        InstrumentSpecification(
+            symbol="EURUSD",
+            digits=5,
+            point=0.00001,
+            pip_size=0.00010,
+            contract_size=100000,
+            volume_min=1.0,
+            volume_max=0.5,
+            volume_step=0.01,
+            tick_size=0.00001,
+        )
+
+
+def test_instrument_volume_step_cannot_exceed_volume_max():
+    with pytest.raises(
+        ValueError,
+        match="volume_step",
+    ):
+        InstrumentSpecification(
+            symbol="EURUSD",
+            digits=5,
+            point=0.00001,
+            pip_size=0.00010,
+            contract_size=100000,
+            volume_min=0.01,
+            volume_max=1.0,
+            volume_step=2.0,
+            tick_size=0.00001,
+        )
+
+
+def test_instrument_pip_size_cannot_be_smaller_than_point():
+    with pytest.raises(
+        ValueError,
+        match="pip_size",
+    ):
+        InstrumentSpecification(
+            symbol="TEST",
+            digits=5,
+            point=0.001,
+            pip_size=0.0001,
+            contract_size=1,
+            volume_min=0.01,
+            volume_max=1.0,
+            volume_step=0.01,
+            tick_size=0.001,
+        )
+
+
+def test_instrument_tick_size_cannot_be_smaller_than_point():
+    with pytest.raises(
+        ValueError,
+        match="tick_size",
+    ):
+        InstrumentSpecification(
+            symbol="TEST",
+            digits=5,
+            point=0.001,
+            pip_size=0.01,
+            contract_size=1,
+            volume_min=0.01,
+            volume_max=1.0,
+            volume_step=0.01,
+            tick_size=0.0001,
+        )
+
+
+def test_instrument_is_immutable():
+    instrument = InstrumentSpecification(
+        symbol="EURUSD",
+        digits=5,
+        point=0.00001,
+        pip_size=0.00010,
+        contract_size=100000,
+        volume_min=0.01,
+        volume_max=500.0,
+        volume_step=0.01,
+        tick_size=0.00001,
+    )
+
+    with pytest.raises(AttributeError):
+        instrument.contract_size = 1  # type: ignore[misc]
