@@ -1,4 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+from backtest.models.order import Order
 
 import pytest
 
@@ -211,3 +213,361 @@ def test_signal_copies_input_metadata():
     metadata["value"] = 999
 
     assert signal.metadata["value"] == 123
+
+def test_order_is_created_with_valid_data():
+    created_at = datetime(
+        2026,
+        8,
+        8,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    scheduled_for = created_at + timedelta(minutes=15)
+
+    order = Order(
+        order_id="ORD-001",
+        signal_id="SIG-001",
+        symbol="EURUSD",
+        side=OrderSide.BUY,
+        quantity=0.01,
+        order_type=OrderType.MARKET,
+        created_at=created_at,
+        scheduled_for=scheduled_for,
+        stop_loss=1.1500,
+        take_profit=1.1700,
+        reason="Risk approved signal",
+        metadata={"risk_model": "fixed-size"},
+    )
+
+    assert order.order_id == "ORD-001"
+    assert order.signal_id == "SIG-001"
+    assert order.symbol == "EURUSD"
+    assert order.side == OrderSide.BUY
+    assert order.quantity == 0.01
+    assert order.order_type == OrderType.MARKET
+
+    assert order.created_at == created_at
+    assert order.scheduled_for == scheduled_for
+
+    assert order.status == OrderStatus.PENDING
+
+    assert order.stop_loss == 1.1500
+    assert order.take_profit == 1.1700
+
+    assert order.reason == "Risk approved signal"
+    assert order.metadata["risk_model"] == "fixed-size"
+
+
+def test_order_defaults_to_pending():
+    timestamp = datetime.now(timezone.utc)
+
+    order = Order(
+        order_id="ORD-001",
+        signal_id="SIG-001",
+        symbol="EURUSD",
+        side=OrderSide.BUY,
+        quantity=0.01,
+        order_type=OrderType.MARKET,
+        created_at=timestamp,
+        scheduled_for=timestamp,
+    )
+
+    assert order.status == OrderStatus.PENDING
+
+
+def test_order_allows_same_timestamp_for_created_and_scheduled():
+    timestamp = datetime.now(timezone.utc)
+
+    order = Order(
+        order_id="ORD-001",
+        signal_id="SIG-001",
+        symbol="EURUSD",
+        side=OrderSide.BUY,
+        quantity=0.01,
+        order_type=OrderType.MARKET,
+        created_at=timestamp,
+        scheduled_for=timestamp,
+    )
+
+    assert order.scheduled_for == order.created_at
+
+
+def test_order_requires_non_empty_order_id():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="order_id"):
+        Order(
+            order_id="",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+        )
+
+
+def test_order_requires_non_empty_signal_id():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="signal_id"):
+        Order(
+            order_id="ORD-001",
+            signal_id="",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+        )
+
+
+def test_order_requires_non_empty_symbol():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="symbol"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+        )
+
+
+@pytest.mark.parametrize(
+    "quantity",
+    [
+        0,
+        -0.01,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_order_requires_positive_finite_quantity(quantity):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="quantity"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=quantity,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+        )
+
+
+def test_order_requires_timezone_aware_created_at():
+    naive_timestamp = datetime(2026, 8, 8, 12, 0)
+    scheduled_for = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="created_at"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=naive_timestamp,
+            scheduled_for=scheduled_for,
+        )
+
+
+def test_order_requires_timezone_aware_scheduled_for():
+    created_at = datetime.now(timezone.utc)
+    naive_timestamp = datetime(2026, 8, 8, 12, 15)
+
+    with pytest.raises(ValueError, match="scheduled_for"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=created_at,
+            scheduled_for=naive_timestamp,
+        )
+
+
+def test_order_cannot_be_scheduled_before_creation():
+    created_at = datetime(
+        2026,
+        8,
+        8,
+        12,
+        15,
+        tzinfo=timezone.utc,
+    )
+
+    scheduled_for = created_at - timedelta(minutes=15)
+
+    with pytest.raises(ValueError, match="scheduled_for"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=created_at,
+            scheduled_for=scheduled_for,
+        )
+
+
+def test_order_requires_order_side_enum():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(TypeError, match="OrderSide"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side="BUY",  # type: ignore[arg-type]
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+        )
+
+
+def test_order_requires_order_type_enum():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(TypeError, match="OrderType"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type="MARKET",  # type: ignore[arg-type]
+            created_at=timestamp,
+            scheduled_for=timestamp,
+        )
+
+
+def test_order_requires_order_status_enum():
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(TypeError, match="OrderStatus"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+            status="PENDING",  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    "stop_loss",
+    [
+        0,
+        -1.0,
+        float("inf"),
+        float("nan"),
+    ],
+)
+def test_order_validates_stop_loss(stop_loss):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="stop_loss"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+            stop_loss=stop_loss,
+        )
+
+
+@pytest.mark.parametrize(
+    "take_profit",
+    [
+        0,
+        -1.0,
+        float("inf"),
+        float("nan"),
+    ],
+)
+def test_order_validates_take_profit(take_profit):
+    timestamp = datetime.now(timezone.utc)
+
+    with pytest.raises(ValueError, match="take_profit"):
+        Order(
+            order_id="ORD-001",
+            signal_id="SIG-001",
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            quantity=0.01,
+            order_type=OrderType.MARKET,
+            created_at=timestamp,
+            scheduled_for=timestamp,
+            take_profit=take_profit,
+        )
+
+
+def test_order_is_immutable():
+    timestamp = datetime.now(timezone.utc)
+
+    order = Order(
+        order_id="ORD-001",
+        signal_id="SIG-001",
+        symbol="EURUSD",
+        side=OrderSide.BUY,
+        quantity=0.01,
+        order_type=OrderType.MARKET,
+        created_at=timestamp,
+        scheduled_for=timestamp,
+    )
+
+    with pytest.raises(AttributeError):
+        order.quantity = 1.0  # type: ignore[misc]
+
+
+def test_order_metadata_is_immutable_and_copied():
+    timestamp = datetime.now(timezone.utc)
+
+    metadata = {
+        "risk_model": "fixed-size",
+    }
+
+    order = Order(
+        order_id="ORD-001",
+        signal_id="SIG-001",
+        symbol="EURUSD",
+        side=OrderSide.BUY,
+        quantity=0.01,
+        order_type=OrderType.MARKET,
+        created_at=timestamp,
+        scheduled_for=timestamp,
+        metadata=metadata,
+    )
+
+    metadata["risk_model"] = "changed"
+
+    assert order.metadata["risk_model"] == "fixed-size"
+
+    with pytest.raises(TypeError):
+        order.metadata["risk_model"] = "other"  # type: ignore[index]
