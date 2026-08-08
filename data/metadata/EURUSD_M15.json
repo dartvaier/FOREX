@@ -1,0 +1,23 @@
+{
+    "symbol": "EURUSD",
+    "timeframe": "M15",
+    "source": "MetaQuotes-Demo",
+    "timezone": "UTC",
+    "first_bar": "2015-01-02T09:00:00+00:00",
+    "last_bar": "2026-08-07T23:45:00+00:00",
+    "bars": 288223,
+    "duplicates": 0,
+    "missing_values": 0,
+    "spread_field_available": true,
+    "spread_reliable_for_execution": false,
+    "real_volume_reliable": false,
+    "tick_volume_available": true,
+    "usage": "development_and_research",
+    "notes": [
+        "OHLC validated.",
+        "Timestamps normalized to UTC.",
+        "Historical spread field is inconsistent across periods.",
+        "Real volume field changes behavior between 2015-2017 and 2018+.",
+        "Dataset contains expected weekend gaps and some intraweek gaps."
+    ]
+}
