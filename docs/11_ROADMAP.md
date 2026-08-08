@@ -804,70 +804,55 @@ worst-case intrabar
 A implementação deverá ocorrer em etapas.
 
 ```text
-F5.1 Core Models
+F5.1 Core Models             ✅ COMPLETE
 
-F5.2 Simulation Clock
+F5.2 Simulation Clock        ✅ COMPLETE
 
-F5.3 Signal / Order / Fill
+F5.3 Signal / Order / Fill   ✅ COMPLETE
 
-F5.4 Position / Portfolio
+F5.4 Position / Portfolio    ⬜ NEXT
 
-F5.5 CostModel
+F5.5 CostModel               ⬜ NOT STARTED
 
-F5.6 Stops / Targets
+F5.6 Stops / Targets         ⬜ NOT STARTED
 
-F5.7 Trade Ledger
+F5.7 Trade Ledger            ⬜ NOT STARTED
 
-F5.8 Performance
+F5.8 Performance             ⬜ NOT STARTED
 
-F5.9 Regression Tests
+F5.9 Regression Tests        ⬜ NOT STARTE
 ```
 
 ---
 
 # 41. F5.1 — Core Models
 
-Implementar estruturas básicas:
+
+Status:
 
 ```text
-Signal
+COMPLETE
 
-Order
-
-Fill
-
-Position
-
-Trade
-
-InstrumentSpecification
-
-BacktestConfig
 ```
 
 ---
 
 # 42. F5.2 — Simulation Clock
 
-Implementar:
+
+Status:
 
 ```text
-simulation_time
-
-bar start
-
-bar close
-
-next bar
-
-availability time
+COMPLETE
 ```
-
-O Engine deverá controlar completamente o relógio.
-
 ---
 
 # 43. F5.3 — Signal / Order / Fill
+
+Status:
+
+```text
+COMPLETE
 
 Fluxo:
 
