@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
+from backtest.models.fill import Fill
+
 from backtest.models.order import Order
 
 import pytest
@@ -571,3 +573,276 @@ def test_order_metadata_is_immutable_and_copied():
 
     with pytest.raises(TypeError):
         order.metadata["risk_model"] = "other"  # type: ignore[index]
+
+def test_fill_is_created_with_valid_data():
+    fill_time = datetime(
+        2026,
+        8,
+        8,
+        12,
+        15,
+        tzinfo=timezone.utc,
+    )
+
+    fill = Fill(
+        fill_id="FILL-001",
+        order_id="ORD-001",
+        fill_time=fill_time,
+        reference_price=1.16000,
+        execution_price=1.16007,
+        quantity=0.01,
+        spread_impact=0.00005,
+        slippage=0.00002,
+        commission=0.07,
+    )
+
+    assert fill.fill_id == "FILL-001"
+    assert fill.order_id == "ORD-001"
+
+    assert fill.fill_time == fill_time
+
+    assert fill.reference_price == 1.16000
+    assert fill.execution_price == 1.16007
+    assert fill.quantity == 0.01
+
+    assert fill.spread_impact == 0.00005
+    assert fill.slippage == 0.00002
+    assert fill.commission == 0.07
+
+
+def test_fill_costs_default_to_zero():
+    fill = Fill(
+        fill_id="FILL-001",
+        order_id="ORD-001",
+        fill_time=datetime.now(timezone.utc),
+        reference_price=1.16000,
+        execution_price=1.16000,
+        quantity=0.01,
+    )
+
+    assert fill.spread_impact == 0.0
+    assert fill.slippage == 0.0
+    assert fill.commission == 0.0
+
+
+def test_fill_requires_non_empty_fill_id():
+    with pytest.raises(ValueError, match="fill_id"):
+        Fill(
+            fill_id="",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=0.01,
+        )
+
+
+def test_fill_requires_non_empty_order_id():
+    with pytest.raises(ValueError, match="order_id"):
+        Fill(
+            fill_id="FILL-001",
+            order_id="",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=0.01,
+        )
+
+
+def test_fill_requires_timezone_aware_fill_time():
+    naive_time = datetime(
+        2026,
+        8,
+        8,
+        12,
+        15,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="timezone-aware",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=naive_time,
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=0.01,
+        )
+
+
+@pytest.mark.parametrize(
+    "reference_price",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_fill_requires_positive_finite_reference_price(
+    reference_price,
+):
+    with pytest.raises(
+        ValueError,
+        match="reference_price",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=reference_price,
+            execution_price=1.16000,
+            quantity=0.01,
+        )
+
+
+@pytest.mark.parametrize(
+    "execution_price",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_fill_requires_positive_finite_execution_price(
+    execution_price,
+):
+    with pytest.raises(
+        ValueError,
+        match="execution_price",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=execution_price,
+            quantity=0.01,
+        )
+
+
+@pytest.mark.parametrize(
+    "quantity",
+    [
+        0,
+        -0.01,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_fill_requires_positive_finite_quantity(
+    quantity,
+):
+    with pytest.raises(
+        ValueError,
+        match="quantity",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=quantity,
+        )
+
+
+@pytest.mark.parametrize(
+    "spread_impact",
+    [
+        -0.00001,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_fill_requires_non_negative_finite_spread_impact(
+    spread_impact,
+):
+    with pytest.raises(
+        ValueError,
+        match="spread_impact",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=0.01,
+            spread_impact=spread_impact,
+        )
+
+
+@pytest.mark.parametrize(
+    "slippage",
+    [
+        -0.00001,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_fill_requires_non_negative_finite_slippage(
+    slippage,
+):
+    with pytest.raises(
+        ValueError,
+        match="slippage",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=0.01,
+            slippage=slippage,
+        )
+
+
+@pytest.mark.parametrize(
+    "commission",
+    [
+        -0.01,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_fill_requires_non_negative_finite_commission(
+    commission,
+):
+    with pytest.raises(
+        ValueError,
+        match="commission",
+    ):
+        Fill(
+            fill_id="FILL-001",
+            order_id="ORD-001",
+            fill_time=datetime.now(timezone.utc),
+            reference_price=1.16000,
+            execution_price=1.16000,
+            quantity=0.01,
+            commission=commission,
+        )
+
+
+def test_fill_is_immutable():
+    fill = Fill(
+        fill_id="FILL-001",
+        order_id="ORD-001",
+        fill_time=datetime.now(timezone.utc),
+        reference_price=1.16000,
+        execution_price=1.16000,
+        quantity=0.01,
+    )
+
+    with pytest.raises(AttributeError):
+        fill.execution_price = 1.17000  # type: ignore[misc]
