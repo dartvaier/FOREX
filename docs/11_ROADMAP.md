@@ -70,7 +70,7 @@ F3  Historical Data             ✅ COMPLETE
 
 F4  Data Transformation         ✅ COMPLETE
 
-F5  Backtest Engine             ⬜ NOT STARTED
+F5  Backtest Engine             🟡 IN PROGRESS
 
 F6  Strategy Research           ⬜ NOT STARTED
 
@@ -81,7 +81,6 @@ F8  Robustness & Validation     ⬜ NOT STARTED
 F9  Demo Execution              ⬜ NOT STARTED
 
 F10 Live Readiness              ⬜ NOT STARTED
-```
 
 ---
 
@@ -735,7 +734,7 @@ Estado atual:
 Status:
 
 ```text
-NOT STARTED
+IN PROGRESS
 ```
 
 Próximo grande marco do projeto.
