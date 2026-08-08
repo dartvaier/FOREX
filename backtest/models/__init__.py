@@ -16,6 +16,7 @@ from backtest.models.order import Order
 from backtest.models.position import Position
 from backtest.models.signal import Signal
 from backtest.models.trade import Trade
+from backtest.models.bar import MarketBar
 
 __all__ = [
     "AmbiguousBarPolicy",
@@ -34,4 +35,5 @@ __all__ = [
     "SignalAction",
     "Timeframe",
     "Trade",
+    "MarketBar",
 ]
