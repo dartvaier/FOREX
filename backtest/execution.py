@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from backtest.costs import CostModel
 
 from dataclasses import dataclass, replace
@@ -12,6 +14,7 @@ from backtest.models.enums import (
 from backtest.models.fill import Fill
 from backtest.models.order import Order
 
+from backtest.protective_exit import ProtectiveExitDecision
 
 @dataclass(frozen=True, slots=True)
 class ExecutionResult:
@@ -96,6 +99,154 @@ class SimulatedExecution:
     Frictionless execution must therefore be declared
     explicitly through ZeroCostModel.
     """
+
+    def execute_protective(
+        self,
+        order: Order,
+        *,
+        decision: ProtectiveExitDecision,
+        bar: MarketBar,
+        fill_time: datetime,
+    ) -> ExecutionResult:
+        """
+        Execute a protective Stop Loss / Take Profit Order.
+
+        The evaluator determines the frictionless reference price.
+
+        fill_time is deterministic simulation time:
+
+            triggered_at_open=True
+                -> BAR_OPEN timestamp
+
+            triggered_at_open=False
+                -> BAR_CLOSE timestamp
+
+        For intrabar exits, fill_time does not pretend to represent
+        the unknown exact touch time inside the candle.
+        """
+
+        if not isinstance(order, Order):
+            raise TypeError(
+                "order must be an Order"
+            )
+
+        if not isinstance(
+            decision,
+            ProtectiveExitDecision,
+        ):
+            raise TypeError(
+                "decision must be a ProtectiveExitDecision"
+            )
+
+        if not isinstance(bar, MarketBar):
+            raise TypeError(
+                "bar must be a MarketBar"
+            )
+
+        if not isinstance(fill_time, datetime):
+            raise TypeError(
+                "fill_time must be a datetime"
+            )
+
+        if order.status != OrderStatus.PENDING:
+            raise ValueError(
+                "only PENDING Orders can be executed"
+            )
+
+        if order.symbol != self._config.symbol:
+            raise ValueError(
+                "order symbol does not match BacktestConfig"
+            )
+
+        if (
+            order.metadata.get("protective_exit")
+            is not True
+        ):
+            raise ValueError(
+                "order is not a protective exit Order"
+            )
+
+        if (
+            order.metadata.get("position_id")
+            != decision.position_id
+        ):
+            raise ValueError(
+                "protective Order position_id does not "
+                "match decision"
+            )
+
+        if decision.bar_time != bar.time:
+            raise ValueError(
+                "decision bar_time does not match MarketBar"
+            )
+
+        if order.created_at != fill_time:
+            raise ValueError(
+                "protective Order created_at must equal fill_time"
+            )
+
+        if order.scheduled_for != fill_time:
+            raise ValueError(
+                "protective Order scheduled_for must equal fill_time"
+            )
+
+        if (
+            decision.triggered_at_open
+            and fill_time != bar.time
+        ):
+            raise ValueError(
+                "open-triggered protective exit must fill at BAR_OPEN"
+            )
+
+        if (
+            not decision.triggered_at_open
+            and fill_time <= bar.time
+        ):
+            raise ValueError(
+                "intrabar protective exit must fill after BAR_OPEN"
+            )
+
+        return self._execute_from_reference(
+            order,
+            fill_time=fill_time,
+            reference_price=decision.reference_price,
+        )
+
+
+    def _execute_from_reference(
+        self,
+        order: Order,
+        *,
+        fill_time: datetime,
+        reference_price: float,
+    ) -> ExecutionResult:
+        cost = self._cost_model.calculate(
+            order,
+            reference_price=reference_price,
+        )
+    
+        fill = Fill(
+            fill_id=self._make_fill_id(order),
+            order_id=order.order_id,
+            fill_time=fill_time,
+            reference_price=cost.reference_price,
+            execution_price=cost.execution_price,
+            quantity=order.quantity,
+            spread_impact=cost.spread_impact,
+            slippage=cost.slippage,
+            commission=cost.commission,
+        )
+    
+        filled_order = replace(
+            order,
+            status=OrderStatus.FILLED,
+        )
+    
+        return ExecutionResult(
+            filled_order=filled_order,
+            fill=fill,
+        )
+
 
     def __init__(
         self,
@@ -210,31 +361,10 @@ class SimulatedExecution:
                 "Order is not yet eligible for execution"
             )
 
-        cost = self._cost_model.calculate(
+        return self._execute_from_reference(
             order,
-            reference_price=bar.open,
-        )
-
-        fill = Fill(
-            fill_id=self._make_fill_id(order),
-            order_id=order.order_id,
             fill_time=event.timestamp,
-            reference_price=cost.reference_price,
-            execution_price=cost.execution_price,
-            quantity=order.quantity,
-            spread_impact=cost.spread_impact,
-            slippage=cost.slippage,
-            commission=cost.commission,
-        )
-
-        filled_order = replace(
-            order,
-            status=OrderStatus.FILLED,
-        )
-
-        return ExecutionResult(
-            filled_order=filled_order,
-            fill=fill,
+            reference_price=bar.open,
         )
 
     @staticmethod
@@ -242,3 +372,5 @@ class SimulatedExecution:
         order: Order,
     ) -> str:
         return f"FILL-{order.order_id}"
+    
+    
