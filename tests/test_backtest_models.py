@@ -1,3 +1,7 @@
+from dataclasses import replace
+
+from backtest.models.position import Position
+
 from datetime import datetime, timedelta, timezone
 
 from backtest.models.fill import Fill
@@ -846,3 +850,372 @@ def test_fill_is_immutable():
 
     with pytest.raises(AttributeError):
         fill.execution_price = 1.17000  # type: ignore[misc]
+
+def test_position_is_created_with_valid_data():
+    entry_time = datetime(
+        2026,
+        8,
+        8,
+        12,
+        15,
+        tzinfo=timezone.utc,
+    )
+
+    position = Position(
+        position_id="POS-001",
+        entry_fill_id="FILL-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        quantity=0.01,
+        entry_time=entry_time,
+        entry_price=1.16000,
+        stop_loss=1.15000,
+        take_profit=1.18000,
+        unrealized_pnl=12.50,
+        metadata={"strategy_id": "EMA-TREND-001"},
+    )
+
+    assert position.position_id == "POS-001"
+    assert position.entry_fill_id == "FILL-001"
+
+    assert position.symbol == "EURUSD"
+    assert position.side == PositionSide.LONG
+    assert position.quantity == 0.01
+
+    assert position.entry_time == entry_time
+    assert position.entry_price == 1.16000
+
+    assert position.stop_loss == 1.15000
+    assert position.take_profit == 1.18000
+
+    assert position.unrealized_pnl == 12.50
+
+    assert (
+        position.metadata["strategy_id"]
+        == "EMA-TREND-001"
+    )
+
+
+def test_position_unrealized_pnl_defaults_to_zero():
+    position = Position(
+        position_id="POS-001",
+        entry_fill_id="FILL-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        quantity=0.01,
+        entry_time=datetime.now(timezone.utc),
+        entry_price=1.16000,
+    )
+
+    assert position.unrealized_pnl == 0.0
+
+
+def test_position_allows_negative_unrealized_pnl():
+    position = Position(
+        position_id="POS-001",
+        entry_fill_id="FILL-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        quantity=0.01,
+        entry_time=datetime.now(timezone.utc),
+        entry_price=1.16000,
+        unrealized_pnl=-25.75,
+    )
+
+    assert position.unrealized_pnl == -25.75
+
+
+def test_position_requires_non_empty_position_id():
+    with pytest.raises(
+        ValueError,
+        match="position_id",
+    ):
+        Position(
+            position_id="",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+        )
+
+
+def test_position_requires_non_empty_entry_fill_id():
+    with pytest.raises(
+        ValueError,
+        match="entry_fill_id",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+        )
+
+
+def test_position_requires_non_empty_symbol():
+    with pytest.raises(
+        ValueError,
+        match="symbol",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+        )
+
+
+def test_position_requires_position_side_enum():
+    with pytest.raises(
+        TypeError,
+        match="PositionSide",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side="LONG",  # type: ignore[arg-type]
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+        )
+
+
+@pytest.mark.parametrize(
+    "quantity",
+    [
+        0,
+        -0.01,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_position_requires_positive_finite_quantity(
+    quantity,
+):
+    with pytest.raises(
+        ValueError,
+        match="quantity",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=quantity,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+        )
+
+
+@pytest.mark.parametrize(
+    "entry_price",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_position_requires_positive_finite_entry_price(
+    entry_price,
+):
+    with pytest.raises(
+        ValueError,
+        match="entry_price",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=entry_price,
+        )
+
+
+def test_position_requires_timezone_aware_entry_time():
+    naive_time = datetime(
+        2026,
+        8,
+        8,
+        12,
+        15,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="timezone-aware",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=naive_time,
+            entry_price=1.16000,
+        )
+
+
+@pytest.mark.parametrize(
+    "stop_loss",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_position_validates_stop_loss(
+    stop_loss,
+):
+    with pytest.raises(
+        ValueError,
+        match="stop_loss",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+            stop_loss=stop_loss,
+        )
+
+
+@pytest.mark.parametrize(
+    "take_profit",
+    [
+        0,
+        -1,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_position_validates_take_profit(
+    take_profit,
+):
+    with pytest.raises(
+        ValueError,
+        match="take_profit",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+            take_profit=take_profit,
+        )
+
+
+@pytest.mark.parametrize(
+    "unrealized_pnl",
+    [
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+    ],
+)
+def test_position_requires_finite_unrealized_pnl(
+    unrealized_pnl,
+):
+    with pytest.raises(
+        ValueError,
+        match="unrealized_pnl",
+    ):
+        Position(
+            position_id="POS-001",
+            entry_fill_id="FILL-001",
+            symbol="EURUSD",
+            side=PositionSide.LONG,
+            quantity=0.01,
+            entry_time=datetime.now(timezone.utc),
+            entry_price=1.16000,
+            unrealized_pnl=unrealized_pnl,
+        )
+
+
+def test_position_is_immutable():
+    position = Position(
+        position_id="POS-001",
+        entry_fill_id="FILL-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        quantity=0.01,
+        entry_time=datetime.now(timezone.utc),
+        entry_price=1.16000,
+    )
+
+    with pytest.raises(AttributeError):
+        position.quantity = 1.0  # type: ignore[misc]
+
+
+def test_position_can_create_new_snapshot():
+    position = Position(
+        position_id="POS-001",
+        entry_fill_id="FILL-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        quantity=0.01,
+        entry_time=datetime.now(timezone.utc),
+        entry_price=1.16000,
+    )
+
+    updated_position = replace(
+        position,
+        unrealized_pnl=-15.25,
+    )
+
+    assert position.unrealized_pnl == 0.0
+    assert updated_position.unrealized_pnl == -15.25
+
+    assert (
+        updated_position.position_id
+        == position.position_id
+    )
+
+
+def test_position_metadata_is_immutable_and_copied():
+    metadata = {
+        "strategy_id": "EMA-TREND-001",
+    }
+
+    position = Position(
+        position_id="POS-001",
+        entry_fill_id="FILL-001",
+        symbol="EURUSD",
+        side=PositionSide.LONG,
+        quantity=0.01,
+        entry_time=datetime.now(timezone.utc),
+        entry_price=1.16000,
+        metadata=metadata,
+    )
+
+    metadata["strategy_id"] = "CHANGED"
+
+    assert (
+        position.metadata["strategy_id"]
+        == "EMA-TREND-001"
+    )
+
+    with pytest.raises(TypeError):
+        position.metadata["strategy_id"] = "OTHER"  # type: ignore[index]
