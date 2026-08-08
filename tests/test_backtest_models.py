@@ -1,3 +1,5 @@
+from backtest.models.config import BacktestConfig
+
 from backtest.models.instrument import InstrumentSpecification
 
 from backtest.models.trade import Trade
@@ -25,6 +27,8 @@ from backtest.models.enums import (
     OrderType,
     PositionSide,
     SignalAction,
+    EndOfBacktestPolicy,
+    Timeframe,
 )
 
 
@@ -2152,3 +2156,402 @@ def test_instrument_is_immutable():
 
     with pytest.raises(AttributeError):
         instrument.contract_size = 1  # type: ignore[misc]
+
+def test_timeframe_baseline_values():
+    assert list(Timeframe) == [
+        Timeframe.M15,
+        Timeframe.H1,
+        Timeframe.H4,
+    ]
+
+
+def test_end_of_backtest_policy_values():
+    assert list(EndOfBacktestPolicy) == [
+        EndOfBacktestPolicy.FORCE_CLOSE_AT_FINAL_AVAILABLE_CLOSE,
+        EndOfBacktestPolicy.LEAVE_OPEN,
+    ]
+    
+def test_backtest_config_is_created_with_valid_data():
+    date_from = datetime(
+        2020,
+        1,
+        1,
+        tzinfo=timezone.utc,
+    )
+
+    date_to = datetime(
+        2021,
+        1,
+        1,
+        tzinfo=timezone.utc,
+    )
+
+    config = BacktestConfig(
+        symbol="EURUSD",
+        timeframe=Timeframe.M15,
+        date_from=date_from,
+        date_to=date_to,
+        initial_capital=10000.0,
+        ambiguous_bar_policy=(
+            AmbiguousBarPolicy.WORST_CASE
+        ),
+        end_of_backtest_policy=(
+            EndOfBacktestPolicy
+            .FORCE_CLOSE_AT_FINAL_AVAILABLE_CLOSE
+        ),
+        allow_incomplete_bars=False,
+    )
+
+    assert config.symbol == "EURUSD"
+    assert config.timeframe == Timeframe.M15
+
+    assert config.date_from == date_from
+    assert config.date_to == date_to
+
+    assert config.initial_capital == 10000.0
+
+    assert (
+        config.ambiguous_bar_policy
+        == AmbiguousBarPolicy.WORST_CASE
+    )
+
+    assert (
+        config.end_of_backtest_policy
+        == EndOfBacktestPolicy
+        .FORCE_CLOSE_AT_FINAL_AVAILABLE_CLOSE
+    )
+
+    assert config.allow_incomplete_bars is False
+
+
+def test_backtest_config_baseline_defaults():
+    config = BacktestConfig(
+        symbol="EURUSD",
+        timeframe=Timeframe.H1,
+        date_from=datetime(
+            2020,
+            1,
+            1,
+            tzinfo=timezone.utc,
+        ),
+        date_to=datetime(
+            2021,
+            1,
+            1,
+            tzinfo=timezone.utc,
+        ),
+        initial_capital=10000.0,
+    )
+
+    assert (
+        config.ambiguous_bar_policy
+        == AmbiguousBarPolicy.WORST_CASE
+    )
+
+    assert (
+        config.end_of_backtest_policy
+        == EndOfBacktestPolicy
+        .FORCE_CLOSE_AT_FINAL_AVAILABLE_CLOSE
+    )
+
+    assert config.allow_incomplete_bars is False
+
+
+def test_backtest_config_requires_non_empty_symbol():
+    with pytest.raises(ValueError, match="symbol"):
+        BacktestConfig(
+            symbol="",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+        )
+
+
+def test_backtest_config_requires_timeframe_enum():
+    with pytest.raises(TypeError, match="Timeframe"):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe="M15",  # type: ignore[arg-type]
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+        )
+
+
+def test_backtest_config_requires_timezone_aware_date_from():
+    with pytest.raises(
+        ValueError,
+        match="date_from",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+        )
+
+
+def test_backtest_config_requires_timezone_aware_date_to():
+    with pytest.raises(
+        ValueError,
+        match="date_to",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+            ),
+            initial_capital=10000.0,
+        )
+
+
+def test_backtest_config_requires_utc_date_from():
+    non_utc = timezone(
+        timedelta(hours=-3)
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="UTC",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=non_utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+        )
+
+
+def test_backtest_config_requires_utc_date_to():
+    non_utc = timezone(
+        timedelta(hours=-3)
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="UTC",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=non_utc,
+            ),
+            initial_capital=10000.0,
+        )
+
+
+def test_backtest_config_date_to_must_be_after_date_from():
+    timestamp = datetime(
+        2020,
+        1,
+        1,
+        tzinfo=timezone.utc,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="date_to",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=timestamp,
+            date_to=timestamp,
+            initial_capital=10000.0,
+        )
+
+
+@pytest.mark.parametrize(
+    "initial_capital",
+    [
+        0,
+        -1000,
+        float("inf"),
+        float("-inf"),
+        float("nan"),
+        True,
+    ],
+)
+def test_backtest_config_requires_positive_initial_capital(
+    initial_capital,
+):
+    with pytest.raises(
+        ValueError,
+        match="initial_capital",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=initial_capital,
+        )
+
+
+def test_backtest_config_requires_ambiguous_bar_policy_enum():
+    with pytest.raises(
+        TypeError,
+        match="AmbiguousBarPolicy",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+            ambiguous_bar_policy="WORST_CASE",  # type: ignore[arg-type]
+        )
+
+
+def test_backtest_config_requires_end_policy_enum():
+    with pytest.raises(
+        TypeError,
+        match="EndOfBacktestPolicy",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+            end_of_backtest_policy="LEAVE_OPEN",  # type: ignore[arg-type]
+        )
+
+
+def test_backtest_config_requires_boolean_incomplete_policy():
+    with pytest.raises(
+        TypeError,
+        match="allow_incomplete_bars",
+    ):
+        BacktestConfig(
+            symbol="EURUSD",
+            timeframe=Timeframe.M15,
+            date_from=datetime(
+                2020,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            date_to=datetime(
+                2021,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ),
+            initial_capital=10000.0,
+            allow_incomplete_bars=1,  # type: ignore[arg-type]
+        )
+
+
+def test_backtest_config_is_immutable():
+    config = BacktestConfig(
+        symbol="EURUSD",
+        timeframe=Timeframe.M15,
+        date_from=datetime(
+            2020,
+            1,
+            1,
+            tzinfo=timezone.utc,
+        ),
+        date_to=datetime(
+            2021,
+            1,
+            1,
+            tzinfo=timezone.utc,
+        ),
+        initial_capital=10000.0,
+    )
+
+    with pytest.raises(AttributeError):
+        config.initial_capital = 50000.0  # type: ignore[misc]

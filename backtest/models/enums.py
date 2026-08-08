@@ -81,3 +81,26 @@ class AmbiguousBarPolicy(StrEnum):
     """
 
     WORST_CASE = "WORST_CASE"
+
+class Timeframe(StrEnum):
+    """
+    Timeframes officially supported by the baseline
+    BacktestEngine.
+    """
+
+    M15 = "M15"
+    H1 = "H1"
+    H4 = "H4"
+
+
+class EndOfBacktestPolicy(StrEnum):
+    """
+    Defines how an open Position is handled when the
+    evaluation period reaches its end.
+    """
+
+    FORCE_CLOSE_AT_FINAL_AVAILABLE_CLOSE = (
+        "FORCE_CLOSE_AT_FINAL_AVAILABLE_CLOSE"
+    )
+
+    LEAVE_OPEN = "LEAVE_OPEN"
