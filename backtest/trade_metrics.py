@@ -20,8 +20,11 @@ class TradeMetrics:
     
     net_profit: float
     average_trade: float
-    expectancy: float
 
+    average_win: float
+    average_loss: float
+
+    expectancy: float
 
 def calculate_trade_metrics(
     ledger: TradeLedger,
@@ -159,5 +162,7 @@ def calculate_trade_metrics(
         profit_factor=profit_factor,
         net_profit=net_profit,
         average_trade=average_trade,
+        average_win=average_win,
+        average_loss=average_loss,
         expectancy=expectancy,
     )

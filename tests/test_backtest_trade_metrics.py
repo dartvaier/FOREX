@@ -83,6 +83,8 @@ def test_empty_ledger_returns_zero_metrics():
         net_profit=0.0,
         average_trade=0.0,
         expectancy=0.0,
+        average_win=0.0,
+        average_loss=0.0,
     )
 
 
@@ -508,3 +510,86 @@ def test_empty_ledger_has_zero_average_and_expectancy():
     assert metrics.net_profit == 0.0
     assert metrics.average_trade == 0.0
     assert metrics.expectancy == 0.0
+    
+def test_calculates_average_win_and_average_loss():
+    ledger = TradeLedger()
+
+    results = [
+        20.0,
+        10.0,
+        -8.0,
+        -2.0,
+        0.0,
+    ]
+
+    for number, net_pnl in enumerate(
+        results,
+        start=1,
+    ):
+        ledger.append(
+            make_trade(
+                number=number,
+                net_pnl=net_pnl,
+            )
+        )
+
+    metrics = calculate_trade_metrics(
+        ledger
+    )
+
+    # Wins:
+    # 20 + 10 = 30
+    # 30 / 2 = 15
+    assert metrics.average_win == pytest.approx(
+        15.0
+    )
+
+    # Losses:
+    # 8 + 2 = 10
+    # 10 / 2 = 5
+    assert metrics.average_loss == pytest.approx(
+        5.0
+    )
+    
+def test_average_win_and_loss_are_zero_when_absent():
+    winning_ledger = TradeLedger()
+
+    winning_ledger.append(
+        make_trade(
+            number=1,
+            net_pnl=10.0,
+        )
+    )
+
+    winning_metrics = calculate_trade_metrics(
+        winning_ledger
+    )
+
+    assert winning_metrics.average_win == pytest.approx(
+        10.0
+    )
+
+    assert winning_metrics.average_loss == pytest.approx(
+        0.0
+    )
+
+    losing_ledger = TradeLedger()
+
+    losing_ledger.append(
+        make_trade(
+            number=2,
+            net_pnl=-7.0,
+        )
+    )
+
+    losing_metrics = calculate_trade_metrics(
+        losing_ledger
+    )
+
+    assert losing_metrics.average_win == pytest.approx(
+        0.0
+    )
+
+    assert losing_metrics.average_loss == pytest.approx(
+        7.0
+    )
