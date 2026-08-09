@@ -810,15 +810,15 @@ F5.2 Simulation Clock        ✅ COMPLETE
 
 F5.3 Signal / Order / Fill   ✅ COMPLETE
 
-F5.4 Position / Portfolio    ⬜ NEXT
+F5.4 Position / Portfolio    ✅ COMPLETE
 
-F5.5 CostModel               ⬜ NOT STARTED
+F5.5 CostModel               ✅ COMPLETE
 
-F5.6 Stops / Targets         ⬜ NOT STARTED
+F5.6 Stops / Targets         ✅ COMPLETE
 
-F5.7 Trade Ledger            ⬜ NOT STARTED
+F5.7 Trade Ledger            ✅ COMPLETE
 
-F5.8 Performance             ⬜ NOT STARTED
+F5.8 Performance             🟡 IN PROGRESS
 
 F5.9 Regression Tests        ⬜ NOT STARTE
 ```
