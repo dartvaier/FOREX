@@ -578,3 +578,138 @@ def test_exit_reason_is_preserved():
         close_result.exit_reason
         == ExitReason.MANUAL_TEST
     )
+    
+def test_open_position_preserves_entry_execution_costs():
+    config = make_config()
+    instrument = make_instrument()
+
+    portfolio = Portfolio(
+        config=config,
+        instrument=instrument,
+    )
+
+    entry = make_execution(
+        side=OrderSide.BUY,
+        price=1.1600,
+        quantity=0.01,
+        commission=1.25,
+        suffix="ENTRY",
+    )
+
+    # Como o helper antigo pode não permitir customizar
+    # spread/slippage, recriamos o Fill com esses valores.
+    entry = ExecutionResult(
+        filled_order=entry.filled_order,
+        fill=Fill(
+            fill_id=entry.fill.fill_id,
+            order_id=entry.fill.order_id,
+            fill_time=entry.fill.fill_time,
+            reference_price=entry.fill.reference_price,
+            execution_price=entry.fill.execution_price,
+            quantity=entry.fill.quantity,
+            spread_impact=0.00010,
+            slippage=0.00005,
+            commission=1.25,
+        ),
+    )
+
+    portfolio.apply_execution(entry)
+
+    position = portfolio.current_position
+
+    assert position is not None
+
+    assert position.metadata[
+        "entry_spread_impact"
+    ] == pytest.approx(0.00010)
+
+    assert position.metadata[
+        "entry_slippage"
+    ] == pytest.approx(0.00005)
+
+    assert position.metadata[
+        "entry_commission"
+    ] == pytest.approx(1.25)
+    
+def test_close_result_preserves_round_trip_execution_costs():
+    config = make_config()
+    instrument = make_instrument()
+
+    portfolio = Portfolio(
+        config=config,
+        instrument=instrument,
+    )
+
+    entry = make_execution(
+        side=OrderSide.BUY,
+        price=1.1600,
+        quantity=0.01,
+        commission=1.00,
+        suffix="ENTRY",
+    )
+
+    entry = ExecutionResult(
+        filled_order=entry.filled_order,
+        fill=Fill(
+            fill_id=entry.fill.fill_id,
+            order_id=entry.fill.order_id,
+            fill_time=entry.fill.fill_time,
+            reference_price=entry.fill.reference_price,
+            execution_price=entry.fill.execution_price,
+            quantity=entry.fill.quantity,
+            spread_impact=0.00010,
+            slippage=0.00005,
+            commission=1.00,
+        ),
+    )
+
+    portfolio.apply_execution(entry)
+
+    exit_execution = make_execution(
+        side=OrderSide.SELL,
+        price=1.1700,
+        quantity=0.01,
+        commission=1.50,
+        suffix="EXIT",
+    )
+
+    exit_execution = ExecutionResult(
+        filled_order=exit_execution.filled_order,
+        fill=Fill(
+            fill_id=exit_execution.fill.fill_id,
+            order_id=exit_execution.fill.order_id,
+            fill_time=exit_execution.fill.fill_time,
+            reference_price=exit_execution.fill.reference_price,
+            execution_price=exit_execution.fill.execution_price,
+            quantity=exit_execution.fill.quantity,
+            spread_impact=0.00020,
+            slippage=0.00007,
+            commission=1.50,
+        ),
+    )
+
+    close_result = portfolio.apply_execution(
+        exit_execution
+    )
+
+    assert close_result is not None
+
+    assert close_result.entry_spread_impact == pytest.approx(
+        0.00010
+    )
+
+    assert close_result.entry_slippage == pytest.approx(
+        0.00005
+    )
+
+    assert close_result.exit_spread_impact == pytest.approx(
+        0.00020
+    )
+
+    assert close_result.exit_slippage == pytest.approx(
+        0.00007
+    )
+
+    assert close_result.commission == pytest.approx(
+        2.50
+    )

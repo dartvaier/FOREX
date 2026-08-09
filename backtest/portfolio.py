@@ -38,6 +38,12 @@ class PositionCloseResult:
 
     commission: float
 
+    entry_spread_impact: float
+    entry_slippage: float
+
+    exit_spread_impact: float
+    exit_slippage: float
+
     exit_reason: ExitReason
 
 
@@ -284,6 +290,8 @@ class Portfolio:
         metadata = {
             "entry_order_id": order.order_id,
             "entry_commission": fill.commission,
+            "entry_spread_impact": fill.spread_impact,
+            "entry_slippage": fill.slippage,
         }
 
         strategy_id = order.metadata.get(
@@ -371,6 +379,20 @@ class Portfolio:
                 0.0,
             )
         )
+        
+        entry_spread_impact = float(
+            position.metadata.get(
+                "entry_spread_impact",
+                0.0,
+            )
+        )
+
+        entry_slippage = float(
+            position.metadata.get(
+                "entry_slippage",
+                0.0,
+            )
+        )
 
         exit_commission = fill.commission
 
@@ -406,6 +428,10 @@ class Portfolio:
             gross_pnl=gross_pnl,
             net_pnl=net_pnl,
             commission=total_commission,
+            entry_spread_impact=entry_spread_impact,
+            entry_slippage=entry_slippage,
+            exit_spread_impact=fill.spread_impact,
+            exit_slippage=fill.slippage,
             exit_reason=exit_reason,
         )
 
