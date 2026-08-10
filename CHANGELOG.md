@@ -88,6 +88,10 @@ Strategy Research
   (demo trade mode, server allowlist, TRADING_ENABLED, kill switch).
   BrokerAccountState.trade_mode added; MT5Execution.validate_environment()
   gates Demo activation. +20 tests; 963 total.
+- F9 Execution comparison (execution/comparison.py): expected vs observed
+  (roadmap 86-87) with pips/latency tolerances, WITHIN/OUTSIDE verdicts and
+  comparison_summary for the Demo validation period. F9 engineering is now
+  COMPLETE; only explicit Demo activation remains. +12 tests; 975 total.
 
 ---
 

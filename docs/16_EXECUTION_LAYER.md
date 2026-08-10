@@ -46,6 +46,7 @@ e executada neste estado.
 | Logs | IMPLEMENTED | `execution/audit_log.py` |
 | Monitoring | IMPLEMENTED | `execution/monitoring.py` |
 | Broker/Demo Validation | IMPLEMENTED | `execution/broker_validation.py` |
+| Execution Comparison | IMPLEMENTED | `execution/comparison.py` |
 | Kill Switch | IMPLEMENTED (F7) | `backtest/risk.py` (KillSwitchRiskGate) |
 
 O pacote `execution/` **nao depende de MetaTrader**: tudo e puro e
@@ -180,17 +181,35 @@ MT5Execution.validate_environment() -> gate de ativacao Demo (leitura)
 `BrokerAccountState` ganhou `trade_mode` (demo/contest/real), preenchido
 pelo adapter a partir de `account_info().trade_mode`.
 
-## 9. Estado da ativacao
+## 9. Execution Comparison
+
+`execution/comparison.py` — compara expected vs observed (roadmap §86-87):
+
+```text
+ExpectedExecution(order_id, symbol, side, quantity, expected_price,
+                  signal_time, expected_spread, expected_commission)
+ObservedExecution(order_id, fill_time, actual_price, spread, commission)
+
+compare_executions(expected, observed, max_price_delta_pips,
+                   max_latency_seconds) -> ExecutionComparison
+  price_delta_pips | latency_seconds | spread/commission deltas
+  verdict: WITHIN_TOLERANCE | OUTSIDE_TOLERANCE (issues listadas)
+
+comparison_summary(comparisons) -> within_rate, avg price delta,
+  avg/max latency (agregado do periodo de validacao Demo)
+```
+
+## 10. Estado da ativacao
 
 ```text
 TRADING_ENABLED=false   <- inalterado
 mt5.order_send()        <- nunca executado (guard testado)
 ```
 
-Falta em F9 (engenharia e ativacao):
+**Engenharia F9 completa.** Falta apenas a decisao de ativacao:
 
 ```text
-Execution comparison  -> comparar expected vs observed (metricas ja prontas)
-Demo activation       -> exige autorizacao explicita; TRADING_ENABLED so muda ai
-Periódo de validacao Demo -> rodar demo real e coletar metricas
+Demo activation          -> exige autorizacao explicita; TRADING_ENABLED so muda ai
+Periódo de validacao Demo -> rodar demo real, coletar metricas e comparar
+  (comparison_summary) — ultimo item do DoD F9
 ```

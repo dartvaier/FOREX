@@ -1847,11 +1847,11 @@ rejection
 
 [ ] reconciliation
 
-[ ] monitoring
+[x] monitoring
 
-[ ] logs
+[x] logs
 
-[ ] execution comparison
+[x] execution comparison
 
 [ ] período de validação Demo concluído
 ```
