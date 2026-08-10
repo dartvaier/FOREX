@@ -16,8 +16,8 @@ O objetivo do projeto é desenvolver uma infraestrutura confiável para:
 
 O projeto é desenvolvido de forma incremental, priorizando integridade dos dados, reprodutibilidade e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> **Status atual:** infraestrutura de mercado e dados concluída.  
-> O Backtest Engine ainda não foi implementado.
+> **Status atual:** infraestrutura de mercado, dados e backtesting baseline concluída.
+> F6 — Strategy Research iniciada com Simple EMA Trend Following.
 
 ---
 
@@ -30,8 +30,8 @@ O projeto é desenvolvido de forma incremental, priorizando integridade dos dado
 | F2 | Market Data Layer | ✅ Concluída |
 | F3 | Historical Data Layer | ✅ Concluída |
 | F4 | Data Transformation | ✅ Concluída |
-| F5 | Backtest Engine | ⬜ Não iniciada |
-| F6 | Strategy Engine | ⬜ Não iniciada |
+| F5 | Backtest Engine | ✅ Concluída |
+| F6 | Strategy Research | 🟡 Em andamento |
 | F7 | Risk Engine | ⬜ Não iniciada |
 | F8 | Execution Engine | ⬜ Não iniciada |
 | F9 | Validação em conta Demo | ⬜ Não iniciada |
@@ -396,9 +396,9 @@ Execução futura
 Não será considerada válida uma estratégia apenas por apresentar bom resultado em um único backtest.
 Próxima Fase
 A próxima fase do projeto será:
-F5 — Backtest Engine
-O Backtest Engine deverá ser projetado antes da implementação das estratégias.
-Entre suas responsabilidades futuras estarão:
+F6 — Strategy Research
+A infraestrutura baseline do Backtest Engine foi implementada antes das estratégias.
+Ela já cobre:
 controle temporal
 execução bar-by-bar
 posição
@@ -410,9 +410,9 @@ slippage
 equity
 trades
 métricas
-logs
+regression tests
 A estratégia não deverá controlar diretamente execução ou gerenciamento de risco.
-Arquitetura pretendida:
+Arquitetura atual:
                   Market Data
                        │
                        ▼
@@ -443,6 +443,7 @@ Arquivos planejados:
 09_DATA_TRANSFORMATION.md
 10_BACKTEST_DESIGN.md
 11_ROADMAP.md
+12_STRATEGY_RESEARCH.md
 Decisões arquiteturais importantes são registradas em:
 DECISIONS.md
 O histórico de mudanças é mantido em:

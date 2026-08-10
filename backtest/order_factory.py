@@ -1,3 +1,6 @@
+import math
+from numbers import Real
+
 from backtest.models.config import BacktestConfig
 from backtest.models.enums import (
     OrderSide,
@@ -181,6 +184,14 @@ class OrderFactory:
             created_at=signal.timestamp,
             scheduled_for=signal.timestamp,
             status=OrderStatus.PENDING,
+            stop_loss=self._optional_price_from_signal(
+                signal,
+                "stop_loss",
+            ),
+            take_profit=self._optional_price_from_signal(
+                signal,
+                "take_profit",
+            ),
             reason=signal.reason,
             metadata={
                 "strategy_id": signal.strategy_id,
@@ -244,3 +255,26 @@ class OrderFactory:
         """
 
         return f"ORD-{signal.signal_id}"
+
+    @staticmethod
+    def _optional_price_from_signal(
+        signal: Signal,
+        key: str,
+    ) -> float | None:
+        value = signal.metadata.get(key)
+
+        if value is None:
+            return None
+
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(
+                f"signal metadata {key} must be a finite "
+                "positive number or None"
+            )
+
+        return float(value)

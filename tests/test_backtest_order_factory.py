@@ -232,6 +232,63 @@ def test_order_metadata_preserves_audit_information():
     )
 
 
+def test_entry_order_can_use_signal_protective_prices():
+    factory = OrderFactory(
+        config=make_config(),
+    )
+
+    signal = Signal(
+        signal_id="SIG-PROTECTED",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        timestamp=utc_time(10, 15),
+        action=SignalAction.ENTER_LONG,
+        metadata={
+            "stop_loss": 1.1500,
+            "take_profit": 1.1700,
+        },
+    )
+
+    order = factory.create(
+        signal=signal,
+        risk_decision=make_decision(signal),
+    )
+
+    assert order is not None
+    assert order.stop_loss == pytest.approx(
+        1.1500
+    )
+    assert order.take_profit == pytest.approx(
+        1.1700
+    )
+
+
+def test_entry_order_rejects_invalid_signal_protective_price():
+    factory = OrderFactory(
+        config=make_config(),
+    )
+
+    signal = Signal(
+        signal_id="SIG-BAD-PROTECTION",
+        strategy_id="TEST",
+        symbol="EURUSD",
+        timestamp=utc_time(10, 15),
+        action=SignalAction.ENTER_LONG,
+        metadata={
+            "stop_loss": True,
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="stop_loss",
+    ):
+        factory.create(
+            signal=signal,
+            risk_decision=make_decision(signal),
+        )
+
+
 def test_hold_creates_no_order():
     factory = OrderFactory(
         config=make_config(),

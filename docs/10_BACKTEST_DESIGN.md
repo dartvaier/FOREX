@@ -1,5 +1,7 @@
 # Backtest Design
 
+> Status: baseline implementado em `backtest/engine.py`.
+
 ## 1. Objetivo
 
 Este documento define o design do futuro:
@@ -14,9 +16,9 @@ da plataforma:
 FOREX Algorithmic Trading Research Platform
 ```
 
-O BacktestEngine ainda não está implementado.
+O BacktestEngine baseline foi implementado após este contrato de design.
 
-Este documento existe antes da implementação para estabelecer o comportamento esperado do sistema e impedir que decisões importantes sejam tomadas implicitamente durante a programação.
+Este documento continua servindo como contrato arquitetural para preservar o comportamento esperado do sistema e impedir que decisões importantes sejam tomadas implicitamente durante a programação.
 
 O princípio central é:
 
@@ -29,13 +31,13 @@ O princípio central é:
 Estado atual:
 
 ```text
-DESIGN
+IMPLEMENTED BASELINE
 ```
 
 Implementação:
 
 ```text
-NOT STARTED
+COMPLETE FOR F5 BASELINE
 ```
 
 Este documento define o contrato inicial da fase:
@@ -2488,7 +2490,7 @@ sem registrar a metodologia.
 
 # 123. Performance
 
-O BacktestEngine produzirá dados brutos.
+O BacktestEngine produz dados brutos e um resumo de performance.
 
 Um componente separado:
 
@@ -2496,7 +2498,13 @@ Um componente separado:
 Performance
 ```
 
-calculará métricas.
+calcula as métricas a partir dos ledgers de trades e equity.
+
+Implementado em:
+
+```text
+backtest/performance.py
+```
 
 ---
 

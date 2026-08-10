@@ -70,9 +70,9 @@ F3  Historical Data             ✅ COMPLETE
 
 F4  Data Transformation         ✅ COMPLETE
 
-F5  Backtest Engine             🟡 IN PROGRESS
+F5  Backtest Engine             ✅ COMPLETE
 
-F6  Strategy Research           ⬜ NOT STARTED
+F6  Strategy Research           🟡 IN PROGRESS
 
 F7  Risk Management             ⬜ NOT STARTED
 
@@ -89,13 +89,13 @@ F10 Live Readiness              ⬜ NOT STARTED
 O projeto encontra-se no marco lógico:
 
 ```text
-FOREX v0.1
+FOREX v0.2
 ```
 
 Descrição:
 
 ```text
-Data & Infrastructure Foundation
+Backtesting Infrastructure
 ```
 
 Esse marco representa:
@@ -118,6 +118,12 @@ H1/H4 derivados
 testes automatizados
 
 documentação da base
+
+BacktestEngine baseline
+
+performance metrics básicas
+
+regression tests F5
 ```
 
 Não representa:
@@ -126,8 +132,6 @@ Não representa:
 trading bot completo
 
 Strategy validada
-
-BacktestEngine pronto
 
 Risk Engine pronto
 
@@ -734,7 +738,7 @@ Estado atual:
 Status:
 
 ```text
-IN PROGRESS
+COMPLETE
 ```
 
 Próximo grande marco do projeto.
@@ -818,9 +822,9 @@ F5.6 Stops / Targets         ✅ COMPLETE
 
 F5.7 Trade Ledger            ✅ COMPLETE
 
-F5.8 Performance             🟡 IN PROGRESS
+F5.8 Performance             ✅ COMPLETE
 
-F5.9 Regression Tests        ⬜ NOT STARTE
+F5.9 Regression Tests        ✅ COMPLETE
 ```
 
 ---
@@ -1049,39 +1053,39 @@ final forced close
 # 51. Definition of Done — F5
 
 ```text
-[ ] Clock implementado
+[x] Clock implementado
 
-[ ] No look-ahead protegido
+[x] No look-ahead protegido
 
-[ ] Signal implementado
+[x] Signal implementado
 
-[ ] Order implementado
+[x] Order implementado
 
-[ ] Fill implementado
+[x] Fill implementado
 
-[ ] Position implementado
+[x] Position implementado
 
-[ ] Portfolio implementado
+[x] Portfolio implementado
 
-[ ] CostModel implementado
+[x] CostModel implementado
 
-[ ] Stop Loss implementado
+[x] Stop Loss implementado
 
-[ ] Take Profit implementado
+[x] Take Profit implementado
 
-[ ] Worst-case intrabar implementado
+[x] Worst-case intrabar implementado
 
-[ ] Trade Ledger implementado
+[x] Trade Ledger implementado
 
-[ ] Equity Curve implementada
+[x] Equity Curve implementada
 
-[ ] Métricas básicas implementadas
+[x] Métricas básicas implementadas
 
-[ ] Regression tests
+[x] Regression tests
 
-[ ] Resultado determinístico
+[x] Resultado determinístico
 
-[ ] Documentação atualizada
+[x] Documentação atualizada
 ```
 
 ---
@@ -1091,10 +1095,10 @@ final forced close
 Status:
 
 ```text
-NOT STARTED
+IN PROGRESS
 ```
 
-Só deve começar depois da F5.
+Iniciada após o fechamento da F5 baseline.
 
 ---
 
@@ -1108,6 +1112,12 @@ Só deve começar depois da F5.
 
 ```text
 Simple EMA Trend Following
+```
+
+Status:
+
+```text
+IMPLEMENTED BASELINE
 ```
 
 Objetivo:
@@ -1229,25 +1239,27 @@ Multi-Timeframe
 Para cada Strategy:
 
 ```text
-[ ] hipótese registrada
+[x] hipótese registrada
 
-[ ] racional registrado
+[x] racional registrado
 
-[ ] parâmetros primários definidos
+[x] parâmetros primários definidos
 
-[ ] código implementado
+[x] código implementado
 
-[ ] unit tests
+[x] unit tests
 
-[ ] backtest base
+[x] backtest base
 
-[ ] custos
+[x] custos
 
-[ ] trade log analisável
+[x] trade log analisável
 
-[ ] sem look-ahead
+[x] sem look-ahead
 
-[ ] resultado reproduzível
+[ ] resultado histórico analisado
+
+[x] resultado reproduzível
 ```
 
 ---

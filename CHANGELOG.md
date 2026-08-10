@@ -24,11 +24,28 @@ As versões representam marcos técnicos do projeto e não necessariamente relea
 Próxima fase planejada:
 
 ```text
-FOREX v0.2.0
-Backtesting Infrastructure
+FOREX v0.3.0
+Strategy Research
 ```
 
 ## Planned
+
+- Fixtures e relatórios para pesquisa de estratégia.
+- Validação out-of-sample inicial.
+- Comparação com custos explícitos.
+
+## Added
+
+- Simple EMA Trend Following baseline.
+- Strategy Research documentation.
+- Unit tests for warm-up, EMA cross above, EMA cross below and no-cross scenarios.
+- BacktestEngine integration tests for EMA strategy with zero-cost and explicit-cost configurations.
+
+---
+
+# [0.2.0] - 2026-08-10
+
+## Backtesting Infrastructure
 
 - BacktestEngine bar-by-bar.
 - Simulation Clock.
@@ -59,10 +76,12 @@ Backtesting Infrastructure
 - Proteção explícita contra look-ahead.
 - Next-open execution.
 - Tratamento de posições abertas no final do backtest.
+- Resultado consolidado em `BacktestResult`.
+- Estratégias podem informar `stop_loss` e `take_profit` via metadata do Signal.
 
 ## Baseline Decisions
 
-O BacktestEngine inicial seguirá:
+O BacktestEngine inicial segue:
 
 ```text
 Clock:
@@ -101,6 +120,7 @@ explicit CostModel
 Look-ahead:
 prohibited
 ```
+
 # [0.1.1] - 2026-08-08
 
 ## Documentation Completion

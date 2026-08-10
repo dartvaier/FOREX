@@ -367,10 +367,57 @@ class SimulatedExecution:
             reference_price=bar.open,
         )
 
+    def execute_at_reference(
+        self,
+        order: Order,
+        *,
+        fill_time: datetime,
+        reference_price: float,
+    ) -> ExecutionResult:
+        """
+        Execute a pending market Order at an explicit reference
+        price selected by simulation policy.
+        """
+
+        if not isinstance(
+            order,
+            Order,
+        ):
+            raise TypeError(
+                "order must be an Order"
+            )
+
+        if not isinstance(
+            fill_time,
+            datetime,
+        ):
+            raise TypeError(
+                "fill_time must be a datetime"
+            )
+
+        if order.status != OrderStatus.PENDING:
+            raise ValueError(
+                "only PENDING Orders can be executed"
+            )
+
+        if order.symbol != self._config.symbol:
+            raise ValueError(
+                "order symbol does not match BacktestConfig"
+            )
+
+        if fill_time < order.scheduled_for:
+            raise ValueError(
+                "Order is not yet eligible for execution"
+            )
+
+        return self._execute_from_reference(
+            order,
+            fill_time=fill_time,
+            reference_price=reference_price,
+        )
+
     @staticmethod
     def _make_fill_id(
         order: Order,
     ) -> str:
         return f"FILL-{order.order_id}"
-    
-    
