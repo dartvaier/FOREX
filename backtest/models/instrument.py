@@ -33,6 +33,11 @@ class InstrumentSpecification:
     tick_size: float
     tick_value: float | None = None
 
+    # Currency legs (roadmap §104 / docs/20-21). Defaults preserve
+    # the historical single-pair behavior (USD-quote).
+    base_currency: str = "USD"
+    quote_currency: str = "USD"
+
     def __post_init__(self) -> None:
         if (
             not isinstance(self.symbol, str)
@@ -111,6 +116,62 @@ class InstrumentSpecification:
             raise ValueError(
                 "tick_size cannot be smaller than point"
             )
+
+        for name in ("base_currency", "quote_currency"):
+            currency = getattr(self, name)
+
+            if (
+                not isinstance(currency, str)
+                or len(currency) != 3
+                or not currency.isalpha()
+                or currency != currency.upper()
+            ):
+                raise ValueError(
+                    f"{name} must be a 3-letter uppercase "
+                    f"currency code, got {currency!r}"
+                )
+
+    def quote_to_account_rate(
+        self,
+        price: float,
+    ) -> float:
+        """
+        Quote-currency to account-currency (USD) conversion rate
+        at the given price.
+
+        - USD-quote pairs (EURUSD, GBPUSD, ...): quote == account
+          currency -> rate 1.0.
+        - USD-base pairs (USDJPY, USDCHF, USDCAD): one unit of
+          quote currency equals 1/price USD -> rate 1/price.
+        - Any other structure (crosses) requires a triangular
+          conversion that is not implemented (docs/20-21).
+
+        The rate is a function of the market price so callers can
+        keep it causal (use the price available at the decision
+        instant, e.g. the exit fill price for realized PnL).
+        """
+        if (
+            not isinstance(price, Real)
+            or isinstance(price, bool)
+            or not math.isfinite(price)
+            or price <= 0
+        ):
+            raise ValueError(
+                "price must be a finite positive number"
+            )
+
+        if self.quote_currency == "USD":
+            return 1.0
+
+        if self.base_currency == "USD":
+            return 1.0 / price
+
+        raise ValueError(
+            "cross currency conversion is not implemented "
+            f"({self.base_currency}{self.quote_currency}); "
+            "only USD-quote and USD-base pairs are supported "
+            "(docs/20-21)"
+        )
 
     @staticmethod
     def _validate_positive_number(

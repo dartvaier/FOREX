@@ -103,6 +103,8 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.00001,
         "tick_value": 1.0,
+        "base_currency": "USD",
+        "quote_currency": "USD",
     },
     "GBPUSD": {
         "symbol": "GBPUSD",
@@ -115,6 +117,8 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.00001,
         "tick_value": 1.0,
+        "base_currency": "GBP",
+        "quote_currency": "USD",
     },
     "USDJPY": {
         "symbol": "USDJPY",
@@ -127,6 +131,8 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.001,
         "tick_value": 100.0,
+        "base_currency": "USD",
+        "quote_currency": "JPY",
     },
     "USDCHF": {
         "symbol": "USDCHF",
@@ -139,6 +145,8 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.00001,
         "tick_value": 1.0,
+        "base_currency": "USD",
+        "quote_currency": "CHF",
     },
     "AUDUSD": {
         "symbol": "AUDUSD",
@@ -151,6 +159,8 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.00001,
         "tick_value": 1.0,
+        "base_currency": "AUD",
+        "quote_currency": "USD",
     },
     "USDCAD": {
         "symbol": "USDCAD",
@@ -163,6 +173,8 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.00001,
         "tick_value": 1.0,
+        "base_currency": "USD",
+        "quote_currency": "CAD",
     },
     "NZDUSD": {
         "symbol": "NZDUSD",
@@ -175,8 +187,13 @@ INSTRUMENT_REGISTRY = {
         "volume_step": 0.01,
         "tick_size": 0.00001,
         "tick_value": 1.0,
+        "base_currency": "NZD",
+        "quote_currency": "USD",
     },
 }
+
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -425,14 +442,26 @@ def round_trip_cost_money(
     instrument: InstrumentSpecification,
     quantity: float,
     cost_params: dict[str, float],
+    quote_to_account_rate: float = 1.0,
 ) -> float:
-    """Total spread + slippage + commission of one round trip."""
+    """
+    Total spread + slippage + commission of one round trip, in
+    account currency (USD).
+
+    The spread/slippage leg is expressed in quote currency and is
+    converted to USD with quote_to_account_rate (causal: derived
+    from an actual trade price by the caller). Commission is
+    already USD.
+    """
     price_distance = (
         cost_params["spread_pips"]
         + 2.0 * cost_params["slippage_pips"]
     ) * instrument.pip_size
 
-    per_lot = price_distance * instrument.contract_size
+    per_lot = (
+        price_distance * instrument.contract_size
+        * quote_to_account_rate
+    )
     commission = (
         2.0 * cost_params["commission_per_lot_per_side"]
     )
@@ -444,11 +473,13 @@ def money_to_pips(
     money: float,
     instrument: InstrumentSpecification,
     quantity: float,
+    quote_to_account_rate: float = 1.0,
 ) -> float:
     per_pip = (
         instrument.pip_size
         * instrument.contract_size
         * quantity
+        * quote_to_account_rate
     )
 
     return money / per_pip
@@ -742,16 +773,32 @@ def run_single(
         else strategy_instance.strategy_id
     )
 
+    trades = list(result.trades)
+
+    # Causal quote->USD rate: derived from the average entry price
+    # of the realized trades (available only after the simulation).
+    if trades:
+        avg_entry = sum(
+            trade.entry_price for trade in trades
+        ) / len(trades)
+        quote_to_account_rate = (
+            instrument.quote_to_account_rate(avg_entry)
+        )
+    else:
+        quote_to_account_rate = 1.0
+
     round_trip_money = round_trip_cost_money(
         instrument,
         fixed_quantity,
         effective_cost_params,
+        quote_to_account_rate=quote_to_account_rate,
     )
 
     round_trip_pips = money_to_pips(
         round_trip_money,
         instrument,
         fixed_quantity,
+        quote_to_account_rate=quote_to_account_rate,
     )
 
     report = build_report(

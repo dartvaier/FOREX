@@ -147,6 +147,14 @@ Strategy Research
   under costs; USDJPY monetary values invalid without currency
   conversion (quote JPY mixed with USD commission) - declared
   unusable for research decisions until conversion exists.
+- Currency conversion quote->USD (docs/22): InstrumentSpecification
+  gains base/quote currencies + quote_to_account_rate(price);
+  Portfolio converts realized and unrealized PnL at the price
+  available at the decision instant (causal); round-trip cost
+  helpers convert the quote leg. USDJPY dev fixed: TSM -33461 ->
+  -401 USD (dd 40% -> 4%). All 19 pair/strategy dev backtests now
+  valid and negative - no pair has edge under costs. +8 tests
+  (1057 total). Crosses (triangular) still future work.
 
 ---
 

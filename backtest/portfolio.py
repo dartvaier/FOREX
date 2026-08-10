@@ -255,6 +255,11 @@ class Portfolio:
             entry_price=self._position.entry_price,
             exit_price=float(mark_price),
             quantity=self._position.quantity,
+            quote_to_account_rate=(
+                self._instrument.quote_to_account_rate(
+                    float(mark_price),
+                )
+            ),
         )
 
         self._position = replace(
@@ -371,6 +376,11 @@ class Portfolio:
             entry_price=position.entry_price,
             exit_price=fill.execution_price,
             quantity=position.quantity,
+            quote_to_account_rate=(
+                self._instrument.quote_to_account_rate(
+                    fill.execution_price,
+                )
+            ),
         )
 
         entry_commission = float(
@@ -447,6 +457,7 @@ class Portfolio:
         entry_price: float,
         exit_price: float,
         quantity: float,
+        quote_to_account_rate: float = 1.0,
     ) -> float:
         if side == PositionSide.LONG:
             price_difference = (
@@ -469,4 +480,5 @@ class Portfolio:
             price_difference
             * self._instrument.contract_size
             * quantity
+            * quote_to_account_rate
         )

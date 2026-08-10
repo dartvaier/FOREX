@@ -2184,7 +2184,7 @@ Após EURUSD estar estabilizado:
 
 ```text
 GBPUSD   [x] 288k M15 + H1/H4 + backtest
-USDJPY   [x] coleta ok; monetario INVALIDO ate conversao de moeda
+USDJPY   [x] coleta ok; conversao de moeda RESOLVIDA (docs/22)
 USDCHF   [x] coleta ok + backtest
 AUDUSD   [x] coleta ok + backtest
 USDCAD   [x] coleta ok + backtest
@@ -2193,9 +2193,9 @@ crosses  [ ] fase posterior
 ```
 
 Status: dados completos; primeira leitura dev (docs/21): TODOS os
-16 backtests USD-quote negativos — nenhum par tem edge com custos;
-sem motivacao para val/OOS multi-par por enquanto. USDJPY: valores
-monetarios invalidos (quote JPY sem conversao) — extensao futura.
+19 backtests (6 pares x 3 estrategias + USDJPY) negativos — nenhum
+par tem edge com custos; sem motivacao para val/OOS multi-par por
+enquanto. Conversao de moeda quote→USD implementada (docs/22).
 
 ---
 
