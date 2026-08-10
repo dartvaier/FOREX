@@ -1730,8 +1730,9 @@ Order Validation         IMPLEMENTED
 Fill Validation          IMPLEMENTED
 Position Reconciliation  IMPLEMENTED
 Broker State             IMPLEMENTED
-Logs                     PLANNED
-Monitoring               PLANNED
+Logs                     IMPLEMENTED
+Monitoring               IMPLEMENTED
+Broker/Demo Validation   IMPLEMENTED (engineering)
 Kill Switch              IMPLEMENTED (F7)
 ```
 

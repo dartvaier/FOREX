@@ -82,6 +82,12 @@ Strategy Research
   send, retcode translation and fill validation; trading_enabled=False
   guard blocks submit/cancel (read-only monitoring allowed). 16 tests with
   a fake MT5 module; no real broker call. 943 tests total.
+- F9 Logs, Monitoring and Broker/Demo validation (execution/audit_log.py,
+  monitoring.py, broker_validation.py): JSONL audit trail, immutable demo
+  metrics (latency, slippage, rejection rate) and roadmap 84 preconditions
+  (demo trade mode, server allowlist, TRADING_ENABLED, kill switch).
+  BrokerAccountState.trade_mode added; MT5Execution.validate_environment()
+  gates Demo activation. +20 tests; 963 total.
 
 ---
 

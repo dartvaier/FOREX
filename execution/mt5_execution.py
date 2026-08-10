@@ -60,6 +60,13 @@ _POSITION_TYPE_BUY = 0
 # Successful execution retcode
 _RETCODE_DONE = 10009
 
+# MT5 account trade modes: 0 = demo, 1 = contest, 2 = real
+_TRADE_MODE_NAMES = {
+    0: "demo",
+    1: "contest",
+    2: "real",
+}
+
 
 class ExecutionNotEnabledError(RuntimeError):
     """Raised when an execution call is attempted while trading is disabled."""
@@ -312,6 +319,10 @@ class MT5Execution(ExecutionInterface):
             margin_free=float(info.margin_free),
             currency=str(info.currency),
             positions=self.fetch_positions(),
+            trade_mode=_TRADE_MODE_NAMES.get(
+                getattr(info, "trade_mode", None),
+                "unknown",
+            ),
         )
 
     def fetch_positions(
@@ -348,6 +359,32 @@ class MT5Execution(ExecutionInterface):
             )
 
         return tuple(positions)
+
+    def validate_environment(
+        self,
+        config: DemoValidationConfig | None = None,
+        *,
+        server: str | None = None,
+    ) -> DemoValidationResult:
+        """
+        Gate for Demo activation (roadmap §84): fetch the account and
+        validate demo trade mode, server allowlist and free margin.
+
+        Read-only: safe to call while trading is disabled.
+        """
+        from execution.broker_validation import (
+            DemoValidationConfig,
+            DemoValidationResult,
+            validate_demo_environment,
+        )
+
+        account = self.fetch_account()
+
+        return validate_demo_environment(
+            account,
+            config or DemoValidationConfig(),
+            server=server,
+        )
 
     def ping(self) -> bool:
         self._require_mt5()

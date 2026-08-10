@@ -73,6 +73,7 @@ class BrokerAccountState:
     margin_free: float
     currency: str
     positions: tuple[BrokerPosition, ...] = ()
+    trade_mode: str = "unknown"
 
     def __post_init__(self) -> None:
         if self.balance < 0:
@@ -86,6 +87,9 @@ class BrokerAccountState:
 
         if not self.currency:
             raise ValueError("currency cannot be empty")
+
+        if not self.trade_mode:
+            raise ValueError("trade_mode cannot be empty")
 
 
 @dataclass(frozen=True, slots=True)

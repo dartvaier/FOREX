@@ -43,7 +43,9 @@ e executada neste estado.
 | Position Reconciliation | IMPLEMENTED | `execution/reconciliation.py` |
 | Broker State | IMPLEMENTED | `execution/interface.py` (BrokerAccountState, BrokerPosition) |
 | MT5Execution | IMPLEMENTED (adapter) | `execution/mt5_execution.py` |
-| Logs / Monitoring | PLANNED | proximo bloco |
+| Logs | IMPLEMENTED | `execution/audit_log.py` |
+| Monitoring | IMPLEMENTED | `execution/monitoring.py` |
+| Broker/Demo Validation | IMPLEMENTED | `execution/broker_validation.py` |
 | Kill Switch | IMPLEMENTED (F7) | `backtest/risk.py` (KillSwitchRiskGate) |
 
 O pacote `execution/` **nao depende de MetaTrader**: tudo e puro e
@@ -147,16 +149,48 @@ Import lazy do MetaTrader5: sem o pacote instalado o adapter falha com
 mensagem clara, sem quebrar o import do pacote `execution/`. Testes usam
 um fake do modulo MT5 — nenhuma chamada real ao broker.
 
-## 8. Estado da ativacao
+## 8. Logs / Monitoring / Broker Validation
+
+`execution/audit_log.py` — trilha de auditoria JSONL:
+
+```text
+AuditEvent(event_id, timestamp UTC, event_type, payload)
+AuditLogger(path).log(event)  -> append de 1 JSON por linha
+eventos: ORDER_SUBMITTED, ORDER_REJECTED, FILLED, RECONCILIATION, ...
+```
+
+`execution/monitoring.py` — metricas da Demo (roadmap §87):
+
+```text
+ExecutionMetrics (imutavel): total/filled/rejected/cancelled
+  rejection_rate, avg/max latency (signal->fill), avg/max slippage
+update_metrics(metrics, report, order) -> nova instancia (fold)
+```
+
+`execution/broker_validation.py` — pre-condicoes (roadmap §84):
+
+```text
+validate_demo_environment(account, config, server) -> DemoValidationResult
+  trade_mode demo obrigatorio, allowlist de servidor, margem minima
+validate_broker_preconditions(...) -> ultima linha antes do envio
+  TRADING_ENABLED, kill switch, symbolo, quantity, SL obrigatorio
+MT5Execution.validate_environment() -> gate de ativacao Demo (leitura)
+```
+
+`BrokerAccountState` ganhou `trade_mode` (demo/contest/real), preenchido
+pelo adapter a partir de `account_info().trade_mode`.
+
+## 9. Estado da ativacao
 
 ```text
 TRADING_ENABLED=false   <- inalterado
 mt5.order_send()        <- nunca executado (guard testado)
 ```
 
-Proximos blocos F9 (somente engenharia, ativacao separada):
+Falta em F9 (engenharia e ativacao):
 
 ```text
-Logs / Monitoring  -> auditoria estruturada de ordens/fills/reconciliacao
-Demo activation    -> exige autorizacao explicita; TRADING_ENABLED so muda ai
+Execution comparison  -> comparar expected vs observed (metricas ja prontas)
+Demo activation       -> exige autorizacao explicita; TRADING_ENABLED so muda ai
+Periódo de validacao Demo -> rodar demo real e coletar metricas
 ```
