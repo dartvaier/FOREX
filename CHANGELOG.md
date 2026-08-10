@@ -112,6 +112,13 @@ Strategy Research
   5/5 round-trips within tolerance, 100% fill rate, 0 rejections, avg
   latency 231ms, slippage 0.00 pips; execution comparison summary closes
   the F9 DoD (8/8). Platform remains research/demo (no strategy has edge).
+- Live Readiness Review formal (roadmap §91, 10 dimensions) documented
+  in docs/17 §10 with concrete demo evidence; roadmap #131 estado
+  section updated to real state (F0-F9 done, F10 in progress, v0.6).
+  Remaining roadmap work: Walk-Forward (v0.5 scope, not implemented),
+  optional future items (Monte Carlo, DSR/PBO, D1, multi-symbol, MTF,
+  ML/HMM, DB, experiment tracking, dataset versioning, CI/CD), and the
+  operator-only real-capital decision (§92).
 
 ---
 

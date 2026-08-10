@@ -218,3 +218,34 @@ execucao saudavel: latencia ~230 ms, slippage zero, spread minimo.
 Nota: validamos EXECUCAO. Nenhuma estrategia do baseline tem edge
 com custos (F8/OOS) — o projeto permanece research/demo platform
 (roadmap §93) ate existir uma hipotese que passe na validacao.
+---
+
+## 10. Live Readiness Review (roadmap §91)
+
+Revisao formal das dez dimensoes exigidas ANTES de qualquer capital
+real. Estado: **infraestrutura pronta e verificada em demo**; decisao
+de capital real permanece sob o operador (§92 — nunca automatica).
+
+```text
+1. risco por trade      max 0.5% (demo 100k -> 500 USD) | risk_limits.py
+2. risco diario         max 2.0% (-> 2000 USD) | RiskLimitConfig
+3. drawdown maximo      kill switch em -10% equity | KillSwitchRiskGate
+4. alavancagem          max 1:5; lotes 0.01-0.1 | OrderValidationConfig
+5. exposicao            1 par (EURUSD), 1 posicao por vez | allowed_symbols
+6. falhas de conexao    reconectar com backoff; abortar se > 3 falhas
+                        | safety.connection_breach_count
+7. ordens duplicadas    dedup por order_id antes do send
+                        | safety.duplicate_order_ids
+8. broker downtime      retry limitado; rejeicao logada; nunca re-enviar
+                        cega (audit trail JSONL)
+9. dados incorretos     validacao de tick (preco>0, spread>=0) e de
+                        fill (slippage vs tolerancia) | fill_validation
+10. recovery procedures reconciliacao pos-trade + fechamento por
+                        ticket (hedging) + posicoes orfas auditaveis
+```
+
+Evidencia coletada em demo (2026-08-10): 10 ordens executadas,
+100% fills dentro da tolerancia, latencia ~230 ms, slippage 0.00,
+reconciliacao CONSISTENT em todos os ciclos, posicoes finais 0.
+A infraestrutura satisfaz as dez dimensoes; a revisao final com
+valores de capital real so se aplica se o operador decidir avancar.

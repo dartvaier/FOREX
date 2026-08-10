@@ -2732,35 +2732,36 @@ CHANGELOG.md
 Marco atual:
 
 ```text
-FOREX v0.4
+FOREX v0.6
 
-Risk Management
+MT5Execution / Demo Trading / Monitoring / Reconciliation
 ```
 
 Status:
 
 ```text
-F0  ✅
+F0  ✅  F1  ✅  F2  ✅  F3  ✅
+F4  ✅  F5  ✅  F6  ✅  F7  ✅
+F8  ✅  F9  ✅  F10 🟡
+```
 
-F1  ✅
+Pendencias F10 (nao bloqueiam pesquisa; decisao de capital real e
+separada, secao 92):
 
-F2  ✅
+```text
+Live Readiness Review formal (secao 91) — docs/17 secao 10
+Decisao de capital real — operador, nunca automatica
+```
 
-F3  ✅
+Itens futuros (escopo v0.5 declarado, nao implementado):
 
-F4  ✅
-
-F5  ✅
-
-F6  ✅
-
-F7  🟡
-
-F8  PLANNED
-
-F9  PLANNED
-
-F10 PLANNED
+```text
+Walk-Forward (secao 75) — proxima rodada de pesquisa
+Monte Carlo (76) | Advanced Robustness DSR/PBO/CSCV (77) | D1 (103)
+Multiple Symbols (104) | Multi-Timeframe Runtime (106)
+Feature Engineering (107) | ML (108) | HMM (109)
+Banco de Dados (110) | Experiment Tracking (112)
+Dataset Versioning (113) | CI/CD (114)
 ```
 
 ---
