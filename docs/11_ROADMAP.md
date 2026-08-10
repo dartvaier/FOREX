@@ -1440,11 +1440,17 @@ IN PROGRESS
 
 Essa fase é quantitativa, não apenas de engenharia.
 
-Primeiro bloco implementado:
+Blocos implementados:
 
 ```text
 cost stress no research runner
 (--cost-multiplier 1.5 / 2.0)
+
+sensibilidade local estruturada
+(research/sweep.py --range/--values, um parametro por vez)
+
+subperiod analysis padrao
+(research/sweep.py --subperiods, 2015-17/2018-20/2021-23/2024-26)
 ```
 
 ---

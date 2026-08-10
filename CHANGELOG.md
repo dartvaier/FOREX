@@ -58,6 +58,9 @@ Strategy Research
 - KillSwitchRiskGate wrapper with latch kill/reset and SOFT/HARD modes (ADR-045).
 - Cost stress support in the research runner (--cost-multiplier 1.0/1.5/2.0) with
   auditable base params + multiplier in reports (F8 first block).
+- Structured local sensitivity and subperiod harness (research/sweep.py):
+  one-parameter sweeps (--range/--values) and standard F8 subperiods
+  (--subperiods), each run an auditable runner report, with comparison CSV.
 
 ---
 

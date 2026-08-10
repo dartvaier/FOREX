@@ -89,6 +89,43 @@ Isso permite comparar a fragilidade de uma estratégia ao custo: se 1.5x ou 2.0x
 destroem o resultado, o edge é frágil (repo §17). O `research.summarize` exibe
 a coluna `cost_multiplier` para comparar execuções lado a lado.
 
+## Sensibilidade Local e Subperiodos (F8)
+
+O `research/sweep.py` orquestra execuções do runner com disciplina de
+sensibilidade local (repo §15-16): **um parâmetro por vez**, grid declarado
+antes de rodar, comparação por regiões de estabilidade — nunca seleção do
+máximo.
+
+```powershell
+# Sensibilidade local: lookback 96→192 com passo 32 (fim inclusivo)
+python -m research.sweep --strategy time_series_momentum --range lookback=96:192:32 --cost explicit
+
+# Lista explícita de valores
+python -m research.sweep --strategy mean_reversion --values lookback=32,48,64
+
+# Parâmetros fixos permanecem fixos durante o sweep
+python -m research.sweep --strategy time_series_momentum --range lookback=96:192:32 --param entry_threshold=0.002
+
+# Subperiods padrão F8 (roadmap §73): 2015-17, 2018-20, 2021-23, 2024-26
+python -m research.sweep --strategy ema_trend --subperiods --cost explicit
+```
+
+Cada execução produz um relatório auditável completo via `run_single`
+(com tag `sweep-<key>=<value>` ou `sub-<period>`). O resumo comparativo sai
+em `<out>/<STRATEGY>_sweep_<key>.csv` (ou `_subperiods.csv`) com:
+
+```text
+param_value | period | trades | net_profit | return_pct | max_dd_pct
+win_rate | profit_factor | expectancy | cost | cost_multiplier
+```
+
+Regras:
+
+- `--range key=start:end:step` e `--values key=v1,v2,v3` são mutuamente
+  exclusivos com `--subperiods`.
+- O parâmetro varrido é validado contra os campos do dataclass da estratégia.
+- Em `--subperiods`, as janelas são fixas (pré-definidas antes de ver resultados).
+
 ## Saída
 
 Para cada execução, em `research/reports/`:
