@@ -15,6 +15,7 @@ from backtest.models import (
     Timeframe,
 )
 from backtest.risk import (
+    DailyLossRiskGate,
     ExposureLimitRiskGate,
     FixedSizeRiskGate,
     StopBasedRiskGate,
@@ -246,6 +247,39 @@ class LongThenExitWithRiskMetadataStrategy:
         )
 
 
+class LongExitThenLongStrategy:
+    @property
+    def strategy_id(self) -> str:
+        return "LONG-EXIT-THEN-LONG"
+
+    def on_bar(
+        self,
+        context,
+    ) -> Signal:
+        if context.current_bar_index == 0:
+            action = SignalAction.ENTER_LONG
+
+        elif context.current_bar_index == 1:
+            action = SignalAction.EXIT
+
+        elif context.current_bar_index == 2:
+            action = SignalAction.ENTER_LONG
+
+        else:
+            action = SignalAction.HOLD
+
+        return Signal(
+            signal_id=(
+                f"LONG-EXIT-THEN-LONG-"
+                f"{context.current_bar_index}"
+            ),
+            strategy_id=self.strategy_id,
+            symbol="EURUSD",
+            timestamp=context.current_time,
+            action=action,
+        )
+
+
 def test_engine_runs_strategy_to_performance_summary():
     result = make_engine().run(
         dataframe=make_dataframe(),
@@ -355,6 +389,91 @@ def test_engine_skips_order_when_exposure_limit_rejects_entry():
     assert result.fills.count == 0
     assert result.trades.count == 0
     assert result.portfolio.is_flat is True
+
+
+def test_engine_skips_reentry_when_daily_loss_limit_is_reached():
+    dataframe = pd.DataFrame(
+        {
+            "time": pd.to_datetime(
+                [
+                    "2026-08-08T10:00:00Z",
+                    "2026-08-08T10:15:00Z",
+                    "2026-08-08T10:30:00Z",
+                    "2026-08-08T10:45:00Z",
+                ],
+                utc=True,
+            ),
+            "open": [
+                1.1600,
+                1.1600,
+                1.1590,
+                1.1590,
+            ],
+            "high": [
+                1.1610,
+                1.1610,
+                1.1600,
+                1.1600,
+            ],
+            "low": [
+                1.1590,
+                1.1580,
+                1.1580,
+                1.1580,
+            ],
+            "close": [
+                1.1600,
+                1.1590,
+                1.1590,
+                1.1590,
+            ],
+            "tick_volume": [
+                1000,
+                1100,
+                1200,
+                1300,
+            ],
+        }
+    )
+
+    config = make_config()
+    instrument = make_instrument()
+
+    engine = BacktestEngine(
+        config=config,
+        instrument=instrument,
+        cost_model=ZeroCostModel(
+            instrument,
+        ),
+        risk_gate=DailyLossRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=instrument,
+                fixed_quantity=0.10,
+            ),
+            max_daily_loss=5.0,
+        ),
+    )
+
+    result = engine.run(
+        dataframe=dataframe,
+        strategy=LongExitThenLongStrategy(),
+    )
+
+    assert result.signals.count == 4
+    assert result.orders.count == 2
+    assert result.fills.count == 2
+    assert result.trades.count == 1
+
+    trade = result.trades.last_trade
+
+    assert trade is not None
+    assert trade.net_pnl == pytest.approx(
+        -10.0
+    )
+    assert result.portfolio.is_flat is True
+    assert result.portfolio.cash == pytest.approx(
+        9990.0
+    )
 
 
 def test_engine_forces_open_position_closed_at_final_close():

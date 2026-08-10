@@ -35,7 +35,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Modelos de `Signal`, `Order`, `Fill`, `Position` e `Trade`.
 - Ledgers de sinais, ordens, fills, trades e equity.
 - CostModel explícito com spread, slippage e comissão.
-- RiskGate com fixed size, validação de volume, sizing baseado em stop e limites de exposição.
+- RiskGate com fixed size, validação de volume, sizing baseado em stop, limites de exposição e daily loss guard.
 - Stop Loss, Take Profit, gap-through-stop e política worst-case intrabar.
 - Métricas básicas de performance.
 - Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
@@ -406,7 +406,7 @@ Esse baseline validou a infraestrutura multi-timeframe sem look-ahead, mas a reg
 Suíte atual:
 
 ```text
-821 passed
+830 passed
 ```
 
 Comando:
@@ -432,6 +432,7 @@ Comando:
 - multi-timeframe context availability;
 - risk gate and stop-based sizing.
 - exposure limit risk gate.
+- daily loss risk gate.
 
 ---
 
@@ -504,8 +505,7 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar daily loss guard.
-2. Implementar drawdown guard.
-3. Definir kill switch do backtest/demo.
-4. Preparar portfolio-level risk.
-5. Manter todos os backtests reproduzíveis antes de qualquer Demo.
+1. Implementar drawdown guard.
+2. Definir kill switch do backtest/demo.
+3. Preparar portfolio-level risk.
+4. Manter todos os backtests reproduzíveis antes de qualquer Demo.

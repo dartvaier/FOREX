@@ -48,6 +48,8 @@ FixedSizeRiskGate
 StopBasedRiskGate
 
 ExposureLimitRiskGate
+
+DailyLossRiskGate
 ```
 
 ---
@@ -152,10 +154,6 @@ volume_min
 volume_max
 ```
 
----
-
-## 6. Rejeicoes Auditaveis
-
 ## 6. ExposureLimitRiskGate
 
 Envolve outro RiskGate:
@@ -193,7 +191,40 @@ aumentam posicao.
 
 ---
 
-## 7. Rejeicoes Auditaveis
+## 7. DailyLossRiskGate
+
+Envolve outro RiskGate e observa pontos de equity:
+
+```text
+EquityPoint
+  ->
+DailyLossRiskGate.observe_equity(point)
+```
+
+Limites suportados:
+
+```text
+max_daily_loss
+
+max_daily_loss_fraction
+```
+
+A fronteira diaria atual e:
+
+```text
+UTC
+```
+
+Quando a perda diaria observada atinge o limite configurado, o gate
+entra em estado travado para aquele dia e rejeita novas entradas.
+
+Sinais `HOLD` e `EXIT` continuam permitidos porque nao aumentam exposicao.
+No proximo dia UTC o estado diario e reiniciado a partir da primeira
+equity observada.
+
+---
+
+## 8. Rejeicoes Auditaveis
 
 O RiskGate rejeita entradas quando:
 
@@ -211,6 +242,10 @@ volume calculado fica abaixo de volume_min
 quantity excede max_quantity
 
 notional excede max_notional
+
+daily loss atingiu max_daily_loss
+
+daily loss atingiu max_daily_loss_fraction
 ```
 
 Essas rejeicoes retornam:
@@ -227,19 +262,19 @@ reason
 
 ---
 
-## 8. Limites Ainda Pendentes
+## 9. Limites Ainda Pendentes
 
 Implementado:
 
 ```text
 max exposure
+
+daily loss guard
 ```
 
 Ainda nao implementado:
 
 ```text
-
-daily loss guard
 
 maximum drawdown guard
 
@@ -254,7 +289,7 @@ Esses itens continuam como proximos blocos da F7.
 
 ---
 
-## 9. Testes
+## 10. Testes
 
 Coberto por testes:
 
@@ -269,6 +304,8 @@ StopBasedRiskGate long/short
 
 ExposureLimitRiskGate
 
+DailyLossRiskGate
+
 missing entry_price
 
 missing stop_loss
@@ -281,22 +318,28 @@ max_quantity cap
 
 max_notional cap
 
+daily loss absolute cap
+
+daily loss fraction cap
+
+daily UTC reset
+
 engine integration
 ```
 
 ---
 
-## 10. Proximo Passo
+## 11. Proximo Passo
 
 Avancar para:
 
 ```text
-Daily loss guard
+Drawdown guard
 ```
 
 Objetivo:
 
 ```text
-impedir novas entradas quando a perda diaria realizada ou simulada
+impedir novas entradas quando o drawdown observado da equity curve
 atingir o limite configurado
 ```

@@ -2,12 +2,15 @@ from datetime import datetime, timezone
 
 import pytest
 
+from backtest.equity_ledger import EquityPoint
 from backtest.models import (
     InstrumentSpecification,
     Signal,
     SignalAction,
 )
+from backtest.models.enums import SimulationPhase
 from backtest.risk import (
+    DailyLossRiskGate,
     ExposureLimitRiskGate,
     FixedSizeRiskGate,
     RiskDecision,
@@ -57,6 +60,29 @@ def make_signal(
             if metadata is None
             else metadata
         ),
+    )
+
+
+def make_equity_point(
+    *,
+    equity: float,
+    day: int = 8,
+) -> EquityPoint:
+    return EquityPoint(
+        timestamp=datetime(
+            2026,
+            8,
+            day,
+            10,
+            15,
+            tzinfo=timezone.utc,
+        ),
+        bar_index=0,
+        phase=SimulationPhase.BAR_CLOSE,
+        cash=equity,
+        equity=equity,
+        realized_pnl=equity - 10000.0,
+        unrealized_pnl=0.0,
     )
 
 
@@ -761,4 +787,294 @@ def test_exposure_limit_gate_validates_configuration():
                 fixed_quantity=0.01,
             ),
             max_notional=0.0,
+        )
+
+
+def test_daily_loss_gate_approves_entry_before_limit():
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss=100.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9950.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.03
+    assert "DailyLossRiskGate" in decision.reason
+    assert gate.daily_loss == pytest.approx(50.0)
+
+
+def test_daily_loss_gate_rejects_entry_after_absolute_limit():
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss=50.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9950.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert "daily loss" in decision.reason
+    assert gate.is_locked is True
+
+
+def test_daily_loss_gate_rejects_entry_after_fraction_limit():
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss_fraction=0.01,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9900.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_SHORT
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert gate.daily_loss_fraction == pytest.approx(0.01)
+
+
+def test_daily_loss_gate_resets_on_new_utc_day():
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss=50.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+            day=8,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9950.0,
+            day=8,
+        )
+    )
+
+    assert gate.is_locked is True
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9950.0,
+            day=9,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert gate.is_locked is False
+    assert gate.day_start_equity == pytest.approx(9950.0)
+    assert decision.approved is True
+
+
+def test_daily_loss_gate_allows_hold_and_exit_when_locked():
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss=50.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9900.0,
+        )
+    )
+
+    hold_decision = gate.evaluate(
+        make_signal(
+            SignalAction.HOLD
+        )
+    )
+
+    exit_decision = gate.evaluate(
+        make_signal(
+            SignalAction.EXIT
+        )
+    )
+
+    assert hold_decision.approved is True
+    assert hold_decision.quantity is None
+    assert exit_decision.approved is True
+    assert exit_decision.quantity is None
+
+
+def test_daily_loss_gate_preserves_inner_rejection():
+    gate = DailyLossRiskGate(
+        inner=StopBasedRiskGate(
+            instrument=make_instrument(),
+            account_equity=10000.0,
+            risk_fraction=0.01,
+        ),
+        max_daily_loss=50.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "stop_loss" in decision.reason
+
+
+def test_daily_loss_gate_requires_equity_before_entry():
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss=50.0,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert "equity snapshot" in decision.reason
+
+
+def test_daily_loss_gate_validates_configuration():
+    with pytest.raises(
+        TypeError,
+        match="RiskGate",
+    ):
+        DailyLossRiskGate(
+            inner=object(),  # type: ignore[arg-type]
+            max_daily_loss=50.0,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="at least one",
+    ):
+        DailyLossRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="max_daily_loss",
+    ):
+        DailyLossRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            max_daily_loss=0.0,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="max_daily_loss_fraction",
+    ):
+        DailyLossRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            max_daily_loss_fraction=1.5,
+        )
+
+    gate = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.01,
+        ),
+        max_daily_loss=50.0,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="EquityPoint",
+    ):
+        gate.observe_equity(
+            object()  # type: ignore[arg-type]
         )

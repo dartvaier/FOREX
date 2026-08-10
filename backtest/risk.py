@@ -1,8 +1,10 @@
 import math
 from dataclasses import dataclass
+from datetime import date, timezone
 from numbers import Real
 from typing import Protocol, runtime_checkable
 
+from backtest.equity_ledger import EquityPoint
 from backtest.models.enums import SignalAction
 from backtest.models.instrument import InstrumentSpecification
 from backtest.models.signal import Signal
@@ -782,6 +784,260 @@ class ExposureLimitRiskGate:
                 "ExposureLimitRiskGate"
             ),
         )
+
+    @staticmethod
+    def _reject(
+        decision: RiskDecision,
+        reason: str,
+    ) -> RiskDecision:
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=False,
+            quantity=None,
+            reason=reason,
+        )
+
+    @staticmethod
+    def _validate_positive_finite(
+        name: str,
+        value: float,
+    ) -> None:
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(
+                f"{name} must be a finite positive number"
+            )
+
+
+class DailyLossRiskGate:
+    """
+    Risk Gate wrapper that rejects new entries after the
+    observed daily equity loss reaches a configured limit.
+
+    The gate is stateful. The BacktestEngine updates it with
+    EquityPoint snapshots through observe_equity().
+
+    Supported limits:
+
+    - max_daily_loss
+    - max_daily_loss_fraction
+
+    The daily boundary is UTC.
+    """
+
+    def __init__(
+        self,
+        *,
+        inner: RiskGate,
+        max_daily_loss: float | None = None,
+        max_daily_loss_fraction: float | None = None,
+    ) -> None:
+        if not isinstance(
+            inner,
+            RiskGate,
+        ):
+            raise TypeError(
+                "inner must satisfy the RiskGate protocol"
+            )
+
+        if (
+            max_daily_loss is None
+            and max_daily_loss_fraction is None
+        ):
+            raise ValueError(
+                "at least one daily loss limit is required"
+            )
+
+        if max_daily_loss is not None:
+            self._validate_positive_finite(
+                "max_daily_loss",
+                max_daily_loss,
+            )
+
+        if max_daily_loss_fraction is not None:
+            self._validate_positive_finite(
+                "max_daily_loss_fraction",
+                max_daily_loss_fraction,
+            )
+
+            if max_daily_loss_fraction > 1.0:
+                raise ValueError(
+                    "max_daily_loss_fraction cannot be "
+                    "greater than 1.0"
+                )
+
+        self._inner = inner
+        self._max_daily_loss = (
+            None
+            if max_daily_loss is None
+            else float(max_daily_loss)
+        )
+        self._max_daily_loss_fraction = (
+            None
+            if max_daily_loss_fraction is None
+            else float(max_daily_loss_fraction)
+        )
+        self._current_day: date | None = None
+        self._day_start_equity: float | None = None
+        self._latest_equity: float | None = None
+        self._locked = False
+
+    @property
+    def inner(self) -> RiskGate:
+        return self._inner
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        return self._inner.instrument
+
+    @property
+    def max_daily_loss(self) -> float | None:
+        return self._max_daily_loss
+
+    @property
+    def max_daily_loss_fraction(self) -> float | None:
+        return self._max_daily_loss_fraction
+
+    @property
+    def current_day(self) -> date | None:
+        return self._current_day
+
+    @property
+    def day_start_equity(self) -> float | None:
+        return self._day_start_equity
+
+    @property
+    def latest_equity(self) -> float | None:
+        return self._latest_equity
+
+    @property
+    def daily_loss(self) -> float:
+        if (
+            self._day_start_equity is None
+            or self._latest_equity is None
+        ):
+            return 0.0
+
+        return max(
+            0.0,
+            self._day_start_equity
+            - self._latest_equity,
+        )
+
+    @property
+    def daily_loss_fraction(self) -> float:
+        if (
+            self._day_start_equity is None
+            or self._day_start_equity <= 0
+        ):
+            return 0.0
+
+        return (
+            self.daily_loss
+            / self._day_start_equity
+        )
+
+    @property
+    def is_locked(self) -> bool:
+        return self._locked
+
+    def observe_equity(
+        self,
+        point: EquityPoint,
+    ) -> None:
+        if not isinstance(
+            point,
+            EquityPoint,
+        ):
+            raise TypeError(
+                "point must be an EquityPoint"
+            )
+
+        point_day = (
+            point.timestamp
+            .astimezone(timezone.utc)
+            .date()
+        )
+
+        if point_day != self._current_day:
+            self._current_day = point_day
+            self._day_start_equity = point.equity
+            self._latest_equity = point.equity
+            self._locked = False
+            return
+
+        self._latest_equity = point.equity
+
+        if self._breached_limit():
+            self._locked = True
+
+    def evaluate(
+        self,
+        signal: Signal,
+    ) -> RiskDecision:
+        decision = self._inner.evaluate(signal)
+
+        if not decision.approved:
+            return decision
+
+        if signal.action in (
+            SignalAction.HOLD,
+            SignalAction.EXIT,
+        ):
+            return decision
+
+        if signal.action not in (
+            SignalAction.ENTER_LONG,
+            SignalAction.ENTER_SHORT,
+        ):
+            raise ValueError(
+                f"unsupported SignalAction: {signal.action}"
+            )
+
+        if self._current_day is None:
+            return self._reject(
+                decision,
+                "equity snapshot is required for "
+                "DailyLossRiskGate",
+            )
+
+        if self._locked:
+            return self._reject(
+                decision,
+                "daily loss limit reached",
+            )
+
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=True,
+            quantity=decision.quantity,
+            reason=(
+                f"{decision.reason}; approved by "
+                "DailyLossRiskGate"
+            ),
+        )
+
+    def _breached_limit(self) -> bool:
+        if (
+            self._max_daily_loss is not None
+            and self.daily_loss >= self._max_daily_loss
+        ):
+            return True
+
+        if (
+            self._max_daily_loss_fraction is not None
+            and self.daily_loss_fraction
+            >= self._max_daily_loss_fraction
+        ):
+            return True
+
+        return False
 
     @staticmethod
     def _reject(

@@ -861,6 +861,8 @@ StopBasedRiskGate
 VolumeRules
 
 ExposureLimitRiskGate
+
+DailyLossRiskGate
 ```
 
 O RiskGate pode aprovar ou rejeitar um Signal antes da criação da Order.
@@ -869,6 +871,10 @@ Em entradas baseadas em stop, a Strategy fornece `entry_price` e
 
 `ExposureLimitRiskGate` pode envolver outro gate para bloquear entradas
 que excedam `max_quantity` ou `max_notional`.
+
+`DailyLossRiskGate` pode envolver outro gate e observar a equity curve
+registrada pelo BacktestEngine para bloquear novas entradas quando a perda
+diaria atingir `max_daily_loss` ou `max_daily_loss_fraction`.
 
 ---
 

@@ -287,10 +287,11 @@ class BacktestEngine:
                     entry_bar_indexes=entry_bar_indexes,
                 )
 
-                equity_recorder.record(
+                point = equity_recorder.record(
                     event,
                     portfolio,
                 )
+                self._observe_risk_equity(point)
 
                 continue
 
@@ -313,10 +314,11 @@ class BacktestEngine:
                     bar.close
                 )
 
-            equity_recorder.record(
+            point = equity_recorder.record(
                 event,
                 portfolio,
             )
+            self._observe_risk_equity(point)
 
             context = context_builder.build(
                 event,
@@ -833,10 +835,32 @@ class BacktestEngine:
             entry_bar_indexes=entry_bar_indexes,
         )
 
-        equity_recorder.record(
+        point = equity_recorder.record(
             final_event,
             portfolio,
         )
+        self._observe_risk_equity(point)
+
+    def _observe_risk_equity(
+        self,
+        point,
+    ) -> None:
+        observe_equity = getattr(
+            self._risk_gate,
+            "observe_equity",
+            None,
+        )
+
+        if observe_equity is None:
+            return
+
+        if not callable(observe_equity):
+            raise TypeError(
+                "risk_gate observe_equity attribute must be "
+                "callable"
+            )
+
+        observe_equity(point)
 
     def _create_end_of_backtest_order(
         self,

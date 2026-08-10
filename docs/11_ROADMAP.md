@@ -1357,6 +1357,8 @@ StopBasedRiskGate
 
 ExposureLimitRiskGate
 
+DailyLossRiskGate
+
 entry_price + stop_loss metadata
 
 risk_fraction
@@ -1364,6 +1366,10 @@ risk_fraction
 max_quantity opcional
 
 max_notional opcional
+
+max_daily_loss opcional
+
+max_daily_loss_fraction opcional
 ```
 
 ---
@@ -1403,7 +1409,7 @@ kill switch bloqueia execução
 
 [x] exposure limits
 
-[ ] daily loss
+[x] daily loss
 
 [ ] drawdown protection
 
@@ -2483,9 +2489,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-821 tests
+830 tests
 
-821 passed
+830 passed
 
 0 failed
 ```

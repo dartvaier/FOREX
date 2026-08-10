@@ -53,6 +53,7 @@ Strategy Research
 - Multi-Timeframe Momentum baseline strategy, tests, causal H1/H4 context support and initial EURUSD M15 result.
 - RiskGate protocol, volume-step validation and StopBasedRiskGate sizing from entry/stop metadata.
 - ExposureLimitRiskGate wrapper with max quantity and max notional checks.
+- DailyLossRiskGate wrapper with absolute and percentage daily loss limits.
 
 ---
 

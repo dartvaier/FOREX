@@ -892,6 +892,18 @@ Quando `max_notional` e usado, o Signal precisa informar `entry_price`
 em metadata para que a exposicao nocional seja calculada de forma
 auditavel.
 
+`DailyLossRiskGate` tambem pode envolver outro RiskGate. Ele observa
+`EquityPoint` gerados pelo BacktestEngine e bloqueia novas entradas quando
+a perda do dia UTC atinge:
+
+```text
+max_daily_loss
+max_daily_loss_fraction
+```
+
+Sinais `HOLD` e `EXIT` continuam permitidos mesmo com o limite diario
+atingido, porque nao aumentam exposicao financeira.
+
 ---
 
 # ADR-015 — Order Não é Fill
