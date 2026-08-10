@@ -332,7 +332,12 @@ class MT5Execution(ExecutionInterface):
         self._require_mt5()
         self._ensure_connected()
 
-        raw_positions = mt5.positions_get(symbol=symbol)  # type: ignore[union-attr]
+        if symbol is None:
+            raw_positions = mt5.positions_get()  # type: ignore[union-attr]
+        else:
+            raw_positions = mt5.positions_get(  # type: ignore[union-attr]
+                symbol=symbol
+            )
 
         if raw_positions is None:
             raise RuntimeError(
