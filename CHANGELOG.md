@@ -92,6 +92,12 @@ Strategy Research
   (roadmap 86-87) with pips/latency tolerances, WITHIN/OUTSIDE verdicts and
   comparison_summary for the Demo validation period. F9 engineering is now
   COMPLETE; only explicit Demo activation remains. +12 tests; 975 total.
+- F10 Live Readiness IN PROGRESS (readiness/ package + docs/17):
+  programmatic readiness review (module availability as evidence), risk
+  limits (risk per trade, daily loss, drawdown, leverage, exposure),
+  safety helpers (duplicate orders, connection breach) and operational
+  procedures documented. Real-state review shows only demo_validation and
+  trading_flag pending (both require explicit activation). +20 tests; 995.
 
 ---
 

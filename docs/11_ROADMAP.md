@@ -80,7 +80,7 @@ F8  Robustness & Validation     ✅ COMPLETE
 
 F9  Demo Execution              🟡 IN PROGRESS
 
-F10 Live Readiness              ⬜ NOT STARTED
+F10 Live Readiness              🟡 IN PROGRESS
 
 ---
 
@@ -1863,7 +1863,18 @@ rejection
 Status:
 
 ```text
-NOT STARTED
+IN PROGRESS
+```
+
+Blocos implementados:
+
+```text
+readiness review programatica (readiness/review.py)
+risk limits (readiness/risk_limits.py)
+safety helpers (readiness/safety.py)
+operational procedures documentadas (docs/17_LIVE_READINESS.md)
+
+pendente: demo validation + trading flag (decisao de ativacao)
 ```
 
 Essa fase não significa automaticamente:
