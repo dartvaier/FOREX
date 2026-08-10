@@ -1596,7 +1596,9 @@ repeat
 Status:
 
 ```text
-PLANNED
+DONE — hipotese WF-01 testada e rejeitada (docs/18):
+nenhum edge transferivel no tempo sob custos explicitos;
+lockbox OOS permanece selado (nada passou no criterio).
 ```
 
 ---
@@ -2753,10 +2755,11 @@ Live Readiness Review formal (secao 91) — docs/17 secao 10
 Decisao de capital real — operador, nunca automatica
 ```
 
-Itens futuros (escopo v0.5 declarado, nao implementado):
+Itens futuros:
 
 ```text
-Walk-Forward (secao 75) — proxima rodada de pesquisa
+Walk-Forward (75) — DONE 2026-08-10 (docs/18): 3 baselines REJECT,
+   nenhum edge transferivel; lockbox OOS selado
 Monte Carlo (76) | Advanced Robustness DSR/PBO/CSCV (77) | D1 (103)
 Multiple Symbols (104) | Multi-Timeframe Runtime (106)
 Feature Engineering (107) | ML (108) | HMM (109)

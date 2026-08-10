@@ -119,6 +119,13 @@ Strategy Research
   optional future items (Monte Carlo, DSR/PBO, D1, multi-symbol, MTF,
   ML/HMM, DB, experiment tracking, dataset versioning, CI/CD), and the
   operator-only real-capital decision (§92).
+- Walk-Forward (roadmap §75, v0.5 scope) DONE: new
+  research/walkforward.py rolling train(2y)/val(1y) harness with
+  pre-registered F8 grids and expectancy selection (+17 tests).
+  Result: all three baselines REJECT (TSM 2/7, EMA 1/7, MR 0/7
+  positive windows; avg val expectancy negative everywhere). OOS
+  lockbox stays sealed — nothing passed the pre-registered
+  acceptance criteria. docs/18_WALK_FORWARD.md.
 
 ---
 

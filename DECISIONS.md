@@ -1,5 +1,17 @@
 # Architecture & Engineering Decisions
 
+## WF-01 (2026-08-10): Walk-Forward — nenhum edge transferivel
+
+- **Decisao**: hipotese WF-01 REJEITADA para os tres baselines
+  (TSM 2/7, EMA 1/7, MR 0/7 janelas positivas sob custos explicitos).
+- **Racional**: selecao por expectancy em train rolando nao produz
+  val positivo na maioria das janelas; parametros selecionados oscilam
+  (overfitting a ruido por janela); consistente com F8 (grids
+  monotonos negativos).
+- **Consequencia**: lockbox OOS permanece selado; proxima direcao e
+  reconstrucao de edge (regime/turnover/payoff), nao varredura de
+  parametros.
+
 ## 1. Objetivo
 
 Este documento registra decisões arquiteturais e de engenharia importantes da plataforma:
