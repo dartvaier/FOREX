@@ -98,6 +98,10 @@ Strategy Research
   safety helpers (duplicate orders, connection breach) and operational
   procedures documented. Real-state review shows only demo_validation and
   trading_flag pending (both require explicit activation). +20 tests; 995.
+- F10 readiness CLI (readiness/__main__.py, python -m readiness): renders
+  the review with live module evidence + operator flags, optional risk
+  limits check; exit 0/1 for scripting. Demo activation procedure
+  documented in docs/17 (section 9). +15 tests; 1010 total.
 
 ---
 

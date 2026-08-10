@@ -133,3 +133,37 @@ engenharia presente; pendentes apenas os itens que dependem da decisao
 explicita de ativacao demo** (`demo_validation` e `trading_flag`). F10
 so sera COMPLETE apos o periodo de validacao demo (F9) concluido e a
 revisao final.
+
+## 8. CLI de readiness
+
+```powershell
+python -m readiness
+python -m readiness --backtest-done --oos-done --cost-stress-done ^
+    --risk-engine-done --ops-documented
+python -m readiness --demo-validation-done --trading-enabled ^
+    --balance 10000 --daily-loss 50 --drawdown-pct 0.02 ^
+    --exposure-notional 2000
+```
+
+Exit code: `0` quando READY, `1` caso contrario (scriptavel). Flags
+booleanas refletem as decisoes do operador; a disponibilidade dos modulos
+e sempre verificada ao vivo.
+
+## 9. Procedimento de ativacao demo (proxima etapa)
+
+A ativacao demo e a decisao explicita que fecha F9 e desbloqueia os dois
+itens pendentes do F10. Sequencia prevista:
+
+```text
+1. [operador] MetaTrader 5 aberto com conta demo logada
+2. smoke read-only: MT5Execution().ping() + fetch_account()
+3. MT5Execution().validate_environment() -> trade mode demo, servidor, margem
+4. instanciar MT5Execution(trading_enabled=True) — ativacao explicita
+5. periodo de validacao: ordens minimas (fixed_quantity 0.01), kill switch
+   armado como default, reconciliacao a cada ciclo
+6. metricas reais: audit log JSONL + monitoring + comparison_summary
+7. avaliar expected vs observed; decidir continuar/pausar
+```
+
+`TRADING_ENABLED=false` no .env permanece ate o passo 4; o guard
+`trading_enabled` e o ponto unico de liberacao.
