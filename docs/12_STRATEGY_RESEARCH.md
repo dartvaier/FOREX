@@ -208,13 +208,96 @@ Os testes utilizam series artificiais pequenas para validar a regra antes de qua
 
 ---
 
-## 8. Proximo Passo
+## 8. Sensibilidade Local Inicial
 
-Rodar analises de robustez e sensibilidade local sobre a Simple EMA Trend Following.
+Objetivo:
+
+```text
+Verificar se a conclusao inicial da EMA 20/50 muda em janelas simples predefinidas.
+```
+
+Importante:
+
+```text
+Isto nao e otimizacao.
+
+As combinacoes foram escolhidas antes da leitura dos resultados.
+```
+
+Dataset:
+
+```text
+EURUSD M15
+
+2015-01-02 09:00:00 UTC
+ate
+2026-08-07 23:45:00 UTC
+
+288223 candles
+```
+
+Parametros comuns:
+
+```text
+fixed_quantity = 0.01 lot
+
+initial_capital = 10000.00
+```
+
+Resultado zero-cost:
+
+| EMA fast/slow | Trades | Net Profit | Return % | Max DD | Max DD % | Win Rate % | Profit Factor | Avg Trade | Final Equity |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 10 / 30 | 5182 | -284.67 | -2.8467 | 410.11 | 4.0789 | 27.1903 | 0.938190 | -0.0549 | 9715.33 |
+| 20 / 50 | 2715 | -81.94 | -0.8194 | 232.05 | 2.2996 | 29.2449 | 0.976041 | -0.0302 | 9918.06 |
+| 50 / 200 | 822 | -18.09 | -0.1809 | 226.25 | 2.2325 | 31.3869 | 0.989912 | -0.0220 | 9981.91 |
+
+Resultado com custos explicitos:
+
+```text
+spread_pips = 2.0
+slippage_pips = 0.5
+commission_per_lot_per_side = 3.50
+```
+
+| EMA fast/slow | Trades | Net Profit | Return % | Max DD | Max DD % | Win Rate % | Profit Factor | Avg Trade | Final Equity |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 10 / 30 | 5182 | -2202.01 | -22.0201 | 2212.09 | 22.1209 | 23.0992 | 0.635470 | -0.4249 | 7797.99 |
+| 20 / 50 | 2715 | -1086.49 | -10.8649 | 1115.19 | 11.1316 | 26.0037 | 0.738059 | -0.4002 | 8913.51 |
+| 50 / 200 | 822 | -322.23 | -3.2223 | 376.94 | 3.7612 | 30.0487 | 0.839207 | -0.3920 | 9677.77 |
+
+Leitura:
+
+```text
+Nenhuma janela testada apresentou edge.
+
+A reducao de frequencia em EMA 50/200 diminuiu a perda e o impacto dos custos,
+mas ainda nao produziu expectativa positiva.
+
+O custo deteriorou todas as combinacoes de forma material.
+```
+
+Decisao:
+
+```text
+Manter Simple EMA Trend Following como benchmark de engenharia.
+
+Nao tratar esta especificacao como candidata promissora.
+```
 
 ---
 
-## 9. Backtest Historico Inicial
+## 9. Proximo Passo
+
+Avancar para a proxima hipotese:
+
+```text
+Volatility Breakout
+```
+
+---
+
+## 10. Backtest Historico Inicial
 
 Dataset:
 
@@ -292,16 +375,20 @@ Ele apenas indica que esta especificacao primaria simples, nestes parametros e n
 
 ---
 
-## 10. Proximo Passo Detalhado
+## 11. Proximo Passo Detalhado
 
-Rodar a Simple EMA Trend Following com pequenas variacoes controladas:
+Implementar uma especificacao primaria simples de Volatility Breakout.
 
 ```text
-EMA 10 / 30
+Exemplo inicial:
 
-EMA 20 / 50
+preco rompe maxima recente
 
-EMA 50 / 200
+range minimo / ATR confirma volatilidade
+
+entrada no proximo open
+
+saida por regra temporal, stop ou retorno ao range
 ```
 
 Depois disso, registrar:

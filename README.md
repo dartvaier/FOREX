@@ -385,8 +385,8 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Rodar sensibilidade controlada da EMA baseline.
-2. Comparar janelas simples como EMA 10/30, 20/50 e 50/200.
-3. Registrar resultados com custo zero e custos explícitos.
-4. Decidir se a EMA baseline será descartada, ajustada ou mantida apenas como benchmark.
-5. Avançar para a próxima hipótese: Volatility Breakout.
+1. Implementar a hipótese `Volatility Breakout`.
+2. Criar testes unitários com séries artificiais.
+3. Rodar backtest histórico com custo zero e custos explícitos.
+4. Registrar trade count, net profit, drawdown, win rate e profit factor.
+5. Comparar a nova hipótese contra a EMA baseline, que agora fica como benchmark de engenharia.

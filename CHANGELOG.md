@@ -42,6 +42,7 @@ Strategy Research
 - BacktestEngine integration tests for EMA strategy with zero-cost and explicit-cost configurations.
 - Causal closed-bar context windowing for stateful strategies.
 - Initial historical EMA baseline result for EURUSD M15.
+- Local sensitivity results for EMA 10/30, 20/50 and 50/200.
 
 ---
 
