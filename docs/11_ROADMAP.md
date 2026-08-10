@@ -1223,9 +1223,9 @@ Time-Series Momentum     ✅ BASELINE TESTED
 
 Mean Reversion           ✅ BASELINE TESTED
 
-Asian Range Breakout     NEXT
+Asian Range Breakout     ✅ BASELINE TESTED
 
-Carry
+Carry                    NEXT
 
 Regime Detection
 
@@ -2455,9 +2455,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-25 tests
+764 tests
 
-25 passed
+764 passed
 
 0 failed
 ```
@@ -2578,11 +2578,11 @@ Velocidade de execução não deve ser priorizada sobre correção.
             │
             ▼
       BACKTEST ENGINE
-           ⬜
+           ✅
             │
             ▼
        STRATEGIES
-           ⬜
+           🟡
             │
             ▼
        RISK ENGINE
@@ -2605,39 +2605,36 @@ Velocidade de execução não deve ser priorizada sobre correção.
 
 # 129. Próxima Ação Técnica
 
-Depois de concluir a documentação do marco atual:
+Continuar a F6 com a próxima hipótese planejada:
 
 ```text
-BacktestEngine
+Carry
 ```
 
-será a próxima implementação.
-
-A primeira tarefa técnica da F5 deverá ser:
+A tarefa técnica seguinte deverá ser:
 
 ```text
-definir e implementar os modelos
-Signal / Order / Fill / Position / Trade
+definir uma especificação causal simples
+implementar a Strategy
+criar testes unitários
+rodar backtest zero-cost e com custos explícitos
+registrar os resultados
 ```
-
-antes de criar uma Strategy real.
 
 ---
 
 # 130. Próxima Ação de Documentação
 
-Antes de voltar ao código ainda faltam:
+Cada nova hipótese da F6 deve atualizar:
 
 ```text
-DECISIONS.md
+README.md
+
+docs/12_STRATEGY_RESEARCH.md
+
+docs/11_ROADMAP.md
 
 CHANGELOG.md
-```
-
-Esses dois arquivos encerram formalmente o marco:
-
-```text
-FOREX v0.1
 ```
 
 ---
@@ -2647,9 +2644,9 @@ FOREX v0.1
 Marco atual:
 
 ```text
-FOREX v0.1
+FOREX v0.3
 
-Data & Infrastructure Foundation
+Strategy Research Baseline
 ```
 
 Status:
@@ -2665,9 +2662,9 @@ F3  ✅
 
 F4  ✅
 
-F5  NEXT
+F5  ✅
 
-F6  PLANNED
+F6  🟡
 
 F7  PLANNED
 

@@ -634,16 +634,112 @@ precisam de edge bruto muito maior para sobreviver a custos.
 
 ---
 
-## 14. Proximo Passo
+## 14. Asian Range Breakout
+
+Hipotese primaria testada:
+
+```text
+Asian Range Breakout
+
+range_start_hour_utc = 0
+
+range_end_hour_utc = 6
+
+trade_end_hour_utc = 20
+
+min_range_pips = 5.0
+
+fixed_quantity = 0.01 lot
+```
+
+Regra:
+
+```text
+Construir a maxima e a minima da faixa entre 00:00 UTC e 06:00 UTC.
+
+Apos o fechamento da faixa:
+
+close > range_high
+
+-> ENTER_LONG
+
+close < range_low
+
+-> ENTER_SHORT
+
+Permitir apenas um rompimento por data UTC.
+
+A partir de 20:00 UTC:
+
+-> EXIT
+
+caso contrario
+
+-> HOLD
+```
+
+Resultado zero-cost:
+
+```text
+trades:              2972
+net_profit:          -259.80
+total_return_pct:    -2.5980
+max_drawdown:        382.75
+max_drawdown_pct:    3.7904
+win_rate:            50.5047
+profit_factor:       0.949656
+average_trade:       -0.0874
+final_equity:        9740.20
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              2972
+net_profit:          -1359.44
+total_return_pct:    -13.5944
+max_drawdown:        1446.21
+max_drawdown_pct:    14.3501
+win_rate:            45.6258
+profit_factor:       0.762751
+average_trade:       -0.4574
+final_equity:        8640.56
+```
+
+Leitura:
+
+```text
+A Asian Range Breakout baseline nao apresentou sinal bruto positivo em zero-cost.
+
+Com custos explicitos, a deterioracao foi relevante.
+
+A configuracao atual nao justifica promocao para OOS.
+```
+
+Decisao:
+
+```text
+Nao promover para OOS.
+
+Registrar como evidencia negativa para esta especificacao primaria.
+```
+
+---
+
+## 15. Proximo Passo
 
 Avancar para:
 
 ```text
-Asian Range Breakout
+Carry
 ```
 
 Objetivo:
 
 ```text
-testar se o rompimento da faixa asiatica possui continuacao suficiente apos custos
+testar se uma hipotese simples de carry possui comportamento mais estavel que os baselines intraday testados
 ```

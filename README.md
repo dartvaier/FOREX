@@ -4,7 +4,7 @@ Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para Fore
 
 O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> Status atual: F6 - Strategy Research em andamento com a primeira estratégia baseline, Simple EMA Trend Following.
+> Status atual: F6 - Strategy Research em andamento com cinco hipóteses baseline testadas.
 
 ---
 
@@ -41,6 +41,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Segunda hipótese simples: `VolatilityBreakoutStrategy`.
 - Terceira hipótese simples: `TimeSeriesMomentumStrategy`.
 - Quarta hipótese simples: `SimpleMeanReversionStrategy`.
+- Quinta hipótese simples: `AsianRangeBreakoutStrategy`.
 
 ---
 
@@ -333,6 +334,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Essa hipótese também mostrou sinal bruto em zero-cost, mas o número alto de trades tornou o resultado muito sensível aos custos.
 
+Quinta hipótese testada:
+
+```text
+Asian Range Breakout
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2972 | -259.80 | 382.75 | 0.949656 | 9740.20 |
+| Custos explícitos | 2972 | -1359.44 | 1446.21 | 0.762751 | 8640.56 |
+
+Essa configuração baseline não mostrou edge bruto suficiente nem em zero-cost. Com custos explícitos, a perda aumentou de forma relevante.
+
 ---
 
 ## Testes
@@ -340,7 +356,7 @@ Essa hipótese também mostrou sinal bruto em zero-cost, mas o número alto de t
 Suíte atual:
 
 ```text
-731 passed
+764 passed
 ```
 
 Comando:
@@ -362,7 +378,7 @@ Comando:
 - ledgers;
 - performance;
 - regression tests;
-- EMA strategy baseline.
+- strategy research baselines.
 
 ---
 
@@ -433,7 +449,7 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Asian Range Breakout`.
+1. Implementar a hipótese `Carry`.
 2. Criar testes unitários com séries artificiais.
 3. Rodar backtest histórico com custo zero e custos explícitos.
 4. Registrar trade count, net profit, drawdown, win rate e profit factor.

@@ -46,6 +46,7 @@ Strategy Research
 - Volatility Breakout baseline strategy, tests and initial EURUSD M15 result.
 - Time-Series Momentum baseline strategy, tests and initial EURUSD M15 result.
 - Simple Mean Reversion baseline strategy, tests and initial EURUSD M15 result.
+- Asian Range Breakout baseline strategy, tests and initial EURUSD M15 result.
 
 ---
 
@@ -136,6 +137,7 @@ Patch release destinado a completar a documentação do marco:
 ```text
 FOREX v0.1
 Data & Infrastructure Foundation
+```
 
 ---
 
