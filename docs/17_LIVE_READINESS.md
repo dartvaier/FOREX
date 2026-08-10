@@ -167,3 +167,19 @@ itens pendentes do F10. Sequencia prevista:
 
 `TRADING_ENABLED=false` no .env permanece ate o passo 4; o guard
 `trading_enabled` e o ponto unico de liberacao.
+
+### Evento de ativacao — smoke read-only (2026-08-10 19:14 UTC-3)
+
+```text
+ping: True (terminal conectado)
+conta: balance 100000.00 USD | equity 100000.00 | margin_free 100000.00
+trade_mode: demo | posicoes abertas: 0
+validate_environment: valid=True (demo + margem >= 100.00)
+```
+
+Bug real encontrado e corrigido no smoke: `positions_get(symbol=None)` era
+rejeitado pelo MT5 (Invalid symbol argument) — o adapter agora chama
+`positions_get()` sem argumento quando nao ha filtro (commit `34e2845`).
+
+Status: aguardando o operador habilitar Algo Trading no MT5 e confirmar
+o passo 4 (ativacao `trading_enabled=True`) para a ordem de teste minima.
