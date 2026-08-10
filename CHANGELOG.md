@@ -141,6 +141,12 @@ Strategy Research
   H1/H4 + backtest). Cost invariant 3.7 pips verified across
   USD-quote pairs; quote-currency conversion declared future
   work. +6 tests (1049 total).
+- Multi-symbol research first pass (docs/21): all 6 majors
+  collected (M15 2015-2026 + H1/H4). Baseline backtests dev
+  explicit: 16/16 USD-quote runs negative - no pair shows edge
+  under costs; USDJPY monetary values invalid without currency
+  conversion (quote JPY mixed with USD commission) - declared
+  unusable for research decisions until conversion exists.
 
 ---
 

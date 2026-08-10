@@ -2183,19 +2183,19 @@ broker convention
 Após EURUSD estar estabilizado:
 
 ```text
-GBPUSD   [x] coletado (288k M15 + H1/H4), backtest PoC ok
-USDJPY   [ ] coleta pendente (infra pronta)
-USDCHF   [ ] coleta pendente
-AUDUSD   [ ] coleta pendente
-USDCAD   [ ] coleta pendente
-NZDUSD   [ ] coleta pendente
+GBPUSD   [x] 288k M15 + H1/H4 + backtest
+USDJPY   [x] coleta ok; monetario INVALIDO ate conversao de moeda
+USDCHF   [x] coleta ok + backtest
+AUDUSD   [x] coleta ok + backtest
+USDCAD   [x] coleta ok + backtest
+NZDUSD   [x] coleta ok + backtest
 crosses  [ ] fase posterior
 ```
 
-Status: IN PROGRESS. Infra entregue (registry 7 pares,
-collect/build --symbol, docs/20). Proximo: coleta dos 5 pares
-restantes e protocolo F8 por par. Limitacao declarada: conversao
-de moeda de custo para quote != USD (USDJPY) e extensao futura.
+Status: dados completos; primeira leitura dev (docs/21): TODOS os
+16 backtests USD-quote negativos — nenhum par tem edge com custos;
+sem motivacao para val/OOS multi-par por enquanto. USDJPY: valores
+monetarios invalidos (quote JPY sem conversao) — extensao futura.
 
 ---
 
