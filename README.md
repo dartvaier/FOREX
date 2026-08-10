@@ -4,7 +4,7 @@ Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para Fore
 
 O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> Status atual: F6 - Strategy Research em andamento com cinco hipóteses baseline testadas.
+> Status atual: F6 - Strategy Research em andamento com sete hipóteses baseline testadas.
 
 ---
 
@@ -43,6 +43,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Quarta hipótese simples: `SimpleMeanReversionStrategy`.
 - Quinta hipótese simples: `AsianRangeBreakoutStrategy`.
 - Sexta hipótese simples: `SimpleCarryStrategy`.
+- Sétima hipótese simples: `SimpleRegimeDetectionStrategy`.
 
 ---
 
@@ -366,6 +367,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Esse teste usa apenas um proxy direcional estático de carry. Ele não inclui accrual de swap ou curva histórica de juros, então ainda não representa uma estratégia de carry completa.
 
+Sétima hipótese testada:
+
+```text
+Simple Regime Detection
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2681 | -100.64 | 126.20 | 0.967062 | 9899.36 |
+| Custos explícitos | 2681 | -1092.61 | 1096.87 | 0.704169 | 8907.39 |
+
+Esse filtro simples de regime ficou próximo do zero sem custos, mas não sobreviveu aos custos explícitos.
+
 ---
 
 ## Testes
@@ -373,7 +389,7 @@ Esse teste usa apenas um proxy direcional estático de carry. Ele não inclui ac
 Suíte atual:
 
 ```text
-773 passed
+785 passed
 ```
 
 Comando:
@@ -467,7 +483,7 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Regime Detection`.
+1. Implementar a hipótese `Multi-Timeframe`.
 2. Criar testes unitários com séries artificiais.
 3. Rodar backtest histórico com custo zero e custos explícitos.
 4. Registrar trade count, net profit, drawdown, win rate e profit factor.

@@ -1227,9 +1227,9 @@ Asian Range Breakout     ✅ BASELINE TESTED
 
 Carry                    ✅ BASELINE TESTED
 
-Regime Detection         NEXT
+Regime Detection         ✅ BASELINE TESTED
 
-Multi-Timeframe
+Multi-Timeframe          NEXT
 ```
 
 ---
@@ -2455,9 +2455,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-773 tests
+785 tests
 
-773 passed
+785 passed
 
 0 failed
 ```
@@ -2608,7 +2608,7 @@ Velocidade de execução não deve ser priorizada sobre correção.
 Continuar a F6 com a próxima hipótese planejada:
 
 ```text
-Regime Detection
+Multi-Timeframe
 ```
 
 A tarefa técnica seguinte deverá ser:

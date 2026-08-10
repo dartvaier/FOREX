@@ -832,19 +832,107 @@ de dados historicos de taxas/swap ou de uma camada de financiamento.
 
 ---
 
-## 16. Proximo Passo
+## 16. Simple Regime Detection
 
-Avancar para:
+Hipotese primaria testada:
 
 ```text
-Regime Detection
+Simple Regime Detection
+
+trend_lookback = 96 candles M15
+
+volatility_lookback = 96 candles M15
+
+entry_threshold = 0.0025
+
+exit_threshold = 0.0005
+
+max_volatility = 0.00055
+
+fixed_quantity = 0.01 lot
 ```
 
-Objetivo:
+Regra:
 
 ```text
-testar se filtros simples de regime conseguem separar periodos mais favoraveis
-dos baselines ja testados
+Calcular o retorno dos ultimos 96 candles.
+
+Calcular a volatilidade realizada dos retornos close-to-close
+dos ultimos 96 candles.
+
+realized_volatility > max_volatility
+
+-> EXIT
+
+trend_return >= entry_threshold
+e realized_volatility <= max_volatility
+
+-> ENTER_LONG
+
+trend_return <= -entry_threshold
+e realized_volatility <= max_volatility
+
+-> ENTER_SHORT
+
+abs(trend_return) <= exit_threshold
+
+-> EXIT
+
+caso contrario
+
+-> HOLD
+```
+
+Resultado zero-cost:
+
+```text
+trades:              2681
+net_profit:          -100.64
+total_return_pct:    -1.0064
+max_drawdown:        126.20
+max_drawdown_pct:    1.2620
+win_rate:            38.4900
+profit_factor:       0.967062
+average_trade:       -0.0375
+final_equity:        9899.36
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              2681
+net_profit:          -1092.61
+total_return_pct:    -10.9261
+max_drawdown:        1096.87
+max_drawdown_pct:    10.9687
+win_rate:            33.0800
+profit_factor:       0.704169
+average_trade:       -0.4075
+final_equity:        8907.39
+```
+
+Leitura:
+
+```text
+O filtro simples de regime reduziu o drawdown em zero-cost,
+mas nao apresentou edge bruto positivo.
+
+Com custos explicitos, o resultado deteriorou de forma relevante.
+
+A configuracao atual ainda opera demais para um sinal fraco.
+```
+
+Decisao:
+
+```text
+Nao promover para OOS.
+
+Registrar como baseline negativa para esta especificacao simples
+de trend + volatilidade.
 ```
 
 ---
@@ -894,7 +982,7 @@ especificacao primaria atual.
 
 ---
 
-## 17. Resultado da Grade Exploratoria (Asian Range Breakout)
+## 18. Resultado da Grade Exploratoria (Asian Range Breakout)
 
 Resultado zero-cost:
 
@@ -953,4 +1041,21 @@ Breakout e suas variacoes simples.
 Reabrir a familia apenas com uma regra primaria nova
 e racional melhor (ex.: filtros de sessao/volume,
 assimetria direcional, saida com stop/target).
+```
+
+---
+
+## 19. Proximo Passo
+
+Avancar para:
+
+```text
+Multi-Timeframe
+```
+
+Objetivo:
+
+```text
+testar se sinais em M15 melhoram quando filtrados por contexto H1/H4
+sem quebrar causalidade ou alinhamento temporal
 ```

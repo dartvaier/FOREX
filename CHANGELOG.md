@@ -49,6 +49,7 @@ Strategy Research
 - Reproducible research runner and report summaries (research/).
 - Asian Range Breakout baseline strategy, tests and initial EURUSD M15 result.
 - Simple Carry baseline strategy, tests and initial EURUSD M15 result.
+- Simple Regime Detection baseline strategy, tests and initial EURUSD M15 result.
 
 ---
 

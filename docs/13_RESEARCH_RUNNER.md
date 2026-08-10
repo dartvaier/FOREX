@@ -47,7 +47,7 @@ python -m research.runner --strategy mean_reversion --equity-csv
 
 | Opção | Padrão | Descrição |
 |---|---|---|
-| `--strategy` | obrigatório | Chave no registro: `ema_trend`, `volatility_breakout`, `time_series_momentum`, `mean_reversion`, `asian_range_breakout`, `carry` |
+| `--strategy` | obrigatório | Chave no registro: `ema_trend`, `volatility_breakout`, `time_series_momentum`, `mean_reversion`, `asian_range_breakout`, `carry`, `regime_detection` |
 | `--symbol` | `EURUSD` | Instrumento (registro em `research/runner.py`) |
 | `--timeframe` | `M15` | `M15` (raw) ou `H1`/`H4` (processed) |
 | `--date-from` / `--date-to` | período completo | Janela UTC (`YYYY-MM-DD` ou ISO-8601); `date_to` é exclusivo |

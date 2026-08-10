@@ -65,6 +65,7 @@ STRATEGY_REGISTRY = {
     "mean_reversion": "strategy.mean_reversion",
     "asian_range_breakout": "strategy.asian_range_breakout",
     "carry": "strategy.carry",
+    "regime_detection": "strategy.regime_detection",
 }
 
 EURUSD_INSTRUMENT = {
