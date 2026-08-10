@@ -133,6 +133,14 @@ Strategy Research
   expectancy stays negative -> pre-registered acceptance criteria
   failed -> REJECT. Sensitivity stable (24/48/96, no island).
   OOS lockbox remains sealed.
+- Multi-symbol + MTF runtime (docs/20): §106 audited DONE
+  (runtime M15/H1/H4 sync already implemented and tested); §104
+  infra delivered - INSTRUMENT_REGISTRY with 7 majors (USDJPY
+  digits 3/pip 0.01 tested), collect_history.py --symbol,
+  build_timeframes.py --symbol, GBPUSD PoC (288k M15 candles +
+  H1/H4 + backtest). Cost invariant 3.7 pips verified across
+  USD-quote pairs; quote-currency conversion declared future
+  work. +6 tests (1049 total).
 
 ---
 

@@ -2183,22 +2183,19 @@ broker convention
 Após EURUSD estar estabilizado:
 
 ```text
-GBPUSD
-
-USDJPY
-
-USDCHF
-
-AUDUSD
-
-USDCAD
-
-NZDUSD
-
-crosses
+GBPUSD   [x] coletado (288k M15 + H1/H4), backtest PoC ok
+USDJPY   [ ] coleta pendente (infra pronta)
+USDCHF   [ ] coleta pendente
+AUDUSD   [ ] coleta pendente
+USDCAD   [ ] coleta pendente
+NZDUSD   [ ] coleta pendente
+crosses  [ ] fase posterior
 ```
 
-podem ser investigados.
+Status: IN PROGRESS. Infra entregue (registry 7 pares,
+collect/build --symbol, docs/20). Proximo: coleta dos 5 pares
+restantes e protocolo F8 por par. Limitacao declarada: conversao
+de moeda de custo para quote != USD (USDJPY) e extensao futura.
 
 ---
 
@@ -2220,19 +2217,12 @@ multi-symbol.
 
 # 106. Multi-Timeframe Runtime
 
-Os datasets H1/H4 já existem.
-
-Mas sincronização runtime:
-
-```text
-M15
-
-H1
-
-H4
-```
-
-ainda será responsabilidade do BacktestEngine futuro.
+DONE — auditoria 2026-08-10 (docs/20): a sincronizacao runtime
+M15/H1/H4 ja esta implementada no BacktestEngine
+(BacktestContextBuilder, por timestamp apos fechamento, nunca por
+indice). Evidencia: tests/test_backtest_multitimeframe.py + as
+strategies MULTI-TIMEFRAME-MOMENTUM e o filtro RF-01 (H4) que a
+usam em producao. Nenhuma mudanca necessaria.
 
 ---
 
