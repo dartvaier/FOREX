@@ -73,6 +73,10 @@ Strategy Research
   --allow-oos): TSM -1.71%, EMA -2.48%, MR -4.23% explicit; TSM +0.42%
   zero-cost. Out-of-sample confirms dev/val: no baseline strategy passes
   under explicit costs. Event logged in docs/15_ROBUSTNESS.md.
+- F9 (Demo Execution) IN PROGRESS, engineering core without activation:
+  execution/ package (ExecutionInterface, BrokerState, Order/Fill
+  validation, Position Reconciliation) with 28 tests; no MT5 dependency,
+  TRADING_ENABLED=false unchanged (docs/16_EXECUTION_LAYER.md).
 
 ---
 

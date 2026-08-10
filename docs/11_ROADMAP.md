@@ -78,7 +78,7 @@ F7  Risk Management             ✅ COMPLETE
 
 F8  Robustness & Validation     ✅ COMPLETE
 
-F9  Demo Execution              ⬜ NOT STARTED
+F9  Demo Execution              🟡 IN PROGRESS
 
 F10 Live Readiness              ⬜ NOT STARTED
 
@@ -1660,7 +1660,19 @@ Somente após a infraestrutura básica estar estabilizada.
 Status:
 
 ```text
-NOT STARTED
+IN PROGRESS
+```
+
+Blocos implementados:
+
+```text
+Execution Interface (execution/interface.py)
+Order Validation (execution/order_validation.py)
+Fill Validation (execution/fill_validation.py)
+Position Reconciliation (execution/reconciliation.py)
+Broker State (BrokerAccountState/BrokerPosition)
+
+TRADING_ENABLED=false permanece; sem mt5.order_send()
 ```
 
 ---
