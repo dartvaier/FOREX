@@ -102,6 +102,12 @@ Strategy Research
   the review with live module evidence + operator flags, optional risk
   limits check; exit 0/1 for scripting. Demo activation procedure
   documented in docs/17 (section 9). +15 tests; 1010 total.
+- Demo activation test (authorized, 2026-08-10): first live market
+  round-trip on the demo account (EURUSD 0.01, SL 20 pips). FILLED with
+  233ms latency and 0.0 pips slippage; total virtual cost 0.01 USD.
+  Adapter fixes from real-broker findings: symbol-derived filling mode
+  (retcode 10030), close_position() by ticket for hedging accounts, and
+  positions_get() without symbol=None. 1012 tests.
 
 ---
 

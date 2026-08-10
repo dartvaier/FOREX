@@ -181,5 +181,26 @@ Bug real encontrado e corrigido no smoke: `positions_get(symbol=None)` era
 rejeitado pelo MT5 (Invalid symbol argument) — o adapter agora chama
 `positions_get()` sem argumento quando nao ha filtro (commit `34e2845`).
 
-Status: aguardando o operador habilitar Algo Trading no MT5 e confirmar
-o passo 4 (ativacao `trading_enabled=True`) para a ordem de teste minima.
+### Evento de ativacao — ordem de teste (2026-08-10 19:21 UTC-3)
+
+```text
+open  EURUSD BUY  0.01 @ 1.15431 (SL 1.15231) -> FILLED (ticket 57912767267)
+      position check: 1 posicao, reconciliacao CONSISTENT
+close EURUSD SELL 0.01                       -> FILLED (ticket 57912767298)
+      descoberta: conta HEDGING (SELL abriu posicao nova em vez de fechar)
+close_position(por ticket) -> FILLED x2, posicoes finais: 0
+metricas: latencia 233 ms | slippage 0.0 pips | custo total 0.01 USD virtual
+```
+
+Descobertas de engenharia corrigidas no adapter (commit `8ec51c2`):
+
+```text
+1. retcode 10030 (Unsupported filling mode): tipo de preenchimento agora
+   e derivado de symbol_info().filling_mode (FOK/IOC/RETURN)
+2. conta hedging: fechamento por ticket (position=int) via close_position()
+3. positions_get() sem argumento quando nao ha filtro
+```
+
+Status: ativacao validada. Proximo: periodo de validacao demo (ordens de
+teste ao longo do tempo para coletar metricas de execucao reais e fechar
+o DoD F9).
