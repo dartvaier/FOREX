@@ -1,5 +1,19 @@
 # Architecture & Engineering Decisions
 
+## RF-01 (2026-08-10): Filtro de regime — reduz perda, nao cria edge
+
+- **Decisao**: hipotese RF-01 REJEITADA (expectancy permanece
+  negativa em dev e val apesar da melhora de net profit).
+- **Racional**: filtro de entrada por vol H4 (h4_vol_high) corta
+  trades ruins e melhora net (-17% dev, -6% val), mas o problema
+  central e payoff/custos: win rate ~26% com round-trip de 3.7 pips
+  nao produz expectancy positiva.
+- **Consequencia**: proxima direcao de pesquisa e gestao de SAIDA
+  (payoff/trailing/exits), nao mais selecao de entrada. Lockbox OOS
+  permanece selado. Implementacao do filtro mantida no codigo
+  (default none, sem impacto em regressao) como ferramenta para
+  combinacoes futuras.
+
 ## WF-01 (2026-08-10): Walk-Forward — nenhum edge transferivel
 
 - **Decisao**: hipotese WF-01 REJEITADA para os tres baselines

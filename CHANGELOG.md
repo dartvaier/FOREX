@@ -126,6 +126,13 @@ Strategy Research
   positive windows; avg val expectancy negative everywhere). OOS
   lockbox stays sealed — nothing passed the pre-registered
   acceptance criteria. docs/18_WALK_FORWARD.md.
+- RF-01 regime filter (docs/19): TSM gains optional
+  regime_filter=h4_vol_high (H4 volatility above historical
+  median; entry filter only; default none preserves regression,
+  +14 tests). Result: reduces losses (dev -17%, val -6%) but
+  expectancy stays negative -> pre-registered acceptance criteria
+  failed -> REJECT. Sensitivity stable (24/48/96, no island).
+  OOS lockbox remains sealed.
 
 ---
 
