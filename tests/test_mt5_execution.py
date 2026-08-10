@@ -6,12 +6,14 @@ touched. The trading_enabled guard is exercised explicitly.
 """
 
 from types import SimpleNamespace
+from datetime import datetime, timezone
 
 import pytest
 
 from backtest.models.enums import OrderSide, OrderStatus, OrderType
 from backtest.models.fill import Fill
 from backtest.models.order import Order
+from execution.interface import BrokerPosition
 from execution.mt5_execution import (
     DEFAULT_MAGIC,
     ExecutionNotEnabledError,
@@ -25,7 +27,9 @@ UTC_EPOCH = 1786406400  # 2026-08-10 12:00:00 UTC approx
 class FakeMT5:
     """Minimal fake of the MetaTrader5 module surface used by the adapter."""
 
+    ORDER_FILLING_FOK = 1
     ORDER_FILLING_IOC = 2
+    ORDER_FILLING_RETURN = 3
 
     def __init__(self) -> None:
         self.initialize_calls = 0
@@ -33,6 +37,7 @@ class FakeMT5:
         self.sent_requests: list[dict] = []
         self.deleted_order_ids: list[str] = []
         self.tick = SimpleNamespace(bid=1.0998, ask=1.1000)
+        self.symbol = SimpleNamespace(filling_mode=2)  # IOC supported
         self.order_send_result = SimpleNamespace(
             retcode=10009,
             comment="done",
@@ -71,6 +76,9 @@ class FakeMT5:
 
     def symbol_info_tick(self, symbol):
         return self.tick
+
+    def symbol_info(self, symbol):
+        return self.symbol
 
     def order_send(self, request):
         self.sent_requests.append(request)
@@ -206,6 +214,7 @@ def test_submit_buy_uses_ask_and_builds_request(fake_mt5):
     assert request["sl"] == 1.0900
     assert request["tp"] == 1.1100
     assert request["magic"] == DEFAULT_MAGIC
+    assert request["type_filling"] == 2  # IOC from symbol filling_mode
 
 
 def test_submit_sell_uses_bid(fake_mt5):
@@ -273,6 +282,50 @@ def test_fill_time_is_utc_aware(fake_mt5):
     assert report.fill is not None
     assert report.fill.fill_time.tzinfo is not None
     assert report.fill.fill_time.utcoffset() is not None
+
+
+def test_close_position_delegates_with_ticket(fake_mt5):
+    adapter = MT5Execution(trading_enabled=True)
+
+    position = BrokerPosition(
+        identifier="57912767267",
+        symbol="EURUSD",
+        side=OrderSide.BUY,
+        quantity=0.01,
+        entry_price=1.15431,
+        open_time=datetime(2026, 8, 10, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+    report = adapter.close_position(position)
+
+    assert report.status == OrderStatus.FILLED
+
+    request = fake_mt5.sent_requests[0]
+    assert request["type"] == 1  # SELL closes BUY
+    assert request["position"] == 57912767267
+    assert request["volume"] == 0.01
+    assert request["price"] == 1.0998  # bid for SELL
+    assert request["symbol"] == "EURUSD"
+
+
+def test_close_position_blocked_while_disabled(fake_mt5):
+    adapter = MT5Execution()
+
+    with pytest.raises(ExecutionNotEnabledError):
+        adapter.close_position(
+            BrokerPosition(
+                identifier="T1",
+                symbol="EURUSD",
+                side=OrderSide.BUY,
+                quantity=0.01,
+                entry_price=1.15,
+                open_time=datetime(
+                    2026, 8, 10, 12, 0, 0, tzinfo=timezone.utc
+                ),
+            )
+        )
+
+    assert fake_mt5.sent_requests == []
 
 
 # ---------------------------------------------------------------------------

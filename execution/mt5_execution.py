@@ -162,6 +162,39 @@ class MT5Execution(ExecutionInterface):
         return _ORDER_TYPE_BUY if side == OrderSide.BUY else _ORDER_TYPE_SELL
 
     @staticmethod
+    def _filling_mode(symbol: str) -> int | None:
+        """
+        Filling mode supported by the symbol (bitmask on
+        symbol_info().filling_mode: 1=FOK, 2=IOC, 4=RETURN).
+
+        Returns None when the symbol is unknown or exposes no mode.
+        """
+        info = mt5.symbol_info(symbol)  # type: ignore[union-attr]
+
+        if info is None:
+            return None
+
+        mode = getattr(info, "filling_mode", None)
+
+        if not mode:
+            return None
+
+        fok = getattr(mt5, "ORDER_FILLING_FOK", 1)  # type: ignore[union-attr]
+        ioc = getattr(mt5, "ORDER_FILLING_IOC", 2)  # type: ignore[union-attr]
+        ret = getattr(mt5, "ORDER_FILLING_RETURN", 3)  # type: ignore[union-attr]
+
+        if mode & 1:
+            return fok
+
+        if mode & 2:
+            return ioc
+
+        if mode & 4:
+            return ret
+
+        return None
+
+    @staticmethod
     def _to_utc(epoch_seconds: int | None) -> datetime:
         if epoch_seconds is None or epoch_seconds <= 0:
             return datetime.now(timezone.utc)
@@ -215,49 +248,25 @@ class MT5Execution(ExecutionInterface):
         if order.take_profit is not None:
             request["tp"] = float(order.take_profit)
 
-        filling = getattr(mt5, "ORDER_FILLING_IOC", None)
+        filling = self._filling_mode(order.symbol)
 
         if filling is not None:
             request["type_filling"] = filling
 
         result = mt5.order_send(request)  # type: ignore[union-attr]
 
-        if result is None:
-            return ExecutionReport(
-                order_id=order.order_id,
-                status=OrderStatus.REJECTED,
-                message=(
-                    f"order_send returned None: "
-                    f"{mt5.last_error()}"  # type: ignore[union-attr]
-                ),
-            )
-
-        if result.retcode != _RETCODE_DONE:
-            return ExecutionReport(
-                order_id=order.order_id,
-                status=OrderStatus.REJECTED,
-                message=(
-                    f"broker retcode {result.retcode}: "
-                    f"{result.comment or 'no comment'}"
-                ),
-                broker_order_id=str(getattr(result, "order", None) or ""),
-            )
-
-        fill = Fill(
-            fill_id=f"mt5-{result.deal}",
-            order_id=order.order_id,
-            fill_time=self._to_utc(getattr(result, "time", None)),
-            reference_price=price,
-            execution_price=float(result.price),
-            quantity=float(result.volume),
-            spread_impact=0.0,
-            slippage=abs(float(result.price) - price),
-            commission=0.0,
+        translated = self._translate_result(
+            order.order_id,
+            result,
+            price,
         )
+
+        if translated.status != OrderStatus.FILLED:
+            return translated
 
         fill_validation = validate_fill(
             order,
-            fill,
+            translated.fill,
             max_slippage_pips=self._max_slippage_pips,
         )
 
@@ -268,16 +277,10 @@ class MT5Execution(ExecutionInterface):
                 message="fill failed validation: " + "; ".join(
                     fill_validation.errors
                 ),
-                broker_order_id=str(getattr(result, "order", None) or ""),
+                broker_order_id=translated.broker_order_id,
             )
 
-        return ExecutionReport(
-            order_id=order.order_id,
-            status=OrderStatus.FILLED,
-            message=result.comment or "filled",
-            broker_order_id=str(result.order),
-            fill=fill,
-        )
+        return translated
 
     def cancel(self, order_id: str) -> ExecutionReport:
         self._require_trading()
@@ -300,6 +303,109 @@ class MT5Execution(ExecutionInterface):
             order_id=order_id,
             status=OrderStatus.CANCELLED,
             message="cancelled",
+        )
+
+    def _translate_result(
+        self,
+        order_id: str,
+        result: Any,
+        reference_price: float,
+    ) -> ExecutionReport:
+        """Translate an order_send result into an ExecutionReport."""
+        if result is None:
+            return ExecutionReport(
+                order_id=order_id,
+                status=OrderStatus.REJECTED,
+                message=(
+                    f"order_send returned None: "
+                    f"{mt5.last_error()}"  # type: ignore[union-attr]
+                ),
+            )
+
+        if result.retcode != _RETCODE_DONE:
+            return ExecutionReport(
+                order_id=order_id,
+                status=OrderStatus.REJECTED,
+                message=(
+                    f"broker retcode {result.retcode}: "
+                    f"{result.comment or 'no comment'}"
+                ),
+                broker_order_id=str(
+                    getattr(result, "order", None) or ""
+                ),
+            )
+
+        fill = Fill(
+            fill_id=f"mt5-{result.deal}",
+            order_id=order_id,
+            fill_time=self._to_utc(
+                getattr(result, "time", None)
+            ),
+            reference_price=reference_price,
+            execution_price=float(result.price),
+            quantity=float(result.volume),
+            spread_impact=0.0,
+            slippage=abs(float(result.price) - reference_price),
+            commission=0.0,
+        )
+
+        return ExecutionReport(
+            order_id=order_id,
+            status=OrderStatus.FILLED,
+            message=result.comment or "filled",
+            broker_order_id=str(result.order),
+            fill=fill,
+        )
+
+    def close_position(
+        self,
+        position: BrokerPosition,
+    ) -> ExecutionReport:
+        """
+        Close a specific position by broker ticket (hedging accounts).
+
+        The trade request carries the position identifier so the
+        broker closes that exact position instead of opening a
+        counter-position.
+        """
+        self._require_trading()
+        self._require_mt5()
+        self._ensure_connected()
+
+        close_side = (
+            OrderSide.SELL
+            if position.side == OrderSide.BUY
+            else OrderSide.BUY
+        )
+
+        price = self._tick_price(
+            position.symbol,
+            close_side,
+        )
+
+        request: dict[str, Any] = {
+            "action": _TRADE_ACTION_DEAL,
+            "symbol": position.symbol,
+            "volume": float(position.quantity),
+            "type": self._order_type(close_side),
+            "price": price,
+            "position": int(position.identifier),
+            "deviation": self._deviation_points,
+            "magic": self._magic,
+            "comment": f"close:{position.identifier}",
+        }
+
+        filling = self._filling_mode(position.symbol)
+
+        if filling is not None:
+            request["type_filling"] = filling
+
+        result = mt5.order_send(request)  # type: ignore[union-attr]
+
+        return self._translate_result(
+            position.identifier,
+            result,
+            price,
         )
 
     def fetch_account(self) -> BrokerAccountState:
