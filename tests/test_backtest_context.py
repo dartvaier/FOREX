@@ -300,6 +300,70 @@ def test_context_closed_bars_are_tuple():
     )
 
 
+def test_context_builder_can_limit_closed_bars():
+    feed, clock = make_feed_and_clock()
+
+    builder = BacktestContextBuilder(
+        feed=feed,
+        clock=clock,
+    )
+
+    third_close = list(clock.events())[5]
+
+    context = builder.build(
+        third_close,
+        closed_bar_limit=2,
+    )
+
+    assert context.closed_bars == (
+        feed.bars[1],
+        feed.bars[2],
+    )
+
+    assert context.last_closed_bar == feed.bars[2]
+
+
+def test_limited_closed_bars_still_do_not_expose_future():
+    feed, clock = make_feed_and_clock()
+
+    builder = BacktestContextBuilder(
+        feed=feed,
+        clock=clock,
+    )
+
+    second_open = list(clock.events())[2]
+
+    context = builder.build(
+        second_open,
+        closed_bar_limit=1,
+    )
+
+    assert context.phase == SimulationPhase.BAR_OPEN
+    assert context.current_bar is None
+    assert context.closed_bars == (
+        feed.bars[0],
+    )
+    assert feed.bars[1] not in context.closed_bars
+
+
+def test_context_builder_rejects_invalid_closed_bar_limit():
+    feed, clock = make_feed_and_clock()
+
+    builder = BacktestContextBuilder(
+        feed=feed,
+        clock=clock,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="closed_bar_limit",
+    ):
+        builder.build(
+            list(clock.events())[1],
+            closed_bar_limit=0,
+        )
+
+
 def test_context_is_immutable():
     feed, clock = make_feed_and_clock()
 

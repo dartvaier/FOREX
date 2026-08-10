@@ -172,6 +172,11 @@ class BacktestEngine:
                 "strategy must satisfy the Strategy protocol"
             )
 
+        self._reset_strategy(strategy)
+        closed_bar_limit = self._strategy_closed_bar_limit(
+            strategy
+        )
+
         feed = HistoricalBarFeed(
             dataframe=dataframe,
             config=self._config,
@@ -293,7 +298,8 @@ class BacktestEngine:
             )
 
             context = context_builder.build(
-                event
+                event,
+                closed_bar_limit=closed_bar_limit,
             )
 
             signal = signal_processor.process(
@@ -354,6 +360,51 @@ class BacktestEngine:
             pending_orders=queue.pending_orders,
             performance=performance,
         )
+
+    @staticmethod
+    def _reset_strategy(
+        strategy: Strategy,
+    ) -> None:
+        reset = getattr(
+            strategy,
+            "reset",
+            None,
+        )
+
+        if reset is None:
+            return
+
+        if not callable(reset):
+            raise TypeError(
+                "strategy reset attribute must be callable"
+            )
+
+        reset()
+
+    @staticmethod
+    def _strategy_closed_bar_limit(
+        strategy: Strategy,
+    ) -> int | None:
+        limit = getattr(
+            strategy,
+            "closed_bar_limit",
+            None,
+        )
+
+        if limit is None:
+            return None
+
+        if (
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or limit <= 0
+        ):
+            raise ValueError(
+                "strategy closed_bar_limit must be a positive "
+                "integer or None"
+            )
+
+        return limit
 
     def _process_pending_orders(
         self,

@@ -235,6 +235,84 @@ def test_strategy_holds_without_new_cross():
     assert signal.reason == "No EMA crossover"
 
 
+def test_incremental_strategy_matches_full_context_actions():
+    closes = [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        12.0,
+        12.0,
+        10.0,
+    ]
+
+    incremental_strategy = make_strategy()
+    incremental_actions = []
+    full_context_actions = []
+
+    for index, close in enumerate(
+        closes,
+        start=1,
+    ):
+        incremental_signal = (
+            incremental_strategy.on_bar(
+                make_context(
+                    [
+                        close,
+                    ]
+                )
+            )
+        )
+
+        full_signal = make_strategy().on_bar(
+            make_context(
+                closes[:index]
+            )
+        )
+
+        incremental_actions.append(
+            incremental_signal.action
+        )
+
+        full_context_actions.append(
+            full_signal.action
+        )
+
+    assert incremental_actions == full_context_actions
+
+
+def test_strategy_reset_clears_incremental_state():
+    strategy = make_strategy()
+
+    for close in [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        12.0,
+    ]:
+        strategy.on_bar(
+            make_context(
+                [
+                    close,
+                ]
+            )
+        )
+
+    strategy.reset()
+
+    signal = strategy.on_bar(
+        make_context(
+            [
+                12.0,
+            ]
+        )
+    )
+
+    assert signal.action == SignalAction.HOLD
+    assert signal.reason == "Warm-up"
+
+
 def test_strategy_signal_is_causal_and_auditable():
     context = make_context(
         [

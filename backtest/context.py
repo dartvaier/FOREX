@@ -199,6 +199,8 @@ class BacktestContextBuilder:
     def build(
         self,
         event: ClockEvent,
+        *,
+        closed_bar_limit: int | None = None,
     ) -> BacktestContext:
         """
         Build the information snapshot that is safe to expose
@@ -220,6 +222,17 @@ class BacktestContextBuilder:
             raise ValueError(
                 "event bar_index is outside the feed"
             )
+
+        if closed_bar_limit is not None:
+            if (
+                not isinstance(closed_bar_limit, int)
+                or isinstance(closed_bar_limit, bool)
+                or closed_bar_limit <= 0
+            ):
+                raise ValueError(
+                    "closed_bar_limit must be a positive "
+                    "integer or None"
+                )
 
         bar = self._feed.bars[
             event.bar_index
@@ -252,9 +265,10 @@ class BacktestContextBuilder:
                 phase=event.phase,
                 current_bar_index=event.bar_index,
                 current_bar=None,
-                closed_bars=self._feed.bars[
-                    :event.bar_index
-                ],
+                closed_bars=self._closed_bars(
+                    end_index=event.bar_index,
+                    closed_bar_limit=closed_bar_limit,
+                ),
             )
 
         if event.phase == SimulationPhase.BAR_CLOSE:
@@ -268,11 +282,31 @@ class BacktestContextBuilder:
                 phase=event.phase,
                 current_bar_index=event.bar_index,
                 current_bar=bar,
-                closed_bars=self._feed.bars[
-                    :event.bar_index + 1
-                ],
+                closed_bars=self._closed_bars(
+                    end_index=event.bar_index + 1,
+                    closed_bar_limit=closed_bar_limit,
+                ),
             )
 
         raise ValueError(
             f"unsupported simulation phase: {event.phase}"
         )
+
+    def _closed_bars(
+        self,
+        *,
+        end_index: int,
+        closed_bar_limit: int | None,
+    ) -> tuple[MarketBar, ...]:
+        if closed_bar_limit is None:
+            start_index = 0
+
+        else:
+            start_index = max(
+                0,
+                end_index - closed_bar_limit,
+            )
+
+        return self._feed.bars[
+            start_index:end_index
+        ]

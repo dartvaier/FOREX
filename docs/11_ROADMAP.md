@@ -1257,7 +1257,7 @@ Para cada Strategy:
 
 [x] sem look-ahead
 
-[ ] resultado histórico analisado
+[x] resultado histórico analisado
 
 [x] resultado reproduzível
 ```

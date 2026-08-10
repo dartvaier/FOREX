@@ -40,6 +40,8 @@ Strategy Research
 - Strategy Research documentation.
 - Unit tests for warm-up, EMA cross above, EMA cross below and no-cross scenarios.
 - BacktestEngine integration tests for EMA strategy with zero-cost and explicit-cost configurations.
+- Causal closed-bar context windowing for stateful strategies.
+- Initial historical EMA baseline result for EURUSD M15.
 
 ---
 

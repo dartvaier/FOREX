@@ -1,11 +1,12 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from numbers import Integral
+from typing import ClassVar
 
 from backtest.context import BacktestContext
 from backtest.models import Signal, SignalAction
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class SimpleEmaTrendStrategy:
     """
     Long-only EMA crossover baseline for Strategy Research.
@@ -25,6 +26,38 @@ class SimpleEmaTrendStrategy:
     fast_period: int = 20
     slow_period: int = 50
     strategy_id: str = "SIMPLE-EMA-TREND"
+
+    closed_bar_limit: ClassVar[int] = 1
+
+    _fast_ema: float | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
+
+    _slow_ema: float | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
+
+    _previous_fast_ema: float | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
+
+    _previous_slow_ema: float | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
+
+    _observations: int = field(
+        default=0,
+        init=False,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         if (
@@ -74,6 +107,12 @@ class SimpleEmaTrendStrategy:
             bar.close
             for bar in context.closed_bars
         )
+
+        if len(closes) == 1:
+            return self._on_incremental_bar(
+                context,
+                close=closes[-1],
+            )
 
         if len(closes) < self.slow_period + 1:
             return self._signal(
@@ -139,6 +178,99 @@ class SimpleEmaTrendStrategy:
             },
         )
 
+    def reset(self) -> None:
+        self._fast_ema = None
+        self._slow_ema = None
+        self._previous_fast_ema = None
+        self._previous_slow_ema = None
+        self._observations = 0
+
+    def _on_incremental_bar(
+        self,
+        context: BacktestContext,
+        *,
+        close: float,
+    ) -> Signal:
+        self._previous_fast_ema = self._fast_ema
+        self._previous_slow_ema = self._slow_ema
+
+        self._fast_ema = self._next_ema(
+            previous=self._fast_ema,
+            value=close,
+            period=self.fast_period,
+        )
+
+        self._slow_ema = self._next_ema(
+            previous=self._slow_ema,
+            value=close,
+            period=self.slow_period,
+        )
+
+        self._observations += 1
+
+        if self._observations < self.slow_period + 1:
+            return self._signal(
+                context,
+                action=SignalAction.HOLD,
+                reason="Warm-up",
+            )
+
+        if (
+            self._previous_fast_ema is None
+            or self._previous_slow_ema is None
+            or self._fast_ema is None
+            or self._slow_ema is None
+        ):
+            return self._signal(
+                context,
+                action=SignalAction.HOLD,
+                reason="Warm-up",
+            )
+
+        crossed_above = (
+            self._previous_fast_ema
+            <= self._previous_slow_ema
+            and self._fast_ema > self._slow_ema
+        )
+
+        crossed_below = (
+            self._previous_fast_ema
+            >= self._previous_slow_ema
+            and self._fast_ema < self._slow_ema
+        )
+
+        if crossed_above:
+            return self._signal(
+                context,
+                action=SignalAction.ENTER_LONG,
+                reason="Fast EMA crossed above slow EMA",
+                metadata={
+                    "fast_ema": self._fast_ema,
+                    "slow_ema": self._slow_ema,
+                },
+            )
+
+        if crossed_below:
+            return self._signal(
+                context,
+                action=SignalAction.EXIT,
+                reason="Fast EMA crossed below slow EMA",
+                metadata={
+                    "fast_ema": self._fast_ema,
+                    "slow_ema": self._slow_ema,
+                },
+            )
+
+        return self._signal(
+            context,
+            action=SignalAction.HOLD,
+            reason="No EMA crossover",
+            metadata={
+                "fast_ema": self._fast_ema,
+                "slow_ema": self._slow_ema,
+            },
+        )
+
     def _signal(
         self,
         context: BacktestContext,
@@ -188,6 +320,27 @@ class SimpleEmaTrendStrategy:
             )
 
         return tuple(ema_values)
+
+    @staticmethod
+    def _next_ema(
+        *,
+        previous: float | None,
+        value: float,
+        period: int,
+    ) -> float:
+        if previous is None:
+            return float(value)
+
+        multiplier = 2.0 / (period + 1.0)
+
+        return (
+            (
+                float(value)
+                - previous
+            )
+            * multiplier
+            + previous
+        )
 
     @staticmethod
     def _validate_period(
