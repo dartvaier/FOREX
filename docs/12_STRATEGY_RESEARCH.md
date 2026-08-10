@@ -730,16 +730,227 @@ Registrar como evidencia negativa para esta especificacao primaria.
 
 ---
 
-## 15. Proximo Passo
+## 15. Simple Carry
+
+Hipotese primaria testada:
+
+```text
+Simple Carry
+
+carry_score = -1.0
+
+entry_threshold = 0.5
+
+exit_threshold = 0.0
+
+fixed_quantity = 0.01 lot
+```
+
+Regra:
+
+```text
+carry_score >= entry_threshold
+
+-> ENTER_LONG
+
+carry_score <= -entry_threshold
+
+-> ENTER_SHORT
+
+abs(carry_score) <= exit_threshold
+
+-> EXIT
+
+caso contrario
+
+-> HOLD
+```
+
+Observacao:
+
+```text
+Este baseline usa apenas um proxy direcional estatico.
+
+Ele nao modela accrual diario de swap, curva historica de juros,
+mudanca temporal do diferencial de taxas ou custos de financiamento.
+
+Portanto, o resultado abaixo deve ser lido como exposicao direcional
+associada a uma hipotese de carry, nao como carry completo.
+```
+
+Resultado zero-cost:
+
+```text
+trades:              1
+net_profit:          48.38
+total_return_pct:    0.4838
+max_drawdown:        251.03
+max_drawdown_pct:    2.4490
+win_rate:            100.0000
+profit_factor:       inf
+average_trade:       48.3800
+final_equity:        10048.38
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              1
+net_profit:          48.01
+total_return_pct:    0.4801
+max_drawdown:        251.03
+max_drawdown_pct:    2.4491
+win_rate:            100.0000
+profit_factor:       inf
+average_trade:       48.0100
+final_equity:        10048.01
+```
+
+Leitura:
+
+```text
+O proxy estatico de carry teve resultado positivo no periodo completo.
+
+Como houve apenas um trade, o profit factor infinito nao deve ser interpretado
+como robustez estatistica.
+
+O resultado tambem nao inclui receita ou custo de swap.
+```
+
+Decisao:
+
+```text
+Nao promover para OOS como carry completo.
+
+Registrar como evidencia de que a proxima evolucao de Carry precisa
+de dados historicos de taxas/swap ou de uma camada de financiamento.
+```
+
+---
+
+## 16. Proximo Passo
 
 Avancar para:
 
 ```text
-Carry
+Regime Detection
 ```
 
 Objetivo:
 
 ```text
-testar se uma hipotese simples de carry possui comportamento mais estavel que os baselines intraday testados
+testar se filtros simples de regime conseguem separar periodos mais favoraveis
+dos baselines ja testados
+```
+
+---
+
+## 17. Variacoes Exploratorias Pre-Registradas (Asian Range Breakout)
+
+Objetivo:
+
+```text
+Verificar se a conclusao da especificacao primaria muda com
+ajustes simples de parametros, mantendo a mesma regra.
+
+As combinacoes foram definidas ANTES da leitura dos resultados.
+Isso nao e otimizacao: e uma grade exploratoria de sensibilidade.
+```
+
+Dataset e parametros comuns:
+
+```text
+EURUSD M15
+2015-01-02 09:00:00 UTC ate 2026-08-08 00:00:00 UTC
+fixed_quantity = 0.01 lot
+initial_capital = 10000.00
+```
+
+Grade (uma variacao por execucao):
+
+| Tag | Parametros |
+|---|---|
+| V1 | min_range_pips = 10 |
+| V2 | min_range_pips = 15 |
+| V3 | trade_end_hour_utc = 16 |
+| V4 | trade_end_hour_utc = 12 |
+| V5 | range_end_hour_utc = 8 |
+| V6 | min_range_pips = 10 + trade_end_hour_utc = 16 |
+
+Criterio de leitura:
+
+```text
+Uma variacao so seria interessante se:
+- zero-cost positivo E
+- custos explicitos ainda positivos (ou proximo de zero)
+
+Senao, o resultado reforca a decisao de descartar a
+especificacao primaria atual.
+```
+
+---
+
+## 17. Resultado da Grade Exploratoria (Asian Range Breakout)
+
+Resultado zero-cost:
+
+| Variacao | Trades | Net Profit | Return % | Win Rate % | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|---:|
+| Base (5 pips, 0-6h, exit 20h) | 2972 | -259.80 | -2.5980 | 50.50 | 0.949656 | 9740.20 |
+| V1 (min_range 10) | 2850 | -277.15 | -2.7715 | 50.91 | 0.944840 | 9722.85 |
+| V2 (min_range 15) | 2320 | -252.18 | -2.5218 | 51.55 | 0.940238 | 9747.82 |
+| V3 (exit 16h) | 2929 | -186.58 | -1.8658 | 50.80 | 0.952915 | 9813.42 |
+| V4 (exit 12h) | 2735 | -127.52 | -1.2752 | 52.03 | 0.945172 | 9872.48 |
+| V5 (range 0-8h) | 2964 | -18.00 | -0.1800 | 50.81 | 0.996299 | 9982.00 |
+| V6 (min_range 10 + exit 16h) | 2807 | -192.67 | -1.9267 | 50.84 | 0.950072 | 9807.33 |
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+```
+
+| Variacao | Trades | Net Profit | Return % | Win Rate % | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|---:|
+| Base | 2972 | -1359.44 | -13.5944 | 45.63 | 0.762751 | 8640.56 |
+| V1 | 2850 | -1331.65 | -13.3165 | 45.68 | 0.760931 | 8668.35 |
+| V2 | 2320 | -1110.58 | -11.1058 | 46.90 | 0.761652 | 8889.42 |
+| V3 | 2929 | -1270.31 | -12.7031 | 43.63 | 0.720420 | 8729.69 |
+| V4 | 2735 | -1139.47 | -11.3947 | 41.02 | 0.606028 | 8860.53 |
+| V5 | 2964 | -1114.68 | -11.1468 | 46.12 | 0.794499 | 8885.32 |
+| V6 | 2807 | -1231.26 | -12.3126 | 44.28 | 0.721157 | 8768.74 |
+
+Leitura:
+
+```text
+Nenhuma variacao atendeu ao criterio pre-registrado
+(zero-cost positivo E resultado positivo apos custos).
+
+Todas as variacoes ficaram negativas em zero-cost.
+
+V5 (range 0-8h) foi a menos pior em zero-cost
+(PF 0.9963, -18.00), mas continuou claramente negativa
+apos custos (PF 0.7945).
+
+V4 (exit 12h) mostrou a maior sensibilidade a custos
+(PF explicito 0.6060), consistente com holding mais curto.
+
+Nenhum ajuste simples de parametro revelou edge.
+```
+
+Decisao:
+
+```text
+Descartar a especificacao primaria atual de Asian Range
+Breakout e suas variacoes simples.
+
+Reabrir a familia apenas com uma regra primaria nova
+e racional melhor (ex.: filtros de sessao/volume,
+assimetria direcional, saida com stop/target).
 ```

@@ -1225,9 +1225,9 @@ Mean Reversion           ✅ BASELINE TESTED
 
 Asian Range Breakout     ✅ BASELINE TESTED
 
-Carry                    NEXT
+Carry                    ✅ BASELINE TESTED
 
-Regime Detection
+Regime Detection         NEXT
 
 Multi-Timeframe
 ```
@@ -2455,9 +2455,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-764 tests
+773 tests
 
-764 passed
+773 passed
 
 0 failed
 ```
@@ -2608,7 +2608,7 @@ Velocidade de execução não deve ser priorizada sobre correção.
 Continuar a F6 com a próxima hipótese planejada:
 
 ```text
-Carry
+Regime Detection
 ```
 
 A tarefa técnica seguinte deverá ser:

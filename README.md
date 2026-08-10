@@ -42,6 +42,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Terceira hipótese simples: `TimeSeriesMomentumStrategy`.
 - Quarta hipótese simples: `SimpleMeanReversionStrategy`.
 - Quinta hipótese simples: `AsianRangeBreakoutStrategy`.
+- Sexta hipótese simples: `SimpleCarryStrategy`.
 
 ---
 
@@ -137,6 +138,7 @@ FOREX/
 ├── docs/
 ├── execution/
 ├── monitoring/
+├── research/
 ├── risk/
 ├── strategy/
 ├── tests/
@@ -349,6 +351,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Essa configuração baseline não mostrou edge bruto suficiente nem em zero-cost. Com custos explícitos, a perda aumentou de forma relevante.
 
+Sexta hipótese testada:
+
+```text
+Simple Carry
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 1 | 48.38 | 251.03 | inf | 10048.38 |
+| Custos explícitos | 1 | 48.01 | 251.03 | inf | 10048.01 |
+
+Esse teste usa apenas um proxy direcional estático de carry. Ele não inclui accrual de swap ou curva histórica de juros, então ainda não representa uma estratégia de carry completa.
+
 ---
 
 ## Testes
@@ -356,7 +373,7 @@ Essa configuração baseline não mostrou edge bruto suficiente nem em zero-cost
 Suíte atual:
 
 ```text
-764 passed
+773 passed
 ```
 
 Comando:
@@ -442,6 +459,7 @@ Documentos principais:
 - `docs/10_BACKTEST_DESIGN.md`
 - `docs/11_ROADMAP.md`
 - `docs/12_STRATEGY_RESEARCH.md`
+- `docs/13_RESEARCH_RUNNER.md`
 - `DECISIONS.md`
 - `CHANGELOG.md`
 
@@ -449,7 +467,7 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Carry`.
+1. Implementar a hipótese `Regime Detection`.
 2. Criar testes unitários com séries artificiais.
 3. Rodar backtest histórico com custo zero e custos explícitos.
 4. Registrar trade count, net profit, drawdown, win rate e profit factor.
