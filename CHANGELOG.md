@@ -61,6 +61,10 @@ Strategy Research
 - Structured local sensitivity and subperiod harness (research/sweep.py):
   one-parameter sweeps (--range/--values) and standard F8 subperiods
   (--subperiods), each run an auditable runner report, with comparison CSV.
+- Formal Development/Validation/OOS period definitions (research/periods.py):
+  pre-registered roles (dev 2015-20, val 2021-23, oos lockbox 2024-26),
+  mechanical OOS guard (--period oos requires --allow-oos), and structured
+  stability analysis (--stability: dev vs val deltas + signal consistency).
 
 ---
 

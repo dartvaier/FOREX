@@ -1451,6 +1451,15 @@ sensibilidade local estruturada
 
 subperiod analysis padrao
 (research/sweep.py --subperiods, 2015-17/2018-20/2021-23/2024-26)
+
+periodos formais Dev/Val/OOS pre-registrados
+(research/periods.py; dev 2015-20, val 2021-23, oos lockbox 2024-26)
+
+lockbox guard mecanico
+(--period oos exige --allow-oos explicito, roadmap 74)
+
+stability analysis dev vs val
+(--stability: deltas + consistencia de sinal)
 ```
 
 ---
@@ -1624,19 +1633,19 @@ Somente após a infraestrutura básica estar estabilizada.
 # 78. Definition of Done — F8
 
 ```text
-[ ] development period definido
+[x] development period definido
 
-[ ] validation period definido
+[x] validation period definido
 
-[ ] OOS protegido
+[x] OOS protegido
 
-[ ] sensitivity tests
+[x] sensitivity tests
 
-[ ] cost stress
+[x] cost stress
 
-[ ] subperiod analysis
+[x] subperiod analysis
 
-[ ] stability analysis
+[x] stability analysis
 
 [ ] resultados documentados
 ```

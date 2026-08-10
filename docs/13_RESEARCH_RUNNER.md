@@ -125,6 +125,42 @@ Regras:
   exclusivos com `--subperiods`.
 - O parâmetro varrido é validado contra os campos do dataclass da estratégia.
 - Em `--subperiods`, as janelas são fixas (pré-definidas antes de ver resultados).
+### Períodos Dev / Val / OOS e Stability Analysis
+
+A fase F8 exige períodos formais pré-registrados (`research/periods.py`,roadmap §74, §78):
+
+```text
+dev (development)    2015-01-01 .. 2021-01-01
+val (validation)     2021-01-01 .. 2024-01-01
+oos (lockbox)        2024-01-01 .. 2027-01-01
+```
+
+O período OOS é um **lockbox**: o harness recusa executá-lo sem
+`--allow-oos` explícito, para que ele não seja consultado repetidamente
+durante o desenvolvimento.
+
+```powershell
+python -m research.sweep --strategy ema_trend --period dev --cost explicit
+python -m research.sweep --strategy ema_trend --period val --cost explicit
+python -m research.sweep --strategy ema_trend --period oos   # bloqueado
+python -m research.sweep --strategy ema_trend --period oos --allow-oos  # uso consciente
+
+# Stability analysis: dev + val com a MESMA config, nunca toca o OOS
+python -m research.sweep --strategy ema_trend --stability --cost explicit
+```
+
+`--stability` imprime a tabela dev/val + comparação estruturada (deltas de
+return, net profit, max drawdown, profit factor) e o veredito de
+**consistência de sinal**: se o sinal do resultado inverte entre dev e val,
+a especificação não é considerada estável. O CSV inclui a coluna
+`signal_consistent` para auditoria.
+
+Regras:
+
+- `--period`, `--stability`, `--subperiods`, `--range` e `--values` são
+  mutuamente exclusivos.
+- `--period` e `--stability` ignoram `--date-from/--date-to` (as datas
+  pré-registradas têm precedência).
 
 ## Saída
 

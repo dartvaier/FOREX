@@ -30,6 +30,16 @@ Usage:
 
     # Standard F8 subperiods
     python -m research.sweep --strategy ema_trend --subperiods --cost explicit
+
+    # Pre-registered Dev/Val/OOS periods (roadmap §74, §78)
+    python -m research.sweep --strategy ema_trend --period dev --cost explicit
+    python -m research.sweep --strategy ema_trend --period val --cost explicit
+
+    # OOS is a lockbox: refuses to run without --allow-oos
+    python -m research.sweep --strategy ema_trend --period oos
+
+    # Stability analysis: development vs validation, never touches OOS
+    python -m research.sweep --strategy ema_trend --stability --cost explicit
 """
 
 from __future__ import annotations
@@ -40,6 +50,14 @@ from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
+from research.periods import (
+    OOS_LOCKBOX_LABEL,
+    PERIOD_ORDER,
+    RESEARCH_PERIODS,
+    ResearchPeriod,
+    require_oos_allowed,
+    resolve_period,
+)
 from research.runner import (
     REPO_ROOT,
     INSTRUMENT_REGISTRY,
@@ -51,6 +69,71 @@ from research.runner import (
 )
 
 REPORTS_DIR = REPO_ROOT / "research" / "reports"
+
+# Period roles defined in research/periods.py (roadmap §74, §78):
+#   dev -> 2015-2020, val -> 2021-2023, oos (lockbox) -> 2024-2026
+PERIOD_ROLES = {label: period.role for label, period in RESEARCH_PERIODS.items()}
+
+
+# ---------------------------------------------------------------------------
+# Period comparison (stability analysis)
+# ---------------------------------------------------------------------------
+
+
+def compare_period_rows(
+    dev_row: dict[str, Any],
+    val_row: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Structured stability comparison between development and validation
+    rows (roadmap §78 stability analysis).
+
+    Returns a dict with the delta of key metrics plus a signal
+    consistency verdict: the sign of the net result must not flip
+    between dev and val for the spec to be considered stable.
+    """
+    dev_return = dev_row["return_pct"]
+    val_return = val_row["return_pct"]
+
+    dev_pf = dev_row["profit_factor"]
+    val_pf = val_row["profit_factor"]
+
+    def _sign(value: float) -> str:
+        if value > 1e-9:
+            return "+"
+        if value < -1e-9:
+            return "-"
+        return "0"
+
+    consistent_sign = _sign(dev_return) == _sign(val_return)
+
+    return {
+        "period": "dev-vs-val",
+        "dev_return_pct": dev_return,
+        "val_return_pct": val_return,
+        "return_delta_pct": round(val_return - dev_return, 4),
+        "dev_net_profit": dev_row["net_profit"],
+        "val_net_profit": val_row["net_profit"],
+        "net_profit_delta": round(
+            val_row["net_profit"] - dev_row["net_profit"],
+            2,
+        ),
+        "dev_max_dd_pct": dev_row["max_dd_pct"],
+        "val_max_dd_pct": val_row["max_dd_pct"],
+        "max_dd_delta_pct": round(
+            val_row["max_dd_pct"] - dev_row["max_dd_pct"],
+            4,
+        ),
+        "dev_win_rate": dev_row["win_rate"],
+        "val_win_rate": val_row["win_rate"],
+        "dev_profit_factor": dev_pf,
+        "val_profit_factor": val_pf,
+        "profit_factor_delta": round(
+            val_pf - dev_pf,
+            6,
+        ),
+        "signal_consistent": consistent_sign,
+    }
 
 STANDARD_SUBPERIODS: tuple[tuple[str, str, str], ...] = (
     ("2015-2017", "2015-01-01", "2018-01-01"),
@@ -296,6 +379,113 @@ def run_subperiods(
     return rows
 
 
+def run_period(
+    *,
+    strategy_key: str,
+    period: ResearchPeriod,
+    fixed_params: dict[str, str],
+    symbol: str,
+    timeframe: str,
+    initial_capital: float,
+    fixed_quantity: float,
+    cost_mode: str,
+    cost_params: dict[str, float],
+    cost_multiplier: float,
+    out_dir: Path,
+    write_equity: bool,
+) -> dict[str, Any]:
+    """Run one strategy over a pre-registered Dev/Val/OOS period."""
+    strategy_class = discover_strategy_class(
+        STRATEGY_REGISTRY[strategy_key]
+    )
+    strategy_module = STRATEGY_REGISTRY[strategy_key]
+
+    strategy_params = coerce_strategy_params(
+        strategy_class,
+        fixed_params,
+    )
+
+    report_path = run_single(
+        symbol=symbol,
+        timeframe=timeframe,
+        strategy_class=strategy_class,
+        strategy_module=strategy_module,
+        tag=f"period-{period.label}",
+        strategy_params=strategy_params,
+        date_from=period.date_from,
+        date_to=period.date_to,
+        initial_capital=initial_capital,
+        fixed_quantity=fixed_quantity,
+        cost_mode=cost_mode,
+        cost_params=cost_params,
+        cost_multiplier=cost_multiplier,
+        out_dir=out_dir,
+        write_equity=write_equity,
+    )
+
+    row = extract_row(report_path)
+    row["period"] = period.label
+    return row
+
+
+def run_stability(
+    *,
+    strategy_key: str,
+    fixed_params: dict[str, str],
+    symbol: str,
+    timeframe: str,
+    initial_capital: float,
+    fixed_quantity: float,
+    cost_mode: str,
+    cost_params: dict[str, float],
+    cost_multiplier: float,
+    out_dir: Path,
+    write_equity: bool,
+) -> list[dict[str, Any]]:
+    """
+    Stability analysis: run development + validation with identical
+    configuration and compare the two rows (roadmap §78).
+
+    The OOS lockbox is never touched here.
+    """
+    dev_row = run_period(
+        strategy_key=strategy_key,
+        period=RESEARCH_PERIODS["dev"],
+        fixed_params=fixed_params,
+        symbol=symbol,
+        timeframe=timeframe,
+        initial_capital=initial_capital,
+        fixed_quantity=fixed_quantity,
+        cost_mode=cost_mode,
+        cost_params=cost_params,
+        cost_multiplier=cost_multiplier,
+        out_dir=out_dir,
+        write_equity=write_equity,
+    )
+
+    val_row = run_period(
+        strategy_key=strategy_key,
+        period=RESEARCH_PERIODS["val"],
+        fixed_params=fixed_params,
+        symbol=symbol,
+        timeframe=timeframe,
+        initial_capital=initial_capital,
+        fixed_quantity=fixed_quantity,
+        cost_mode=cost_mode,
+        cost_params=cost_params,
+        cost_multiplier=cost_multiplier,
+        out_dir=out_dir,
+        write_equity=write_equity,
+    )
+
+    comparison = compare_period_rows(
+        dev_row,
+        val_row,
+    )
+
+    return [dev_row, val_row, comparison]
+
+
 def extract_row(
     report_path: Path,
 ) -> dict[str, Any]:
@@ -376,6 +566,7 @@ def write_summary_csv(
         "expectancy",
         "cost",
         "cost_multiplier",
+        "signal_consistent",
     ]
 
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -387,6 +578,12 @@ def write_summary_csv(
         writer.writeheader()
 
         for row in rows:
+            row["signal_consistent"] = (
+                row.get("signal_consistent")
+                if row.get("period") == "dev-vs-val"
+                else ""
+            )
+
             writer.writerow(row)
 
 
@@ -452,6 +649,56 @@ def print_table(
     print("\n".join(lines))
 
 
+def print_stability_table(
+    rows: list[dict[str, Any]],
+) -> None:
+    """Print the dev/val/comparison stability table."""
+    headers = [
+        "period",
+        "return_pct",
+        "net_profit",
+        "max_dd_pct",
+        "win_rate",
+        "profit_factor",
+        "signal",
+    ]
+
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(["---"] * len(headers)) + " |",
+    ]
+
+    for row in rows:
+        if row["period"] == "dev-vs-val":
+            cells = [
+                "dev-vs-val",
+                f"{row['dev_return_pct']} -> {row['val_return_pct']}"
+                f" (d {row['return_delta_pct']})",
+                f"{row['dev_net_profit']} -> {row['val_net_profit']}"
+                f" (d {row['net_profit_delta']})",
+                f"{row['dev_max_dd_pct']} -> {row['val_max_dd_pct']}"
+                f" (d {row['max_dd_delta_pct']})",
+                f"{row['dev_win_rate']} -> {row['val_win_rate']}",
+                f"{row['dev_profit_factor']} -> {row['val_profit_factor']}"
+                f" (d {row['profit_factor_delta']})",
+                "CONSISTENT" if row["signal_consistent"] else "FLIPPED",
+            ]
+        else:
+            cells = [
+                str(row["period"]),
+                str(row["return_pct"]),
+                str(row["net_profit"]),
+                str(row["max_dd_pct"]),
+                str(row["win_rate"]),
+                str(row["profit_factor"]),
+                "",
+            ]
+
+        lines.append("| " + " | ".join(cells) + " |")
+
+    print("\n".join(lines))
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -490,6 +737,32 @@ def build_parser() -> argparse.ArgumentParser:
         "--subperiods",
         action="store_true",
         help="run the four standard F8 subperiods",
+    )
+
+    parser.add_argument(
+        "--period",
+        default=None,
+        choices=PERIOD_ORDER,
+        help=(
+            "run a pre-registered research period: "
+            "dev (2015-2020), val (2021-2023), "
+            "oos (lockbox, requires --allow-oos)"
+        ),
+    )
+
+    parser.add_argument(
+        "--stability",
+        action="store_true",
+        help=(
+            "run development + validation and print the "
+            "structured comparison (never touches OOS)"
+        ),
+    )
+
+    parser.add_argument(
+        "--allow-oos",
+        action="store_true",
+        help="explicitly unlock the OOS lockbox (roadmap §74)",
     )
 
     parser.add_argument(
@@ -587,12 +860,19 @@ def main() -> None:
         args.range is not None,
         args.values is not None,
         args.subperiods,
+        args.period is not None,
+        args.stability,
     ]
 
     if sum(modes) != 1:
         raise ValueError(
-            "exactly one of --range, --values or --subperiods "
-            "is required"
+            "exactly one of --range, --values, --subperiods, "
+            "--period or --stability is required"
+        )
+
+    if args.period == OOS_LOCKBOX_LABEL:
+        require_oos_allowed(
+            allow_oos=args.allow_oos,
         )
 
     fixed_params = parse_params(args.param)
@@ -613,7 +893,43 @@ def main() -> None:
     value_label = "param_value"
 
     for cost_mode in cost_modes:
-        if args.subperiods:
+        if args.period is not None:
+            period = resolve_period(args.period)
+            rows = [
+                run_period(
+                    strategy_key=args.strategy,
+                    period=period,
+                    fixed_params=fixed_params,
+                    symbol=args.symbol,
+                    timeframe=args.timeframe,
+                    initial_capital=args.initial_capital,
+                    fixed_quantity=args.fixed_quantity,
+                    cost_mode=cost_mode,
+                    cost_params=cost_params,
+                    cost_multiplier=args.cost_multiplier,
+                    out_dir=args.out_dir,
+                    write_equity=args.equity_csv,
+                )
+            ]
+            value_label = "period"
+
+        elif args.stability:
+            rows = run_stability(
+                strategy_key=args.strategy,
+                fixed_params=fixed_params,
+                symbol=args.symbol,
+                timeframe=args.timeframe,
+                initial_capital=args.initial_capital,
+                fixed_quantity=args.fixed_quantity,
+                cost_mode=cost_mode,
+                cost_params=cost_params,
+                cost_multiplier=args.cost_multiplier,
+                out_dir=args.out_dir,
+                write_equity=args.equity_csv,
+            )
+            value_label = "period"
+
+        elif args.subperiods:
             rows = run_subperiods(
                 strategy_key=args.strategy,
                 fixed_params=fixed_params,
@@ -656,21 +972,29 @@ def main() -> None:
                 write_equity=args.equity_csv,
             )
 
-            for row in rows:
-                row["cost"] = cost_mode
-                row["cost_multiplier"] = args.cost_multiplier
+        for row in rows:
+            row["cost"] = cost_mode
+            row["cost_multiplier"] = args.cost_multiplier
 
         all_rows.extend(rows)
 
         print(f"\n--- {cost_mode.upper()} ---")
-        print_table(
-            rows,
-            value_label=value_label,
-        )
+
+        if args.stability:
+            print_stability_table(rows)
+        else:
+            print_table(
+                rows,
+                value_label=value_label,
+            )
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.subperiods:
+    if args.period is not None:
+        stem = f"{args.strategy.upper()}_period_{args.period}"
+    elif args.stability:
+        stem = f"{args.strategy.upper()}_stability"
+    elif args.subperiods:
         stem = f"{args.strategy.upper()}_subperiods"
     else:
         stem = (
