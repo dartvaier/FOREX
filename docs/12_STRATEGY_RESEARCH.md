@@ -465,14 +465,100 @@ Manter Volatility Breakout como familia possivel apenas se uma nova regra primar
 
 ## 12. Proximo Passo
 
-Avancar para a proxima hipotese simples:
+Hipotese primaria testada:
 
 ```text
 Time-Series Momentum
+
+lookback = 96 candles M15
+
+entry_threshold = 0.0010
+
+exit_threshold = 0.0
+
+fixed_quantity = 0.01 lot
+```
+
+Regra:
+
+```text
+retorno acumulado dos ultimos 96 candles > 0.10%
+
+-> ENTER_LONG
+
+retorno acumulado dos ultimos 96 candles < 0.00%
+
+-> EXIT
+
+caso contrario
+
+-> HOLD
+```
+
+Resultado zero-cost:
+
+```text
+trades:              2674
+net_profit:          175.01
+total_return_pct:    1.7501
+max_drawdown:        183.73
+max_drawdown_pct:    1.8013
+win_rate:            32.2737
+profit_factor:       1.063166
+average_trade:       0.0654
+final_equity:        10175.01
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              2674
+net_profit:          -814.37
+total_return_pct:    -8.1437
+max_drawdown:        845.84
+max_drawdown_pct:    8.4321
+win_rate:            25.5423
+profit_factor:       0.765704
+average_trade:       -0.3046
+final_equity:        9185.63
+```
+
+Leitura:
+
+```text
+A Time-Series Momentum baseline apresentou sinal bruto positivo em zero-cost.
+
+O resultado nao sobreviveu aos custos explicitos baseline.
+
+Isso sugere que a hipotese pode conter informacao direcional,
+mas a especificacao atual opera com friccao demais ou edge insuficiente.
+```
+
+Decisao:
+
+```text
+Nao promover para OOS ainda.
+
+Marcar como mais interessante que EMA e Volatility Breakout,
+mas ainda nao aprovada apos custos.
+```
+
+---
+
+## 13. Proximo Passo
+
+Avancar para:
+
+```text
+Simple Mean Reversion
 ```
 
 Objetivo:
 
 ```text
-testar se retornos acumulados recentes possuem continuacao positiva apos custos
+testar se movimentos curtos excessivos tendem a reverter apos custos
 ```

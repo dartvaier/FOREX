@@ -1219,9 +1219,9 @@ Após EMA baseline:
 ```text
 Volatility Breakout      ✅ BASELINE TESTED
 
-Time-Series Momentum     NEXT
+Time-Series Momentum     ✅ BASELINE TESTED
 
-Mean Reversion
+Mean Reversion           NEXT
 
 Asian Range Breakout
 

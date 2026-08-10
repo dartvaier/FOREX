@@ -39,6 +39,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Métricas básicas de performance.
 - Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
 - Segunda hipótese simples: `VolatilityBreakoutStrategy`.
+- Terceira hipótese simples: `TimeSeriesMomentumStrategy`.
 
 ---
 
@@ -301,6 +302,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Essa especificação primária também não mostrou edge.
 
+Terceira hipótese testada:
+
+```text
+Time-Series Momentum
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2674 | 175.01 | 183.73 | 1.063166 | 10175.01 |
+| Custos explícitos | 2674 | -814.37 | 845.84 | 0.765704 | 9185.63 |
+
+Essa hipótese mostrou sinal bruto em zero-cost, mas ainda não sobreviveu aos custos explícitos baseline.
+
 ---
 
 ## Testes
@@ -401,8 +417,8 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Time-Series Momentum`.
+1. Implementar a hipótese `Simple Mean Reversion`.
 2. Criar testes unitários com séries artificiais.
 3. Rodar backtest histórico com custo zero e custos explícitos.
 4. Registrar trade count, net profit, drawdown, win rate e profit factor.
-5. Comparar contra EMA e Volatility Breakout, que agora ficam como benchmarks iniciais.
+5. Comparar contra EMA, Volatility Breakout e Time-Series Momentum.
