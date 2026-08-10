@@ -33,7 +33,7 @@ from backtest.performance import (
 from backtest.portfolio import Portfolio, PositionCloseResult
 from backtest.protective_exit import ProtectiveExitEvaluator
 from backtest.protective_order import ProtectiveExitOrderFactory
-from backtest.risk import FixedSizeRiskGate
+from backtest.risk import RiskGate
 from backtest.signal_ledger import SignalLedger
 from backtest.signal_processor import SignalProcessor
 from backtest.strategy import Strategy
@@ -77,7 +77,7 @@ class BacktestEngine:
         config: BacktestConfig,
         instrument: InstrumentSpecification,
         cost_model: CostModel,
-        risk_gate: FixedSizeRiskGate,
+        risk_gate: RiskGate,
     ) -> None:
         if not isinstance(
             config,
@@ -105,10 +105,10 @@ class BacktestEngine:
 
         if not isinstance(
             risk_gate,
-            FixedSizeRiskGate,
+            RiskGate,
         ):
             raise TypeError(
-                "risk_gate must be a FixedSizeRiskGate"
+                "risk_gate must satisfy the RiskGate protocol"
             )
 
         if instrument.symbol != config.symbol:
@@ -148,7 +148,7 @@ class BacktestEngine:
         return self._cost_model
 
     @property
-    def risk_gate(self) -> FixedSizeRiskGate:
+    def risk_gate(self) -> RiskGate:
         return self._risk_gate
 
     def run(

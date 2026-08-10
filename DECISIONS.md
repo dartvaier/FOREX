@@ -806,7 +806,7 @@ sem conhecer o ambiente de execução.
 
 ```text
 ACCEPTED
-IMPLEMENTATION PENDING
+IMPLEMENTED
 ```
 
 ## Contexto
@@ -848,6 +848,37 @@ Approved Order
 ## Consequências
 
 Risk Engine pode rejeitar um sinal sem alterar a Strategy.
+
+A implementação atual usa um contrato:
+
+```text
+RiskGate
+```
+
+com decisões auditáveis:
+
+```text
+RiskDecision
+```
+
+O `FixedSizeRiskGate` mantém o baseline histórico. O
+`StopBasedRiskGate` permite calcular quantidade a partir de:
+
+```text
+entry_price
+stop_loss
+account_equity
+risk_fraction
+instrument contract_size
+```
+
+A quantidade final respeita:
+
+```text
+volume_min
+volume_max
+volume_step
+```
 
 ---
 

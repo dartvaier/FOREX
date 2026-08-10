@@ -14,7 +14,10 @@ from backtest.models import (
     SignalAction,
     Timeframe,
 )
-from backtest.risk import FixedSizeRiskGate
+from backtest.risk import (
+    FixedSizeRiskGate,
+    StopBasedRiskGate,
+)
 
 
 def utc_time(
@@ -200,6 +203,48 @@ class LongWithStopStrategy:
         )
 
 
+class LongThenExitWithRiskMetadataStrategy:
+    @property
+    def strategy_id(self) -> str:
+        return "LONG-THEN-EXIT-RISK"
+
+    def on_bar(
+        self,
+        context,
+    ) -> Signal:
+        if context.current_bar_index == 0:
+            return Signal(
+                signal_id="RISK-LONG-0",
+                strategy_id=self.strategy_id,
+                symbol="EURUSD",
+                timestamp=context.current_time,
+                action=SignalAction.ENTER_LONG,
+                metadata={
+                    "entry_price": 1.1620,
+                    "stop_loss": 1.1520,
+                },
+            )
+
+        if context.current_bar_index == 1:
+            return Signal(
+                signal_id="RISK-EXIT-1",
+                strategy_id=self.strategy_id,
+                symbol="EURUSD",
+                timestamp=context.current_time,
+                action=SignalAction.EXIT,
+            )
+
+        return Signal(
+            signal_id=(
+                f"RISK-HOLD-{context.current_bar_index}"
+            ),
+            strategy_id=self.strategy_id,
+            symbol="EURUSD",
+            timestamp=context.current_time,
+            action=SignalAction.HOLD,
+        )
+
+
 def test_engine_runs_strategy_to_performance_summary():
     result = make_engine().run(
         dataframe=make_dataframe(),
@@ -232,15 +277,47 @@ def test_engine_runs_strategy_to_performance_summary():
     )
 
     assert result.portfolio.is_flat is True
+
+
+def test_engine_accepts_stop_based_risk_gate():
+    config = make_config()
+    instrument = make_instrument()
+
+    engine = BacktestEngine(
+        config=config,
+        instrument=instrument,
+        cost_model=ZeroCostModel(
+            instrument,
+        ),
+        risk_gate=StopBasedRiskGate(
+            instrument=instrument,
+            account_equity=10000.0,
+            risk_fraction=0.01,
+        ),
+    )
+
+    result = engine.run(
+        dataframe=make_dataframe(),
+        strategy=LongThenExitWithRiskMetadataStrategy(),
+    )
+
+    assert result.trades.count == 1
+    assert result.trades.last_trade is not None
+    assert result.trades.last_trade.quantity == pytest.approx(
+        0.10
+    )
+    assert result.trades.last_trade.net_pnl == pytest.approx(
+        50.0
+    )
     assert result.portfolio.cash == pytest.approx(
-        10005.0
+        10050.0
     )
 
     assert result.performance.final_equity == pytest.approx(
-        10005.0
+        10050.0
     )
     assert result.performance.total_return == pytest.approx(
-        5.0
+        50.0
     )
     assert (
         result.performance.trade_metrics.total_trades

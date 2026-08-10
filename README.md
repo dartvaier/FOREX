@@ -4,7 +4,7 @@ Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para Fore
 
 O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> Status atual: F6 - Strategy Research em andamento com oito hipóteses baseline testadas.
+> Status atual: F7 - Risk Management em andamento após oito hipóteses baseline testadas na F6.
 
 ---
 
@@ -18,8 +18,8 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 | F3 | Historical Data Layer | Concluída |
 | F4 | Data Transformation | Concluída |
 | F5 | Backtest Engine | Concluída |
-| F6 | Strategy Research | Em andamento |
-| F7 | Risk Engine | Não iniciada |
+| F6 | Strategy Research | Concluída no baseline inicial |
+| F7 | Risk Engine | Em andamento |
 | F8 | Robustness & Validation | Não iniciada |
 | F9 | Demo Execution | Não iniciada |
 
@@ -35,6 +35,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Modelos de `Signal`, `Order`, `Fill`, `Position` e `Trade`.
 - Ledgers de sinais, ordens, fills, trades e equity.
 - CostModel explícito com spread, slippage e comissão.
+- RiskGate com fixed size, validação de volume e sizing baseado em stop.
 - Stop Loss, Take Profit, gap-through-stop e política worst-case intrabar.
 - Métricas básicas de performance.
 - Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
@@ -405,7 +406,7 @@ Esse baseline validou a infraestrutura multi-timeframe sem look-ahead, mas a reg
 Suíte atual:
 
 ```text
-799 passed
+812 passed
 ```
 
 Comando:
@@ -428,7 +429,8 @@ Comando:
 - performance;
 - regression tests;
 - strategy research baselines;
-- multi-timeframe context availability.
+- multi-timeframe context availability;
+- risk gate and stop-based sizing.
 
 ---
 
@@ -493,6 +495,7 @@ Documentos principais:
 - `docs/11_ROADMAP.md`
 - `docs/12_STRATEGY_RESEARCH.md`
 - `docs/13_RESEARCH_RUNNER.md`
+- `docs/14_RISK_MANAGEMENT.md`
 - `DECISIONS.md`
 - `CHANGELOG.md`
 
@@ -500,8 +503,8 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Iniciar F7 `Risk Management`.
-2. Implementar limites básicos de risco separados da Strategy.
-3. Evoluir position sizing além do fixed size.
-4. Definir daily loss, drawdown guard e kill switch.
+1. Evoluir F7 com limites de exposição.
+2. Implementar daily loss guard.
+3. Implementar drawdown guard.
+4. Definir kill switch do backtest/demo.
 5. Manter todos os backtests reproduzíveis antes de qualquer Demo.

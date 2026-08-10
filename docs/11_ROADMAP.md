@@ -72,9 +72,9 @@ F4  Data Transformation         ✅ COMPLETE
 
 F5  Backtest Engine             ✅ COMPLETE
 
-F6  Strategy Research           🟡 IN PROGRESS
+F6  Strategy Research           ✅ COMPLETE BASELINE
 
-F7  Risk Management             ⬜ NOT STARTED
+F7  Risk Management             🟡 IN PROGRESS
 
 F8  Robustness & Validation     ⬜ NOT STARTED
 
@@ -89,13 +89,13 @@ F10 Live Readiness              ⬜ NOT STARTED
 O projeto encontra-se no marco lógico:
 
 ```text
-FOREX v0.2
+FOREX v0.4
 ```
 
 Descrição:
 
 ```text
-Backtesting Infrastructure
+Risk Management
 ```
 
 Esse marco representa:
@@ -122,6 +122,12 @@ documentação da base
 BacktestEngine baseline
 
 performance metrics básicas
+
+strategy research baseline inicial
+
+risk gate baseline
+
+stop-based sizing inicial
 
 regression tests F5
 ```
@@ -1269,7 +1275,7 @@ Para cada Strategy:
 Status:
 
 ```text
-NOT STARTED
+IN PROGRESS
 ```
 
 ---
@@ -1338,6 +1344,24 @@ produzem:
 position size
 ```
 
+Implementado no primeiro bloco F7:
+
+```text
+RiskGate protocol
+
+VolumeRules
+
+FixedSizeRiskGate com validação de volume_step
+
+StopBasedRiskGate
+
+entry_price + stop_loss metadata
+
+risk_fraction
+
+max_quantity opcional
+```
+
 ---
 
 # 66. Risk Invariants
@@ -1363,15 +1387,15 @@ kill switch bloqueia execução
 # 67. Definition of Done — F7
 
 ```text
-[ ] Risk Engine separado
+[x] Risk Engine separado
 
-[ ] Fixed Size
+[x] Fixed Size
 
-[ ] Risk %
+[x] Risk %
 
-[ ] Stop-Based Sizing
+[x] Stop-Based Sizing
 
-[ ] volume constraints
+[x] volume constraints
 
 [ ] exposure limits
 
@@ -1381,7 +1405,7 @@ kill switch bloqueia execução
 
 [ ] kill switch
 
-[ ] testes automatizados
+[x] testes automatizados
 ```
 
 ---
@@ -2455,9 +2479,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-799 tests
+812 tests
 
-799 passed
+812 passed
 
 0 failed
 ```
@@ -2644,9 +2668,9 @@ CHANGELOG.md
 Marco atual:
 
 ```text
-FOREX v0.3
+FOREX v0.4
 
-Strategy Research Baseline
+Risk Management
 ```
 
 Status:
@@ -2664,9 +2688,9 @@ F4  ✅
 
 F5  ✅
 
-F6  🟡
+F6  ✅
 
-F7  PLANNED
+F7  🟡
 
 F8  PLANNED
 

@@ -10,6 +10,8 @@ from backtest.models import (
 from backtest.risk import (
     FixedSizeRiskGate,
     RiskDecision,
+    StopBasedRiskGate,
+    VolumeRules,
 )
 
 
@@ -40,6 +42,8 @@ def make_instrument():
 
 def make_signal(
     action: SignalAction,
+    *,
+    metadata: dict | None = None,
 ) -> Signal:
     return Signal(
         signal_id="SIG-001",
@@ -47,6 +51,11 @@ def make_signal(
         symbol="EURUSD",
         timestamp=timestamp(),
         action=action,
+        metadata=(
+            {}
+            if metadata is None
+            else metadata
+        ),
     )
 
 
@@ -117,6 +126,26 @@ def test_risk_gate_rejects_quantity_above_instrument_max():
             instrument=make_instrument(),
             fixed_quantity=501.0,
         )
+
+
+def test_risk_gate_rejects_quantity_that_violates_volume_step():
+    with pytest.raises(
+        ValueError,
+        match="volume_step",
+    ):
+        FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.015,
+        )
+
+
+def test_volume_rules_normalize_quantity_down_to_step():
+    rules = VolumeRules(
+        make_instrument()
+    )
+
+    assert rules.normalize_down(0.019) == 0.01
+    assert rules.normalize_down(0.0200000001) == 0.02
 
 
 def test_risk_gate_approves_long_entry():
@@ -332,3 +361,216 @@ def test_risk_decision_is_immutable():
 
     with pytest.raises(AttributeError):
         decision.quantity = 1.0  # type: ignore[misc]
+
+
+def test_stop_based_risk_gate_sizes_long_entry_from_stop_loss():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.0900,
+            },
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.10
+    assert "StopBasedRiskGate" in decision.reason
+
+
+def test_stop_based_risk_gate_sizes_short_entry_from_stop_loss():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_SHORT,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.1100,
+            },
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.10
+
+
+def test_stop_based_risk_gate_rejects_missing_entry_price():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "stop_loss": 1.0900,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert "entry_price" in decision.reason
+
+
+def test_stop_based_risk_gate_rejects_missing_stop_loss():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert "stop_loss" in decision.reason
+
+
+def test_stop_based_risk_gate_rejects_invalid_long_stop_side():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.1010,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "below" in decision.reason
+
+
+def test_stop_based_risk_gate_rejects_invalid_short_stop_side():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_SHORT,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.0990,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "above" in decision.reason
+
+
+def test_stop_based_risk_gate_floors_quantity_to_volume_step():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.0933,
+            },
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.14
+
+
+def test_stop_based_risk_gate_applies_max_quantity_cap():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.05,
+        max_quantity=0.03,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.0900,
+            },
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.03
+
+
+def test_stop_based_risk_gate_rejects_quantity_below_minimum():
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.00001,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.0900,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "volume_min" in decision.reason
+
+
+def test_stop_based_risk_gate_validates_configuration():
+    with pytest.raises(
+        ValueError,
+        match="risk_fraction",
+    ):
+        StopBasedRiskGate(
+            instrument=make_instrument(),
+            account_equity=10000.0,
+            risk_fraction=0.0,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="risk_fraction",
+    ):
+        StopBasedRiskGate(
+            instrument=make_instrument(),
+            account_equity=10000.0,
+            risk_fraction=1.5,
+        )

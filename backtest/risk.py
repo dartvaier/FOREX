@@ -1,6 +1,7 @@
 import math
 from dataclasses import dataclass
 from numbers import Real
+from typing import Protocol, runtime_checkable
 
 from backtest.models.enums import SignalAction
 from backtest.models.instrument import InstrumentSpecification
@@ -74,6 +75,163 @@ class RiskDecision:
             )
 
 
+@runtime_checkable
+class RiskGate(Protocol):
+    """
+    Contract for components that approve/reject Signals and
+    assign final entry quantity.
+    """
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        ...
+
+    def evaluate(
+        self,
+        signal: Signal,
+    ) -> RiskDecision:
+        ...
+
+
+class VolumeRules:
+    """
+    Instrument volume validation and step normalization.
+    """
+
+    def __init__(
+        self,
+        instrument: InstrumentSpecification,
+    ) -> None:
+        if not isinstance(
+            instrument,
+            InstrumentSpecification,
+        ):
+            raise TypeError(
+                "instrument must be an "
+                "InstrumentSpecification"
+            )
+
+        self._instrument = instrument
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        return self._instrument
+
+    def validate(
+        self,
+        quantity: float,
+        *,
+        name: str = "quantity",
+    ) -> float:
+        self._validate_positive_finite(
+            name,
+            quantity,
+        )
+
+        if quantity < self._instrument.volume_min:
+            raise ValueError(
+                f"{name} cannot be smaller than "
+                "instrument volume_min"
+            )
+
+        if quantity > self._instrument.volume_max:
+            raise ValueError(
+                f"{name} cannot be greater than "
+                "instrument volume_max"
+            )
+
+        if not self.is_step_aligned(quantity):
+            raise ValueError(
+                f"{name} must respect instrument volume_step"
+            )
+
+        return float(quantity)
+
+    def normalize_down(
+        self,
+        quantity: float,
+    ) -> float:
+        self._validate_positive_finite(
+            "quantity",
+            quantity,
+        )
+
+        capped = min(
+            quantity,
+            self._instrument.volume_max,
+        )
+
+        steps = math.floor(
+            (
+                capped
+                + self._epsilon()
+            )
+            / self._instrument.volume_step
+        )
+
+        normalized = (
+            steps
+            * self._instrument.volume_step
+        )
+
+        return round(
+            normalized,
+            self._decimal_places(),
+        )
+
+    def is_step_aligned(
+        self,
+        quantity: float,
+    ) -> bool:
+        if (
+            not isinstance(quantity, Real)
+            or isinstance(quantity, bool)
+            or not math.isfinite(quantity)
+        ):
+            return False
+
+        ratio = (
+            quantity
+            / self._instrument.volume_step
+        )
+
+        return math.isclose(
+            ratio,
+            round(ratio),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+
+    def _decimal_places(self) -> int:
+        step_text = f"{self._instrument.volume_step:.10f}"
+
+        return len(
+            step_text.rstrip("0").split(".")[-1]
+        )
+
+    def _epsilon(self) -> float:
+        return self._instrument.volume_step * 1e-9
+
+    @staticmethod
+    def _validate_positive_finite(
+        name: str,
+        value: float,
+    ) -> None:
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(
+                f"{name} must be a finite positive number"
+            )
+
+
 class FixedSizeRiskGate:
     """
     Minimal deterministic Risk Gate used to validate the
@@ -128,17 +286,14 @@ class FixedSizeRiskGate:
                 "positive number"
             )
 
-        if fixed_quantity < instrument.volume_min:
-            raise ValueError(
-                "fixed_quantity cannot be smaller than "
-                "instrument volume_min"
-            )
+        self._volume_rules = VolumeRules(
+            instrument
+        )
 
-        if fixed_quantity > instrument.volume_max:
-            raise ValueError(
-                "fixed_quantity cannot be greater than "
-                "instrument volume_max"
-            )
+        self._volume_rules.validate(
+            fixed_quantity,
+            name="fixed_quantity",
+        )
 
         self._instrument = instrument
         self._fixed_quantity = float(
@@ -210,3 +365,263 @@ class FixedSizeRiskGate:
         raise ValueError(
             f"unsupported SignalAction: {signal.action}"
         )
+
+
+class StopBasedRiskGate:
+    """
+    Risk Gate that sizes entries from explicit stop distance.
+
+    Required entry Signal metadata:
+
+    - entry_price
+    - stop_loss
+
+    The approved quantity is floored to the instrument
+    volume_step and capped by instrument.volume_max and an
+    optional max_quantity.
+    """
+
+    def __init__(
+        self,
+        *,
+        instrument: InstrumentSpecification,
+        account_equity: float,
+        risk_fraction: float,
+        max_quantity: float | None = None,
+    ) -> None:
+        if not isinstance(
+            instrument,
+            InstrumentSpecification,
+        ):
+            raise TypeError(
+                "instrument must be an "
+                "InstrumentSpecification"
+            )
+
+        self._validate_positive_finite(
+            "account_equity",
+            account_equity,
+        )
+
+        self._validate_positive_finite(
+            "risk_fraction",
+            risk_fraction,
+        )
+
+        if risk_fraction > 1.0:
+            raise ValueError(
+                "risk_fraction cannot be greater than 1.0"
+            )
+
+        if max_quantity is not None:
+            self._validate_positive_finite(
+                "max_quantity",
+                max_quantity,
+            )
+
+        self._instrument = instrument
+        self._account_equity = float(account_equity)
+        self._risk_fraction = float(risk_fraction)
+        self._max_quantity = (
+            None
+            if max_quantity is None
+            else float(max_quantity)
+        )
+        self._volume_rules = VolumeRules(
+            instrument
+        )
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        return self._instrument
+
+    @property
+    def account_equity(self) -> float:
+        return self._account_equity
+
+    @property
+    def risk_fraction(self) -> float:
+        return self._risk_fraction
+
+    @property
+    def max_quantity(self) -> float | None:
+        return self._max_quantity
+
+    def evaluate(
+        self,
+        signal: Signal,
+    ) -> RiskDecision:
+        if not isinstance(signal, Signal):
+            raise TypeError(
+                "signal must be a Signal"
+            )
+
+        if signal.symbol != self._instrument.symbol:
+            raise ValueError(
+                "signal symbol does not match instrument"
+            )
+
+        if signal.action == SignalAction.HOLD:
+            return RiskDecision(
+                signal_id=signal.signal_id,
+                approved=True,
+                quantity=None,
+                reason="HOLD requires no order",
+            )
+
+        if signal.action == SignalAction.EXIT:
+            return RiskDecision(
+                signal_id=signal.signal_id,
+                approved=True,
+                quantity=None,
+                reason=(
+                    "EXIT quantity must be resolved from "
+                    "the current Position"
+                ),
+            )
+
+        if signal.action not in (
+            SignalAction.ENTER_LONG,
+            SignalAction.ENTER_SHORT,
+        ):
+            raise ValueError(
+                f"unsupported SignalAction: {signal.action}"
+            )
+
+        entry_price = self._metadata_price(
+            signal,
+            "entry_price",
+        )
+
+        stop_loss = self._metadata_price(
+            signal,
+            "stop_loss",
+        )
+
+        if entry_price is None:
+            return self._reject(
+                signal,
+                "entry_price metadata is required",
+            )
+
+        if stop_loss is None:
+            return self._reject(
+                signal,
+                "stop_loss metadata is required",
+            )
+
+        if (
+            signal.action == SignalAction.ENTER_LONG
+            and stop_loss >= entry_price
+        ):
+            return self._reject(
+                signal,
+                "long stop_loss must be below entry_price",
+            )
+
+        if (
+            signal.action == SignalAction.ENTER_SHORT
+            and stop_loss <= entry_price
+        ):
+            return self._reject(
+                signal,
+                "short stop_loss must be above entry_price",
+            )
+
+        stop_distance = abs(
+            entry_price
+            - stop_loss
+        )
+
+        risk_per_lot = (
+            stop_distance
+            * self._instrument.contract_size
+        )
+
+        if risk_per_lot <= 0:
+            return self._reject(
+                signal,
+                "stop distance produced zero risk",
+            )
+
+        risk_amount = (
+            self._account_equity
+            * self._risk_fraction
+        )
+
+        raw_quantity = risk_amount / risk_per_lot
+
+        if self._max_quantity is not None:
+            raw_quantity = min(
+                raw_quantity,
+                self._max_quantity,
+            )
+
+        quantity = self._volume_rules.normalize_down(
+            raw_quantity
+        )
+
+        if quantity < self._instrument.volume_min:
+            return self._reject(
+                signal,
+                "calculated quantity is below volume_min",
+            )
+
+        return RiskDecision(
+            signal_id=signal.signal_id,
+            approved=True,
+            quantity=quantity,
+            reason=(
+                "Approved by StopBasedRiskGate "
+                f"risk_fraction={self._risk_fraction}"
+            ),
+        )
+
+    def _reject(
+        self,
+        signal: Signal,
+        reason: str,
+    ) -> RiskDecision:
+        return RiskDecision(
+            signal_id=signal.signal_id,
+            approved=False,
+            quantity=None,
+            reason=reason,
+        )
+
+    @staticmethod
+    def _metadata_price(
+        signal: Signal,
+        key: str,
+    ) -> float | None:
+        value = signal.metadata.get(key)
+
+        if value is None:
+            return None
+
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            return None
+
+        return float(value)
+
+    @staticmethod
+    def _validate_positive_finite(
+        name: str,
+        value: float,
+    ) -> None:
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(
+                f"{name} must be a finite positive number"
+            )

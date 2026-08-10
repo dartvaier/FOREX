@@ -849,6 +849,22 @@ Exemplo:
 cada operação = tamanho fixo
 ```
 
+Implementação atual:
+
+```text
+RiskGate protocol
+
+FixedSizeRiskGate
+
+StopBasedRiskGate
+
+VolumeRules
+```
+
+O RiskGate pode aprovar ou rejeitar um Signal antes da criação da Order.
+Em entradas baseadas em stop, a Strategy fornece `entry_price` e
+`stop_loss` em metadata; o RiskGate calcula a quantidade final.
+
 ---
 
 # 39. Strategy Não Define Lote Final
@@ -865,6 +881,28 @@ mas o tamanho financeiro final pertence ao:
 
 ```text
 Risk Engine
+```
+
+Na implementação atual:
+
+```text
+StopBasedRiskGate
+```
+
+calcula:
+
+```text
+account_equity * risk_fraction
+/
+abs(entry_price - stop_loss) * contract_size
+```
+
+e normaliza o resultado para:
+
+```text
+volume_min
+volume_max
+volume_step
 ```
 
 ---
