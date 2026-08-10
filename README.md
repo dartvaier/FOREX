@@ -40,6 +40,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
 - Segunda hipótese simples: `VolatilityBreakoutStrategy`.
 - Terceira hipótese simples: `TimeSeriesMomentumStrategy`.
+- Quarta hipótese simples: `SimpleMeanReversionStrategy`.
 
 ---
 
@@ -317,6 +318,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Essa hipótese mostrou sinal bruto em zero-cost, mas ainda não sobreviveu aos custos explícitos baseline.
 
+Quarta hipótese testada:
+
+```text
+Simple Mean Reversion
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 6568 | 128.39 | 131.39 | 1.027958 | 10128.39 |
+| Custos explícitos | 6568 | -2301.77 | 2306.19 | 0.590060 | 7698.23 |
+
+Essa hipótese também mostrou sinal bruto em zero-cost, mas o número alto de trades tornou o resultado muito sensível aos custos.
+
 ---
 
 ## Testes
@@ -417,8 +433,8 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Simple Mean Reversion`.
+1. Implementar a hipótese `Asian Range Breakout`.
 2. Criar testes unitários com séries artificiais.
 3. Rodar backtest histórico com custo zero e custos explícitos.
 4. Registrar trade count, net profit, drawdown, win rate e profit factor.
-5. Comparar contra EMA, Volatility Breakout e Time-Series Momentum.
+5. Comparar contra os benchmarks já testados.

@@ -1221,9 +1221,9 @@ Volatility Breakout      ✅ BASELINE TESTED
 
 Time-Series Momentum     ✅ BASELINE TESTED
 
-Mean Reversion           NEXT
+Mean Reversion           ✅ BASELINE TESTED
 
-Asian Range Breakout
+Asian Range Breakout     NEXT
 
 Carry
 

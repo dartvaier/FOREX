@@ -551,14 +551,99 @@ mas ainda nao aprovada apos custos.
 
 ## 13. Proximo Passo
 
-Avancar para:
+Hipotese primaria testada:
 
 ```text
 Simple Mean Reversion
+
+lookback = 16 candles M15
+
+entry_threshold = -0.0010
+
+exit_threshold = 0.0
+
+fixed_quantity = 0.01 lot
+```
+
+Regra:
+
+```text
+retorno acumulado dos ultimos 16 candles < -0.10%
+
+-> ENTER_LONG
+
+retorno acumulado dos ultimos 16 candles >= 0.00%
+
+-> EXIT
+
+caso contrario
+
+-> HOLD
+```
+
+Resultado zero-cost:
+
+```text
+trades:              6568
+net_profit:          128.39
+total_return_pct:    1.2839
+max_drawdown:        131.39
+max_drawdown_pct:    1.3139
+win_rate:            64.8904
+profit_factor:       1.027958
+average_trade:       0.0195
+final_equity:        10128.39
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              6568
+net_profit:          -2301.77
+total_return_pct:    -23.0177
+max_drawdown:        2306.19
+max_drawdown_pct:    23.0619
+win_rate:            50.2132
+profit_factor:       0.590060
+average_trade:       -0.3505
+final_equity:        7698.23
+```
+
+Leitura:
+
+```text
+A Mean Reversion baseline apresentou sinal bruto positivo em zero-cost.
+
+O alto numero de trades tornou a estrategia muito sensivel a custos.
+
+Com custos explicitos, a deterioracao foi severa.
+```
+
+Decisao:
+
+```text
+Nao promover para OOS.
+
+Registrar como evidencia de que estrategias intraday de alta frequencia operacional
+precisam de edge bruto muito maior para sobreviver a custos.
+```
+
+---
+
+## 14. Proximo Passo
+
+Avancar para:
+
+```text
+Asian Range Breakout
 ```
 
 Objetivo:
 
 ```text
-testar se movimentos curtos excessivos tendem a reverter apos custos
+testar se o rompimento da faixa asiatica possui continuacao suficiente apos custos
 ```
