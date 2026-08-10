@@ -377,38 +377,102 @@ Ele apenas indica que esta especificacao primaria simples, nestes parametros e n
 
 ## 11. Proximo Passo Detalhado
 
-Implementar uma especificacao primaria simples de Volatility Breakout.
+Hipotese primaria testada:
 
 ```text
-Exemplo inicial:
+Volatility Breakout
 
-preco rompe maxima recente
+entry_lookback = 20
 
-range minimo / ATR confirma volatilidade
+exit_lookback = 10
 
-entrada no proximo open
+min_range_pips = 10
 
-saida por regra temporal, stop ou retorno ao range
+fixed_quantity = 0.01 lot
 ```
 
-Depois disso, registrar:
+Regra:
 
 ```text
-periodo testado
+close atual rompe acima da maxima dos 20 candles anteriores
 
-parametros
+e
 
-custos
+range dos 20 candles anteriores >= 10 pips
 
-trade count
+-> ENTER_LONG
 
-net profit
+close atual rompe abaixo da minima dos 10 candles anteriores
 
-drawdown
+-> EXIT
 
-win rate
+caso contrario
 
-profit factor
+-> HOLD
+```
 
-observacoes
+Resultado zero-cost:
+
+```text
+trades:              4336
+net_profit:          -541.31
+total_return_pct:    -5.4131
+max_drawdown:        594.00
+max_drawdown_pct:    5.9260
+win_rate:            35.2629
+profit_factor:       0.873042
+average_trade:       -0.1248
+final_equity:        9458.69
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              4336
+net_profit:          -2145.63
+total_return_pct:    -21.4563
+max_drawdown:        2159.55
+max_drawdown_pct:    21.5950
+win_rate:            29.0129
+profit_factor:       0.599219
+average_trade:       -0.4948
+final_equity:        7854.37
+```
+
+Leitura:
+
+```text
+A especificacao primaria simples de Volatility Breakout nao apresentou edge.
+
+O resultado zero-cost ja foi negativo.
+
+Com custos explicitos, a deterioracao foi severa.
+```
+
+Decisao:
+
+```text
+Nao promover esta especificacao para validacao OOS.
+
+Manter Volatility Breakout como familia possivel apenas se uma nova regra primaria for definida com racional melhor.
+```
+
+---
+
+## 12. Proximo Passo
+
+Avancar para a proxima hipotese simples:
+
+```text
+Time-Series Momentum
+```
+
+Objetivo:
+
+```text
+testar se retornos acumulados recentes possuem continuacao positiva apos custos
 ```

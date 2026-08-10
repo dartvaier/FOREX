@@ -38,6 +38,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Stop Loss, Take Profit, gap-through-stop e política worst-case intrabar.
 - Métricas básicas de performance.
 - Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
+- Segunda hipótese simples: `VolatilityBreakoutStrategy`.
 
 ---
 
@@ -285,6 +286,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Esse resultado não descarta trend following como família. Ele apenas indica que esta especificação simples, nesses parâmetros e nesse dataset, não mostrou edge suficiente.
 
+Segunda hipótese testada:
+
+```text
+Volatility Breakout
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 4336 | -541.31 | 594.00 | 0.873042 | 9458.69 |
+| Custos explícitos | 4336 | -2145.63 | 2159.55 | 0.599219 | 7854.37 |
+
+Essa especificação primária também não mostrou edge.
+
 ---
 
 ## Testes
@@ -385,8 +401,8 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Volatility Breakout`.
+1. Implementar a hipótese `Time-Series Momentum`.
 2. Criar testes unitários com séries artificiais.
 3. Rodar backtest histórico com custo zero e custos explícitos.
 4. Registrar trade count, net profit, drawdown, win rate e profit factor.
-5. Comparar a nova hipótese contra a EMA baseline, que agora fica como benchmark de engenharia.
+5. Comparar contra EMA e Volatility Breakout, que agora ficam como benchmarks iniciais.

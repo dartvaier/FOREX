@@ -1217,9 +1217,9 @@ cost calculation
 Após EMA baseline:
 
 ```text
-Volatility Breakout
+Volatility Breakout      ✅ BASELINE TESTED
 
-Time-Series Momentum
+Time-Series Momentum     NEXT
 
 Mean Reversion
 
