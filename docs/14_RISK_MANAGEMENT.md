@@ -246,6 +246,10 @@ notional excede max_notional
 daily loss atingiu max_daily_loss
 
 daily loss atingiu max_daily_loss_fraction
+
+drawdown atingiu max_drawdown
+
+drawdown atingiu max_drawdown_pct
 ```
 
 Essas rejeicoes retornam:
@@ -270,14 +274,13 @@ Implementado:
 max exposure
 
 daily loss guard
+
+drawdown guard
 ```
 
 Ainda nao implementado:
 
 ```text
-
-maximum drawdown guard
-
 kill switch
 
 portfolio-level risk
@@ -306,6 +309,8 @@ ExposureLimitRiskGate
 
 DailyLossRiskGate
 
+DrawdownRiskGate
+
 missing entry_price
 
 missing stop_loss
@@ -324,22 +329,55 @@ daily loss fraction cap
 
 daily UTC reset
 
+drawdown absolute cap
+
+drawdown pct cap
+
+drawdown unlock on recovery
+
+drawdown unlock on new peak
+
+drawdown HOLD/EXIT passthrough
+
 engine integration
 ```
 
 ---
 
-## 11. Proximo Passo
+## 11. DrawdownRiskGate
+
+Envolve outro RiskGate e observa pontos de equity:
+
+```text
+EquityPoint
+  ->
+DrawdownRiskGate.observe_equity(point)
+```
+
+Limites suportados:
+
+```text
+max_drawdown
+
+max_drawdown_pct
+```
+
+Diferente do DailyLossRiskGate, o pico de equity e rastreado durante
+toda a simulacao (all-time high), nao sendo reiniciado diariamente.
+
+O bloqueio e dinamico:
+
+- Se equity faz novo pico, o gate desbloqueia imediatamente.
+- Se equity recupera e drawdown cai abaixo do limite, o gate desbloqueia.
+
+Sinais HOLD e EXIT continuam permitidos.
+
+---
+
+## 12. Proximo Passo
 
 Avancar para:
 
 ```text
-Drawdown guard
-```
-
-Objetivo:
-
-```text
-impedir novas entradas quando o drawdown observado da equity curve
-atingir o limite configurado
+Kill switch
 ```

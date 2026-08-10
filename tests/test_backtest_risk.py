@@ -11,6 +11,7 @@ from backtest.models import (
 from backtest.models.enums import SimulationPhase
 from backtest.risk import (
     DailyLossRiskGate,
+    DrawdownRiskGate,
     ExposureLimitRiskGate,
     FixedSizeRiskGate,
     RiskDecision,
@@ -1078,3 +1079,376 @@ def test_daily_loss_gate_validates_configuration():
         gate.observe_equity(
             object()  # type: ignore[arg-type]
         )
+
+
+# ---------------------------------------------------------------------------
+# DrawdownRiskGate
+# ---------------------------------------------------------------------------
+
+
+def test_drawdown_gate_approves_entry_when_drawdown_is_within_limit():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=200.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9850.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.03
+    assert "DrawdownRiskGate" in decision.reason
+    assert gate.current_drawdown == pytest.approx(150.0)
+    assert gate.is_locked is False
+
+
+def test_drawdown_gate_rejects_entry_after_absolute_drawdown_limit():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=100.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9890.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert "drawdown limit" in decision.reason
+    assert gate.is_locked is True
+    assert gate.current_drawdown == pytest.approx(110.0)
+
+
+def test_drawdown_gate_rejects_entry_after_pct_drawdown_limit():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown_pct=2.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9790.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert gate.is_locked is True
+    assert gate.current_drawdown_pct == pytest.approx(2.1)
+
+
+def test_drawdown_gate_tracks_peak_and_updates_on_new_high():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=100.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10100.0,
+        )
+    )
+
+    assert gate.peak_equity == pytest.approx(10100.0)
+    assert gate.current_drawdown == pytest.approx(0.0)
+    assert gate.is_locked is False
+
+
+def test_drawdown_gate_unlocks_when_equity_recovers():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=100.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9890.0,
+        )
+    )
+
+    assert gate.is_locked is True
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9920.0,
+        )
+    )
+
+    assert gate.is_locked is False
+    assert gate.current_drawdown == pytest.approx(80.0)
+
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is True
+
+
+def test_drawdown_gate_unlocks_on_new_peak():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=100.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9890.0,
+        )
+    )
+
+    assert gate.is_locked is True
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10050.0,
+        )
+    )
+
+    assert gate.is_locked is False
+    assert gate.peak_equity == pytest.approx(10050.0)
+    assert gate.current_drawdown == pytest.approx(0.0)
+
+
+def test_drawdown_gate_allows_hold_and_exit_when_locked():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=100.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=9850.0,
+        )
+    )
+
+    assert gate.is_locked is True
+
+    hold_decision = gate.evaluate(
+        make_signal(
+            SignalAction.HOLD
+        )
+    )
+
+    exit_decision = gate.evaluate(
+        make_signal(
+            SignalAction.EXIT
+        )
+    )
+
+    assert hold_decision.approved is True
+    assert hold_decision.quantity is None
+    assert exit_decision.approved is True
+    assert exit_decision.quantity is None
+
+
+def test_drawdown_gate_preserves_inner_rejection():
+    gate = DrawdownRiskGate(
+        inner=StopBasedRiskGate(
+            instrument=make_instrument(),
+            account_equity=10000.0,
+            risk_fraction=0.01,
+        ),
+        max_drawdown=200.0,
+    )
+
+    gate.observe_equity(
+        make_equity_point(
+            equity=10000.0,
+        )
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "stop_loss" in decision.reason
+
+
+def test_drawdown_gate_requires_equity_before_entry():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown=100.0,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert "equity snapshot" in decision.reason
+
+
+def test_drawdown_gate_validates_configuration():
+    with pytest.raises(
+        TypeError,
+        match="RiskGate",
+    ):
+        DrawdownRiskGate(
+            inner=object(),  # type: ignore[arg-type]
+            max_drawdown=100.0,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="at least one",
+    ):
+        DrawdownRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="max_drawdown",
+    ):
+        DrawdownRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            max_drawdown=0.0,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="max_drawdown_pct",
+    ):
+        DrawdownRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            max_drawdown_pct=150.0,
+        )
+
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.01,
+        ),
+        max_drawdown=100.0,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="EquityPoint",
+    ):
+        gate.observe_equity(
+            object()  # type: ignore[arg-type]
+        )
+
+
+def test_drawdown_gate_current_drawdown_is_zero_when_no_equity_observed():
+    gate = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.01,
+        ),
+        max_drawdown=100.0,
+    )
+
+    assert gate.current_drawdown == 0.0
+    assert gate.current_drawdown_pct == 0.0
+    assert gate.peak_equity is None

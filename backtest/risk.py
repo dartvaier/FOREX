@@ -1065,3 +1065,259 @@ class DailyLossRiskGate:
             raise ValueError(
                 f"{name} must be a finite positive number"
             )
+
+
+class DrawdownRiskGate:
+    """
+    Risk Gate wrapper that rejects new entries when the
+    observed peak-to-current equity drawdown reaches a
+    configured limit.
+
+    The gate is stateful. The BacktestEngine updates it with
+    EquityPoint snapshots through observe_equity().
+
+    Supported limits:
+
+    - max_drawdown
+    - max_drawdown_pct
+
+    The drawdown is dynamic: entries are unlocked when equity
+    recovers and the drawdown falls below the configured limit.
+
+    Unlike DailyLossRiskGate, the peak equity is tracked across
+    the entire simulation (all-time high), not reset daily.
+
+    HOLD and EXIT signals are always allowed regardless of
+    drawdown state, because they do not increase financial
+    exposure.
+    """
+
+    def __init__(
+        self,
+        *,
+        inner: RiskGate,
+        max_drawdown: float | None = None,
+        max_drawdown_pct: float | None = None,
+    ) -> None:
+        if not isinstance(
+            inner,
+            RiskGate,
+        ):
+            raise TypeError(
+                "inner must satisfy the RiskGate protocol"
+            )
+
+        if (
+            max_drawdown is None
+            and max_drawdown_pct is None
+        ):
+            raise ValueError(
+                "at least one drawdown limit is required"
+            )
+
+        if max_drawdown is not None:
+            self._validate_positive_finite(
+                "max_drawdown",
+                max_drawdown,
+            )
+
+        if max_drawdown_pct is not None:
+            self._validate_positive_finite(
+                "max_drawdown_pct",
+                max_drawdown_pct,
+            )
+
+            if max_drawdown_pct > 100.0:
+                raise ValueError(
+                    "max_drawdown_pct cannot be greater than "
+                    "100.0"
+                )
+
+        self._inner = inner
+        self._max_drawdown = (
+            None
+            if max_drawdown is None
+            else float(max_drawdown)
+        )
+        self._max_drawdown_pct = (
+            None
+            if max_drawdown_pct is None
+            else float(max_drawdown_pct)
+        )
+        self._peak_equity: float | None = None
+        self._current_equity: float | None = None
+        self._locked = False
+
+    @property
+    def inner(self) -> RiskGate:
+        return self._inner
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        return self._inner.instrument
+
+    @property
+    def max_drawdown(self) -> float | None:
+        return self._max_drawdown
+
+    @property
+    def max_drawdown_pct(self) -> float | None:
+        return self._max_drawdown_pct
+
+    @property
+    def peak_equity(self) -> float | None:
+        return self._peak_equity
+
+    @property
+    def current_equity(self) -> float | None:
+        return self._current_equity
+
+    @property
+    def current_drawdown(self) -> float:
+        if (
+            self._peak_equity is None
+            or self._current_equity is None
+        ):
+            return 0.0
+
+        return max(
+            0.0,
+            self._peak_equity
+            - self._current_equity,
+        )
+
+    @property
+    def current_drawdown_pct(self) -> float:
+        if (
+            self._peak_equity is None
+            or self._peak_equity <= 0
+        ):
+            return 0.0
+
+        return (
+            self.current_drawdown
+            / self._peak_equity
+            * 100.0
+        )
+
+    @property
+    def is_locked(self) -> bool:
+        return self._locked
+
+    def observe_equity(
+        self,
+        point: EquityPoint,
+    ) -> None:
+        if not isinstance(
+            point,
+            EquityPoint,
+        ):
+            raise TypeError(
+                "point must be an EquityPoint"
+            )
+
+        self._current_equity = point.equity
+
+        if (
+            self._peak_equity is None
+            or point.equity > self._peak_equity
+        ):
+            self._peak_equity = point.equity
+            self._locked = False
+            return
+
+        if self._breached_limit():
+            self._locked = True
+        else:
+            self._locked = False
+
+    def evaluate(
+        self,
+        signal: Signal,
+    ) -> RiskDecision:
+        decision = self._inner.evaluate(signal)
+
+        if not decision.approved:
+            return decision
+
+        if signal.action in (
+            SignalAction.HOLD,
+            SignalAction.EXIT,
+        ):
+            return decision
+
+        if signal.action not in (
+            SignalAction.ENTER_LONG,
+            SignalAction.ENTER_SHORT,
+        ):
+            raise ValueError(
+                f"unsupported SignalAction: {signal.action}"
+            )
+
+        if self._peak_equity is None:
+            return self._reject(
+                decision,
+                "equity snapshot is required for "
+                "DrawdownRiskGate",
+            )
+
+        if self._locked:
+            return self._reject(
+                decision,
+                "drawdown limit reached",
+            )
+
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=True,
+            quantity=decision.quantity,
+            reason=(
+                f"{decision.reason}; approved by "
+                "DrawdownRiskGate"
+            ),
+        )
+
+    def _breached_limit(self) -> bool:
+        if (
+            self._max_drawdown is not None
+            and self.current_drawdown >= self._max_drawdown
+        ):
+            return True
+
+        if (
+            self._max_drawdown_pct is not None
+            and self.current_drawdown_pct
+            >= self._max_drawdown_pct
+        ):
+            return True
+
+        return False
+
+    @staticmethod
+    def _reject(
+        decision: RiskDecision,
+        reason: str,
+    ) -> RiskDecision:
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=False,
+            quantity=None,
+            reason=reason,
+        )
+
+    @staticmethod
+    def _validate_positive_finite(
+        name: str,
+        value: float,
+    ) -> None:
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(
+                f"{name} must be a finite positive number"
+            )
