@@ -77,6 +77,11 @@ Strategy Research
   execution/ package (ExecutionInterface, BrokerState, Order/Fill
   validation, Position Reconciliation) with 28 tests; no MT5 dependency,
   TRADING_ENABLED=false unchanged (docs/16_EXECUTION_LAYER.md).
+- F9 MT5Execution adapter (execution/mt5_execution.py): implements
+  ExecutionInterface via MT5 API with lazy import, order validation before
+  send, retcode translation and fill validation; trading_enabled=False
+  guard blocks submit/cancel (read-only monitoring allowed). 16 tests with
+  a fake MT5 module; no real broker call. 943 tests total.
 
 ---
 

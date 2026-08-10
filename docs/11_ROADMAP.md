@@ -1724,23 +1724,15 @@ MetaTrader 5 Demo
 Antes de Demo:
 
 ```text
-Execution Interface
-
-MT5Execution
-
-Order Validation
-
-Fill Validation
-
-Position Reconciliation
-
-Broker State
-
-Logs
-
-Monitoring
-
-Kill Switch
+Execution Interface      IMPLEMENTED
+MT5Execution             IMPLEMENTED (adapter, nao ativado)
+Order Validation         IMPLEMENTED
+Fill Validation          IMPLEMENTED
+Position Reconciliation  IMPLEMENTED
+Broker State             IMPLEMENTED
+Logs                     PLANNED
+Monitoring               PLANNED
+Kill Switch              IMPLEMENTED (F7)
 ```
 
 ---

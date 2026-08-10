@@ -42,7 +42,7 @@ e executada neste estado.
 | Fill Validation | IMPLEMENTED | `execution/fill_validation.py` |
 | Position Reconciliation | IMPLEMENTED | `execution/reconciliation.py` |
 | Broker State | IMPLEMENTED | `execution/interface.py` (BrokerAccountState, BrokerPosition) |
-| MT5Execution | PLANNED | proximo bloco (adapter MT5) |
+| MT5Execution | IMPLEMENTED (adapter) | `execution/mt5_execution.py` |
 | Logs / Monitoring | PLANNED | proximo bloco |
 | Kill Switch | IMPLEMENTED (F7) | `backtest/risk.py` (KillSwitchRiskGate) |
 
@@ -121,17 +121,42 @@ consistent           nenhuma divergencia
 `reconcile_balance(expected, actual, tolerance)` — saldo dentro de
 tolerancia (default 0.01 USD).
 
-## 7. Estado da ativacao
+## 7. MT5Execution (adapter)
+
+`execution/mt5_execution.py` implementa `ExecutionInterface` via API MT5:
+
+```text
+submit(order)          -> valida (Order Validation), envia TRADE_ACTION_DEAL,
+                          traduz retcode em ExecutionReport (FILLED/REJECTED)
+cancel(order_id)       -> order_delete
+fetch_account()        -> account_info -> BrokerAccountState (+ posicoes)
+fetch_positions()      -> positions_get -> tuple[BrokerPosition]
+ping() / close()       -> terminal_info().connected / shutdown()
+```
+
+Guard de seguranca materializado no codigo:
+
+```text
+trading_enabled=False (default)
+  submit/cancel -> ExecutionNotEnabledError (AGENTS.md §10)
+  fetch_*/ping  -> permitidos (monitoramento nao altera estado do broker)
+trading_enabled=True  -> decisao explicita de ativacao Demo, separada
+```
+
+Import lazy do MetaTrader5: sem o pacote instalado o adapter falha com
+mensagem clara, sem quebrar o import do pacote `execution/`. Testes usam
+um fake do modulo MT5 — nenhuma chamada real ao broker.
+
+## 8. Estado da ativacao
 
 ```text
 TRADING_ENABLED=false   <- inalterado
-mt5.order_send()        <- nunca executado
+mt5.order_send()        <- nunca executado (guard testado)
 ```
 
 Proximos blocos F9 (somente engenharia, ativacao separada):
 
 ```text
-MT5Execution adapter  -> implementa ExecutionInterface via API MT5 (sem ativar)
-Logs / Monitoring     -> auditoria estruturada de ordens/fills/reconciliacao
-Demo activation       -> exige autorizacao explicita; TRADING_ENABLED so muda ai
+Logs / Monitoring  -> auditoria estruturada de ordens/fills/reconciliacao
+Demo activation    -> exige autorizacao explicita; TRADING_ENABLED so muda ai
 ```

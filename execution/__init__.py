@@ -20,6 +20,11 @@ from execution.interface import (
     ExecutionInterface,
     ExecutionReport,
 )
+from execution.mt5_execution import (
+    DEFAULT_MAGIC,
+    ExecutionNotEnabledError,
+    MT5Execution,
+)
 from execution.order_validation import (
     OrderValidationConfig,
     OrderValidationResult,
@@ -34,9 +39,12 @@ from execution.reconciliation import (
 __all__ = [
     "BrokerAccountState",
     "BrokerPosition",
+    "DEFAULT_MAGIC",
     "ExecutionInterface",
+    "ExecutionNotEnabledError",
     "ExecutionReport",
     "FillValidationResult",
+    "MT5Execution",
     "OrderValidationConfig",
     "OrderValidationResult",
     "ReconciliationReport",
