@@ -625,3 +625,187 @@ class StopBasedRiskGate:
             raise ValueError(
                 f"{name} must be a finite positive number"
             )
+
+
+class ExposureLimitRiskGate:
+    """
+    Risk Gate wrapper that rejects entries above exposure
+    limits after another RiskGate has approved and sized them.
+
+    Supported limits:
+
+    - max_quantity
+    - max_notional
+
+    Notional exposure uses:
+
+        entry_price * contract_size * quantity
+
+    therefore max_notional checks require entry_price metadata
+    on entry Signals.
+    """
+
+    def __init__(
+        self,
+        *,
+        inner: RiskGate,
+        max_quantity: float | None = None,
+        max_notional: float | None = None,
+    ) -> None:
+        if not isinstance(
+            inner,
+            RiskGate,
+        ):
+            raise TypeError(
+                "inner must satisfy the RiskGate protocol"
+            )
+
+        if (
+            max_quantity is None
+            and max_notional is None
+        ):
+            raise ValueError(
+                "at least one exposure limit is required"
+            )
+
+        if max_quantity is not None:
+            self._validate_positive_finite(
+                "max_quantity",
+                max_quantity,
+            )
+
+        if max_notional is not None:
+            self._validate_positive_finite(
+                "max_notional",
+                max_notional,
+            )
+
+        self._inner = inner
+        self._max_quantity = (
+            None
+            if max_quantity is None
+            else float(max_quantity)
+        )
+        self._max_notional = (
+            None
+            if max_notional is None
+            else float(max_notional)
+        )
+
+    @property
+    def inner(self) -> RiskGate:
+        return self._inner
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        return self._inner.instrument
+
+    @property
+    def max_quantity(self) -> float | None:
+        return self._max_quantity
+
+    @property
+    def max_notional(self) -> float | None:
+        return self._max_notional
+
+    def evaluate(
+        self,
+        signal: Signal,
+    ) -> RiskDecision:
+        decision = self._inner.evaluate(signal)
+
+        if not decision.approved:
+            return decision
+
+        if signal.action in (
+            SignalAction.HOLD,
+            SignalAction.EXIT,
+        ):
+            return decision
+
+        if signal.action not in (
+            SignalAction.ENTER_LONG,
+            SignalAction.ENTER_SHORT,
+        ):
+            raise ValueError(
+                f"unsupported SignalAction: {signal.action}"
+            )
+
+        if decision.quantity is None:
+            return self._reject(
+                decision,
+                "approved entry requires quantity",
+            )
+
+        if (
+            self._max_quantity is not None
+            and decision.quantity > self._max_quantity
+        ):
+            return self._reject(
+                decision,
+                "quantity exceeds max_quantity exposure limit",
+            )
+
+        if self._max_notional is not None:
+            entry_price = StopBasedRiskGate._metadata_price(
+                signal,
+                "entry_price",
+            )
+
+            if entry_price is None:
+                return self._reject(
+                    decision,
+                    "entry_price metadata is required for "
+                    "max_notional exposure limit",
+                )
+
+            notional = (
+                entry_price
+                * self.instrument.contract_size
+                * decision.quantity
+            )
+
+            if notional > self._max_notional:
+                return self._reject(
+                    decision,
+                    "notional exposure exceeds max_notional",
+                )
+
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=True,
+            quantity=decision.quantity,
+            reason=(
+                f"{decision.reason}; approved by "
+                "ExposureLimitRiskGate"
+            ),
+        )
+
+    @staticmethod
+    def _reject(
+        decision: RiskDecision,
+        reason: str,
+    ) -> RiskDecision:
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=False,
+            quantity=None,
+            reason=reason,
+        )
+
+    @staticmethod
+    def _validate_positive_finite(
+        name: str,
+        value: float,
+    ) -> None:
+        if (
+            not isinstance(value, Real)
+            or isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise ValueError(
+                f"{name} must be a finite positive number"
+            )

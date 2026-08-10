@@ -859,11 +859,16 @@ FixedSizeRiskGate
 StopBasedRiskGate
 
 VolumeRules
+
+ExposureLimitRiskGate
 ```
 
 O RiskGate pode aprovar ou rejeitar um Signal antes da criação da Order.
 Em entradas baseadas em stop, a Strategy fornece `entry_price` e
 `stop_loss` em metadata; o RiskGate calcula a quantidade final.
+
+`ExposureLimitRiskGate` pode envolver outro gate para bloquear entradas
+que excedam `max_quantity` ou `max_notional`.
 
 ---
 

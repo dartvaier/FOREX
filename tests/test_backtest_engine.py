@@ -15,6 +15,7 @@ from backtest.models import (
     Timeframe,
 )
 from backtest.risk import (
+    ExposureLimitRiskGate,
     FixedSizeRiskGate,
     StopBasedRiskGate,
 )
@@ -323,6 +324,37 @@ def test_engine_accepts_stop_based_risk_gate():
         result.performance.trade_metrics.total_trades
         == 1
     )
+
+
+def test_engine_skips_order_when_exposure_limit_rejects_entry():
+    config = make_config()
+    instrument = make_instrument()
+
+    engine = BacktestEngine(
+        config=config,
+        instrument=instrument,
+        cost_model=ZeroCostModel(
+            instrument,
+        ),
+        risk_gate=ExposureLimitRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=instrument,
+                fixed_quantity=0.10,
+            ),
+            max_quantity=0.05,
+        ),
+    )
+
+    result = engine.run(
+        dataframe=make_dataframe(),
+        strategy=LongOnlyStrategy(),
+    )
+
+    assert result.signals.count == 3
+    assert result.orders.count == 0
+    assert result.fills.count == 0
+    assert result.trades.count == 0
+    assert result.portfolio.is_flat is True
 
 
 def test_engine_forces_open_position_closed_at_final_close():

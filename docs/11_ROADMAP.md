@@ -1355,11 +1355,15 @@ FixedSizeRiskGate com validação de volume_step
 
 StopBasedRiskGate
 
+ExposureLimitRiskGate
+
 entry_price + stop_loss metadata
 
 risk_fraction
 
 max_quantity opcional
+
+max_notional opcional
 ```
 
 ---
@@ -1397,7 +1401,7 @@ kill switch bloqueia execução
 
 [x] volume constraints
 
-[ ] exposure limits
+[x] exposure limits
 
 [ ] daily loss
 
@@ -2479,9 +2483,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-812 tests
+821 tests
 
-812 passed
+821 passed
 
 0 failed
 ```

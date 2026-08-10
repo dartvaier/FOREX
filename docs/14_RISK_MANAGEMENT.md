@@ -46,6 +46,8 @@ VolumeRules
 FixedSizeRiskGate
 
 StopBasedRiskGate
+
+ExposureLimitRiskGate
 ```
 
 ---
@@ -154,6 +156,45 @@ volume_max
 
 ## 6. Rejeicoes Auditaveis
 
+## 6. ExposureLimitRiskGate
+
+Envolve outro RiskGate:
+
+```text
+inner RiskGate
+  ->
+ExposureLimitRiskGate
+```
+
+Limites suportados:
+
+```text
+max_quantity
+
+max_notional
+```
+
+O limite nocional usa:
+
+```text
+entry_price * contract_size * quantity
+```
+
+Por isso `max_notional` exige:
+
+```text
+entry_price
+```
+
+na metadata do Signal.
+
+Sinais `HOLD` e `EXIT` passam sem checagem de exposicao nova porque nao
+aumentam posicao.
+
+---
+
+## 7. Rejeicoes Auditaveis
+
 O RiskGate rejeita entradas quando:
 
 ```text
@@ -166,6 +207,10 @@ stop_loss do long nao esta abaixo do entry_price
 stop_loss do short nao esta acima do entry_price
 
 volume calculado fica abaixo de volume_min
+
+quantity excede max_quantity
+
+notional excede max_notional
 ```
 
 Essas rejeicoes retornam:
@@ -182,12 +227,17 @@ reason
 
 ---
 
-## 7. Limites Ainda Pendentes
+## 8. Limites Ainda Pendentes
+
+Implementado:
+
+```text
+max exposure
+```
 
 Ainda nao implementado:
 
 ```text
-max exposure
 
 daily loss guard
 
@@ -204,7 +254,7 @@ Esses itens continuam como proximos blocos da F7.
 
 ---
 
-## 8. Testes
+## 9. Testes
 
 Coberto por testes:
 
@@ -217,6 +267,8 @@ VolumeRules
 
 StopBasedRiskGate long/short
 
+ExposureLimitRiskGate
+
 missing entry_price
 
 missing stop_loss
@@ -227,22 +279,24 @@ volume_step normalization
 
 max_quantity cap
 
+max_notional cap
+
 engine integration
 ```
 
 ---
 
-## 9. Proximo Passo
+## 10. Proximo Passo
 
 Avancar para:
 
 ```text
-Exposure limits
+Daily loss guard
 ```
 
 Objetivo:
 
 ```text
-impedir que sinais validos de mercado aumentem exposicao alem
-dos limites definidos pela camada de risco
+impedir novas entradas quando a perda diaria realizada ou simulada
+atingir o limite configurado
 ```

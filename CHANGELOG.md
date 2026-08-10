@@ -52,6 +52,7 @@ Strategy Research
 - Simple Regime Detection baseline strategy, tests and initial EURUSD M15 result.
 - Multi-Timeframe Momentum baseline strategy, tests, causal H1/H4 context support and initial EURUSD M15 result.
 - RiskGate protocol, volume-step validation and StopBasedRiskGate sizing from entry/stop metadata.
+- ExposureLimitRiskGate wrapper with max quantity and max notional checks.
 
 ---
 

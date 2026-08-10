@@ -880,6 +880,18 @@ volume_max
 volume_step
 ```
 
+`ExposureLimitRiskGate` pode envolver outro RiskGate para rejeitar entradas
+que excedam limites de:
+
+```text
+max_quantity
+max_notional
+```
+
+Quando `max_notional` e usado, o Signal precisa informar `entry_price`
+em metadata para que a exposicao nocional seja calculada de forma
+auditavel.
+
 ---
 
 # ADR-015 — Order Não é Fill

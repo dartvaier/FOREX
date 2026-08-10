@@ -8,6 +8,7 @@ from backtest.models import (
     SignalAction,
 )
 from backtest.risk import (
+    ExposureLimitRiskGate,
     FixedSizeRiskGate,
     RiskDecision,
     StopBasedRiskGate,
@@ -573,4 +574,191 @@ def test_stop_based_risk_gate_validates_configuration():
             instrument=make_instrument(),
             account_equity=10000.0,
             risk_fraction=1.5,
+        )
+
+
+def test_exposure_limit_gate_approves_quantity_within_limit():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_quantity=0.05,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.03
+    assert "ExposureLimitRiskGate" in decision.reason
+
+
+def test_exposure_limit_gate_rejects_quantity_above_limit():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.10,
+        ),
+        max_quantity=0.05,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert decision.quantity is None
+    assert "max_quantity" in decision.reason
+
+
+def test_exposure_limit_gate_allows_hold_and_exit():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.10,
+        ),
+        max_quantity=0.05,
+    )
+
+    hold_decision = gate.evaluate(
+        make_signal(
+            SignalAction.HOLD
+        )
+    )
+
+    exit_decision = gate.evaluate(
+        make_signal(
+            SignalAction.EXIT
+        )
+    )
+
+    assert hold_decision.approved is True
+    assert hold_decision.quantity is None
+    assert exit_decision.approved is True
+    assert exit_decision.quantity is None
+
+
+def test_exposure_limit_gate_preserves_inner_rejection():
+    gate = ExposureLimitRiskGate(
+        inner=StopBasedRiskGate(
+            instrument=make_instrument(),
+            account_equity=10000.0,
+            risk_fraction=0.01,
+        ),
+        max_quantity=0.50,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "stop_loss" in decision.reason
+
+
+def test_exposure_limit_gate_rejects_missing_entry_price_for_notional():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.10,
+        ),
+        max_notional=10000.0,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is False
+    assert "entry_price" in decision.reason
+
+
+def test_exposure_limit_gate_approves_notional_within_limit():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.05,
+        ),
+        max_notional=10000.0,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.05
+
+
+def test_exposure_limit_gate_rejects_notional_above_limit():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.10,
+        ),
+        max_notional=10000.0,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "max_notional" in decision.reason
+
+
+def test_exposure_limit_gate_validates_configuration():
+    with pytest.raises(
+        TypeError,
+        match="RiskGate",
+    ):
+        ExposureLimitRiskGate(
+            inner=object(),  # type: ignore[arg-type]
+            max_quantity=0.10,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="at least one",
+    ):
+        ExposureLimitRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="max_notional",
+    ):
+        ExposureLimitRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            max_notional=0.0,
         )
