@@ -69,6 +69,10 @@ Strategy Research
   (sweep grids, subperiods, dev/val stability, cost stress 1.5x/2.0x for
   TSM/EMA/MR; OOS lockbox untouched). All three baseline strategies are
   consistently negative under explicit costs; no parameter islands.
+- OOS lockbox consulted once at baseline close (2026-08-10, explicit
+  --allow-oos): TSM -1.71%, EMA -2.48%, MR -4.23% explicit; TSM +0.42%
+  zero-cost. Out-of-sample confirms dev/val: no baseline strategy passes
+  under explicit costs. Event logged in docs/15_ROBUSTNESS.md.
 
 ---
 

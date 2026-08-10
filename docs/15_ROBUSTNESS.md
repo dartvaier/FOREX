@@ -39,9 +39,10 @@ val (validation)     2021-01-01 .. 2024-01-01
 oos (lockbox)        2024-01-01 .. 2027-01-01   <- NAO consultado
 ```
 
-O OOS lockbox permanece intacto (roadmap §74): nenhuma execucao F8 o
-consultou. O guard mecanico (`--period oos` exige `--allow-oos`) bloqueia
-consultas acidentais.
+O OOS lockbox foi consultado UMA vez, ao fechamento do baseline
+(2026-08-10, evento de lockbox com decisao explicita `--allow-oos`),
+conforme o protocolo do roadmap §74: o periodo so e aberto quando o
+desenvolvimento termina, e a consulta fica registrada neste documento.
 
 ## 3. TIME-SERIES-MOMENTUM (lookback=96, entry_threshold=0.001)
 
@@ -189,14 +190,27 @@ menor turnover, sem nunca cruzar o zero).
    de regime, reducao de turnover, melhoria de payoff — ou aceitar que essas
    classes simples nao tem edge em EURUSD M15.
 
-## 7. Status do OOS
+5. **Leitura OOS (lockbox):** consistente com dev/val. As tres estrategias
+   sao negativas no OOS com custos explicitos. A melhor do baseline (TSM)
+   tem +0.42% zero-cost no OOS — edge bruto marginal, destruido pelos
+   custos (-1.71%). Nenhuma estrategia do baseline passa no OOS.
 
-```text
-OOS lockbox (2024-2026): NAO CONSULTADO
-```
+## 7. Resultados OOS (lockbox)
 
-Guard mecanico ativo. Qualquer consulta futura exige decisao explicita
-(`--allow-oos`) e deve ser registrada como evento de lockbox.
+Evento de lockbox: 2026-08-10, decisao explicita (`--allow-oos`),
+fechamento do baseline. Rodadas: EURUSD M15, periodo 2024-01-01 a
+2027-01-01.
+
+| estrategia | custo | trades | net_profit | return_pct | max_dd_pct | win_rate | pf |
+|---|---|---|---|---|---|---|---|
+| TIME-SERIES-MOMENTUM | zero | 576 | +42.26 | +0.42 | 0.65 | 34.20 | 1.079 |
+| TIME-SERIES-MOMENTUM | explicit | 576 | -170.86 | -1.71 | 1.72 | 26.56 | 0.749 |
+| SIMPLE-EMA-TREND | explicit | 627 | -248.10 | -2.48 | 2.60 | 25.20 | 0.718 |
+| SIMPLE-MEAN-REVERSION | explicit | 1361 | -423.29 | -4.23 | 4.28 | 48.49 | 0.583 |
+
+Leitura: consistente com dev/val — ausencia de edge confirmada fora da
+amostra. O lockbox esta fechado novamente apos esta consulta unica; novas
+consultas so com decisao explicita e novo registro de evento.
 
 ## 8. Conclusao
 
@@ -225,4 +239,5 @@ research/reports/f8/*_sweep_*.csv       grids de sensibilidade
 research/reports/f8/*_subperiods.csv    estabilidade temporal
 research/reports/f8/*_stability.csv     dev vs val + signal_consistent
 research/reports/f8/*_f8-cost1{5,0}.json  cost stress 1.5x/2.0x
+research/reports/f8/*_period_oos.csv      consulta unica do lockbox
 ```
