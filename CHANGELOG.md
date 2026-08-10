@@ -65,6 +65,10 @@ Strategy Research
   pre-registered roles (dev 2015-20, val 2021-23, oos lockbox 2024-26),
   mechanical OOS guard (--period oos requires --allow-oos), and structured
   stability analysis (--stability: dev vs val deltas + signal consistency).
+- F8 COMPLETE: robustness results documented in docs/15_ROBUSTNESS.md
+  (sweep grids, subperiods, dev/val stability, cost stress 1.5x/2.0x for
+  TSM/EMA/MR; OOS lockbox untouched). All three baseline strategies are
+  consistently negative under explicit costs; no parameter islands.
 
 ---
 

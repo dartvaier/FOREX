@@ -567,6 +567,20 @@ def write_summary_csv(
         "cost",
         "cost_multiplier",
         "signal_consistent",
+        "dev_return_pct",
+        "val_return_pct",
+        "return_delta_pct",
+        "dev_net_profit",
+        "val_net_profit",
+        "net_profit_delta",
+        "dev_max_dd_pct",
+        "val_max_dd_pct",
+        "max_dd_delta_pct",
+        "dev_win_rate",
+        "val_win_rate",
+        "dev_profit_factor",
+        "val_profit_factor",
+        "profit_factor_delta",
     ]
 
     with path.open("w", encoding="utf-8", newline="") as handle:

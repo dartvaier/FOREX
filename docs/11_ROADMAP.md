@@ -76,7 +76,7 @@ F6  Strategy Research           ✅ COMPLETE BASELINE
 
 F7  Risk Management             ✅ COMPLETE
 
-F8  Robustness & Validation     🟡 IN PROGRESS
+F8  Robustness & Validation     ✅ COMPLETE
 
 F9  Demo Execution              ⬜ NOT STARTED
 
@@ -89,13 +89,13 @@ F10 Live Readiness              ⬜ NOT STARTED
 O projeto encontra-se no marco lógico:
 
 ```text
-FOREX v0.4
+FOREX v0.5
 ```
 
 Descrição:
 
 ```text
-Risk Management
+Robustness & Validation
 ```
 
 Esse marco representa:
@@ -1435,7 +1435,7 @@ kill switch bloqueia execução
 Status:
 
 ```text
-IN PROGRESS
+COMPLETE
 ```
 
 Essa fase é quantitativa, não apenas de engenharia.
@@ -1460,6 +1460,9 @@ lockbox guard mecanico
 
 stability analysis dev vs val
 (--stability: deltas + consistencia de sinal)
+
+resultados documentados
+(docs/15_ROBUSTNESS.md: sweep + subperiods + stability + cost stress)
 ```
 
 ---
@@ -1647,7 +1650,7 @@ Somente após a infraestrutura básica estar estabilizada.
 
 [x] stability analysis
 
-[ ] resultados documentados
+[x] resultados documentados
 ```
 
 ---
