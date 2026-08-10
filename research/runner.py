@@ -66,6 +66,9 @@ STRATEGY_REGISTRY = {
     "asian_range_breakout": "strategy.asian_range_breakout",
     "carry": "strategy.carry",
     "regime_detection": "strategy.regime_detection",
+    "multi_timeframe_momentum": (
+        "strategy.multi_timeframe_momentum"
+    ),
 }
 
 EURUSD_INSTRUMENT = {
@@ -186,6 +189,34 @@ def load_dataframe(symbol: str, timeframe: str) -> pd.DataFrame:
         )
 
     return pd.read_parquet(path)
+
+
+def load_higher_timeframe_dataframes(
+    *,
+    symbol: str,
+    strategy: Any,
+) -> dict[Timeframe, pd.DataFrame]:
+    higher_timeframes = getattr(
+        strategy,
+        "higher_timeframes",
+        (),
+    )
+
+    result = {}
+
+    for timeframe in higher_timeframes:
+        if not isinstance(
+            timeframe,
+            Timeframe,
+        ):
+            timeframe = Timeframe(timeframe)
+
+        result[timeframe] = load_dataframe(
+            symbol,
+            timeframe.value,
+        )
+
+    return result
 
 
 def sha256_of(path: Path) -> str:
@@ -532,9 +563,15 @@ def run_single(
         **strategy_params,
     )
 
+    higher_timeframe_dataframes = load_higher_timeframe_dataframes(
+        symbol=symbol,
+        strategy=strategy_instance,
+    )
+
     result = engine.run(
         dataframe=dataframe,
         strategy=strategy_instance,
+        higher_timeframe_dataframes=higher_timeframe_dataframes,
     )
 
     strategy_id = (

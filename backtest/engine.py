@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pandas as pd
 
@@ -19,6 +19,7 @@ from backtest.models.enums import (
     OrderType,
     PositionSide,
     SimulationPhase,
+    Timeframe,
 )
 from backtest.models.instrument import InstrumentSpecification
 from backtest.models.order import Order
@@ -155,6 +156,11 @@ class BacktestEngine:
         *,
         dataframe: pd.DataFrame,
         strategy: Strategy,
+        higher_timeframe_dataframes: dict[
+            Timeframe,
+            pd.DataFrame,
+        ]
+        | None = None,
     ) -> BacktestResult:
         if not isinstance(
             dataframe,
@@ -176,10 +182,21 @@ class BacktestEngine:
         closed_bar_limit = self._strategy_closed_bar_limit(
             strategy
         )
+        higher_timeframe_bar_limits = (
+            self._strategy_higher_timeframe_bar_limits(
+                strategy
+            )
+        )
 
         feed = HistoricalBarFeed(
             dataframe=dataframe,
             config=self._config,
+        )
+
+        higher_timeframe_feeds = (
+            self._build_higher_timeframe_feeds(
+                higher_timeframe_dataframes
+            )
         )
 
         clock = SimulationClock(
@@ -190,6 +207,10 @@ class BacktestEngine:
         context_builder = BacktestContextBuilder(
             feed=feed,
             clock=clock,
+            higher_timeframe_feeds=higher_timeframe_feeds,
+            higher_timeframe_bar_limits=(
+                higher_timeframe_bar_limits
+            ),
         )
 
         signal_processor = SignalProcessor(
@@ -405,6 +426,114 @@ class BacktestEngine:
             )
 
         return limit
+
+    @staticmethod
+    def _strategy_higher_timeframe_bar_limits(
+        strategy: Strategy,
+    ) -> dict[Timeframe, int]:
+        limits = getattr(
+            strategy,
+            "higher_timeframe_bar_limits",
+            {},
+        )
+
+        if limits is None:
+            return {}
+
+        if not isinstance(
+            limits,
+            dict,
+        ):
+            raise TypeError(
+                "strategy higher_timeframe_bar_limits must be "
+                "a dict"
+            )
+
+        normalized = {}
+
+        for timeframe, limit in limits.items():
+            if not isinstance(
+                timeframe,
+                Timeframe,
+            ):
+                raise TypeError(
+                    "strategy higher_timeframe_bar_limits keys "
+                    "must be Timeframe values"
+                )
+
+            if (
+                not isinstance(limit, int)
+                or isinstance(limit, bool)
+                or limit <= 0
+            ):
+                raise ValueError(
+                    "strategy higher_timeframe_bar_limits values "
+                    "must be positive integers"
+                )
+
+            normalized[timeframe] = limit
+
+        return normalized
+
+    def _build_higher_timeframe_feeds(
+        self,
+        higher_timeframe_dataframes: dict[
+            Timeframe,
+            pd.DataFrame,
+        ]
+        | None,
+    ) -> dict[Timeframe, HistoricalBarFeed]:
+        if higher_timeframe_dataframes is None:
+            return {}
+
+        if not isinstance(
+            higher_timeframe_dataframes,
+            dict,
+        ):
+            raise TypeError(
+                "higher_timeframe_dataframes must be a dict"
+            )
+
+        feeds = {}
+
+        for timeframe, dataframe in (
+            higher_timeframe_dataframes.items()
+        ):
+            if not isinstance(
+                timeframe,
+                Timeframe,
+            ):
+                raise TypeError(
+                    "higher_timeframe_dataframes keys must be "
+                    "Timeframe values"
+                )
+
+            if timeframe == self._config.timeframe:
+                raise ValueError(
+                    "higher_timeframe_dataframes cannot include "
+                    "the base timeframe"
+                )
+
+            if not isinstance(
+                dataframe,
+                pd.DataFrame,
+            ):
+                raise TypeError(
+                    "higher_timeframe_dataframes values must be "
+                    "pandas DataFrames"
+                )
+
+            config = replace(
+                self._config,
+                timeframe=timeframe,
+            )
+
+            feeds[timeframe] = HistoricalBarFeed(
+                dataframe=dataframe,
+                config=config,
+            )
+
+        return feeds
 
     def _process_pending_orders(
         self,

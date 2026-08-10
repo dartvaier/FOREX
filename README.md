@@ -4,7 +4,7 @@ Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para Fore
 
 O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> Status atual: F6 - Strategy Research em andamento com sete hipóteses baseline testadas.
+> Status atual: F6 - Strategy Research em andamento com oito hipóteses baseline testadas.
 
 ---
 
@@ -44,6 +44,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Quinta hipótese simples: `AsianRangeBreakoutStrategy`.
 - Sexta hipótese simples: `SimpleCarryStrategy`.
 - Sétima hipótese simples: `SimpleRegimeDetectionStrategy`.
+- Oitava hipótese simples: `MultiTimeframeMomentumStrategy`.
 
 ---
 
@@ -382,6 +383,21 @@ Resultado histórico inicial em `EURUSD M15`:
 
 Esse filtro simples de regime ficou próximo do zero sem custos, mas não sobreviveu aos custos explícitos.
 
+Oitava hipótese testada:
+
+```text
+Multi-Timeframe Momentum
+```
+
+Resultado histórico inicial em `EURUSD M15` com contexto `H1/H4`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 6838 | -289.52 | 422.58 | 0.935529 | 9710.48 |
+| Custos explícitos | 6838 | -2819.58 | 2847.70 | 0.554227 | 7180.42 |
+
+Esse baseline validou a infraestrutura multi-timeframe sem look-ahead, mas a regra inicial operou demais e não mostrou edge.
+
 ---
 
 ## Testes
@@ -389,7 +405,7 @@ Esse filtro simples de regime ficou próximo do zero sem custos, mas não sobrev
 Suíte atual:
 
 ```text
-785 passed
+799 passed
 ```
 
 Comando:
@@ -411,7 +427,8 @@ Comando:
 - ledgers;
 - performance;
 - regression tests;
-- strategy research baselines.
+- strategy research baselines;
+- multi-timeframe context availability.
 
 ---
 
@@ -483,8 +500,8 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar a hipótese `Multi-Timeframe`.
-2. Criar testes unitários com séries artificiais.
-3. Rodar backtest histórico com custo zero e custos explícitos.
-4. Registrar trade count, net profit, drawdown, win rate e profit factor.
-5. Comparar contra os benchmarks já testados.
+1. Iniciar F7 `Risk Management`.
+2. Implementar limites básicos de risco separados da Strategy.
+3. Evoluir position sizing além do fixed size.
+4. Definir daily loss, drawdown guard e kill switch.
+5. Manter todos os backtests reproduzíveis antes de qualquer Demo.

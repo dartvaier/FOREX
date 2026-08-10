@@ -1,10 +1,20 @@
-from dataclasses import dataclass
+from collections.abc import Mapping
+from bisect import bisect_right
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from types import MappingProxyType
 
 from backtest.clock import ClockEvent, SimulationClock
 from backtest.feed import HistoricalBarFeed
 from backtest.models.bar import MarketBar
-from backtest.models.enums import SimulationPhase
+from backtest.models.enums import SimulationPhase, Timeframe
+
+
+_TIMEFRAME_DURATIONS = {
+    Timeframe.M15: timedelta(minutes=15),
+    Timeframe.H1: timedelta(hours=1),
+    Timeframe.H4: timedelta(hours=4),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +52,10 @@ class BacktestContext:
 
     current_bar: MarketBar | None
     closed_bars: tuple[MarketBar, ...]
+    timeframe_bars: Mapping[
+        Timeframe,
+        tuple[MarketBar, ...],
+    ] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self._validate_utc_datetime(
@@ -82,6 +96,50 @@ class BacktestContext:
             raise TypeError(
                 "closed_bars must contain only MarketBar objects"
             )
+
+        if not isinstance(
+            self.timeframe_bars,
+            Mapping,
+        ):
+            raise TypeError(
+                "timeframe_bars must be a mapping"
+            )
+
+        normalized_timeframe_bars = {}
+
+        for timeframe, bars in self.timeframe_bars.items():
+            if not isinstance(
+                timeframe,
+                Timeframe,
+            ):
+                raise TypeError(
+                    "timeframe_bars keys must be Timeframe values"
+                )
+
+            if not isinstance(
+                bars,
+                tuple,
+            ):
+                raise TypeError(
+                    "timeframe_bars values must be tuples"
+                )
+
+            if not all(
+                isinstance(bar, MarketBar)
+                for bar in bars
+            ):
+                raise TypeError(
+                    "timeframe_bars values must contain only "
+                    "MarketBar objects"
+                )
+
+            normalized_timeframe_bars[timeframe] = bars
+
+        object.__setattr__(
+            self,
+            "timeframe_bars",
+            MappingProxyType(normalized_timeframe_bars),
+        )
 
         if self.phase == SimulationPhase.BAR_OPEN:
             if self.current_bar is not None:
@@ -160,6 +218,16 @@ class BacktestContextBuilder:
         self,
         feed: HistoricalBarFeed,
         clock: SimulationClock,
+        higher_timeframe_feeds: Mapping[
+            Timeframe,
+            HistoricalBarFeed,
+        ]
+        | None = None,
+        higher_timeframe_bar_limits: Mapping[
+            Timeframe,
+            int,
+        ]
+        | None = None,
     ) -> None:
         if not isinstance(
             feed,
@@ -195,6 +263,25 @@ class BacktestContextBuilder:
 
         self._feed = feed
         self._clock = clock
+        self._higher_timeframe_feeds = (
+            self._validate_higher_timeframe_feeds(
+                higher_timeframe_feeds
+            )
+        )
+        self._higher_timeframe_bar_limits = (
+            self._validate_higher_timeframe_bar_limits(
+                higher_timeframe_bar_limits
+            )
+        )
+        self._higher_timeframe_close_times = {
+            timeframe: tuple(
+                bar.time + _TIMEFRAME_DURATIONS[timeframe]
+                for bar in feed.bars
+            )
+            for timeframe, feed in (
+                self._higher_timeframe_feeds.items()
+            )
+        }
 
     def build(
         self,
@@ -269,6 +356,9 @@ class BacktestContextBuilder:
                     end_index=event.bar_index,
                     closed_bar_limit=closed_bar_limit,
                 ),
+                timeframe_bars=self._higher_timeframe_bars(
+                    timestamp=event.timestamp,
+                ),
             )
 
         if event.phase == SimulationPhase.BAR_CLOSE:
@@ -285,6 +375,9 @@ class BacktestContextBuilder:
                 closed_bars=self._closed_bars(
                     end_index=event.bar_index + 1,
                     closed_bar_limit=closed_bar_limit,
+                ),
+                timeframe_bars=self._higher_timeframe_bars(
+                    timestamp=event.timestamp,
                 ),
             )
 
@@ -310,3 +403,147 @@ class BacktestContextBuilder:
         return self._feed.bars[
             start_index:end_index
         ]
+
+    def _higher_timeframe_bars(
+        self,
+        *,
+        timestamp: datetime,
+    ) -> dict[Timeframe, tuple[MarketBar, ...]]:
+        result = {}
+
+        for timeframe, feed in self._higher_timeframe_feeds.items():
+            end_index = bisect_right(
+                self._higher_timeframe_close_times[timeframe],
+                timestamp,
+            )
+
+            limit = self._higher_timeframe_bar_limits.get(
+                timeframe
+            )
+
+            start_index = (
+                0
+                if limit is None
+                else max(
+                    0,
+                    end_index - limit,
+                )
+            )
+
+            result[timeframe] = feed.bars[
+                start_index:end_index
+            ]
+
+        return result
+
+    def _validate_higher_timeframe_feeds(
+        self,
+        feeds: Mapping[
+            Timeframe,
+            HistoricalBarFeed,
+        ]
+        | None,
+    ) -> Mapping[Timeframe, HistoricalBarFeed]:
+        if feeds is None:
+            return MappingProxyType({})
+
+        if not isinstance(
+            feeds,
+            Mapping,
+        ):
+            raise TypeError(
+                "higher_timeframe_feeds must be a mapping"
+            )
+
+        normalized = {}
+
+        for timeframe, feed in feeds.items():
+            if not isinstance(
+                timeframe,
+                Timeframe,
+            ):
+                raise TypeError(
+                    "higher_timeframe_feeds keys must be Timeframe "
+                    "values"
+                )
+
+            if timeframe == self._clock.timeframe:
+                raise ValueError(
+                    "higher_timeframe_feeds cannot include the "
+                    "base timeframe"
+                )
+
+            if timeframe not in _TIMEFRAME_DURATIONS:
+                raise ValueError(
+                    f"unsupported higher timeframe: {timeframe}"
+                )
+
+            if not isinstance(
+                feed,
+                HistoricalBarFeed,
+            ):
+                raise TypeError(
+                    "higher_timeframe_feeds values must be "
+                    "HistoricalBarFeed objects"
+                )
+
+            if feed.config.symbol != self._feed.config.symbol:
+                raise ValueError(
+                    "higher timeframe feed symbol must match base "
+                    "feed"
+                )
+
+            if feed.config.timeframe != timeframe:
+                raise ValueError(
+                    "higher timeframe feed config must match "
+                    "mapping key"
+                )
+
+            normalized[timeframe] = feed
+
+        return MappingProxyType(normalized)
+
+    @staticmethod
+    def _validate_higher_timeframe_bar_limits(
+        limits: Mapping[
+            Timeframe,
+            int,
+        ]
+        | None,
+    ) -> Mapping[Timeframe, int]:
+        if limits is None:
+            return MappingProxyType({})
+
+        if not isinstance(
+            limits,
+            Mapping,
+        ):
+            raise TypeError(
+                "higher_timeframe_bar_limits must be a mapping"
+            )
+
+        normalized = {}
+
+        for timeframe, limit in limits.items():
+            if not isinstance(
+                timeframe,
+                Timeframe,
+            ):
+                raise TypeError(
+                    "higher_timeframe_bar_limits keys must be "
+                    "Timeframe values"
+                )
+
+            if (
+                not isinstance(limit, int)
+                or isinstance(limit, bool)
+                or limit <= 0
+            ):
+                raise ValueError(
+                    "higher_timeframe_bar_limits values must be "
+                    "positive integers"
+                )
+
+            normalized[timeframe] = limit
+
+        return MappingProxyType(normalized)

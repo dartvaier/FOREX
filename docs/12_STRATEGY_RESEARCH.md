@@ -1045,17 +1045,137 @@ assimetria direcional, saida com stop/target).
 
 ---
 
-## 19. Proximo Passo
+## 19. Multi-Timeframe Momentum
+
+Hipotese primaria testada:
+
+```text
+Multi-Timeframe Momentum
+
+base timeframe = M15
+
+contexto superior = H1 + H4
+
+m15_lookback = 16 candles
+
+h1_lookback = 24 candles
+
+h4_lookback = 30 candles
+
+m15_entry_threshold = 0.0005
+
+h1_entry_threshold = 0.0005
+
+h4_entry_threshold = 0.0010
+
+exit_threshold = 0.0
+
+fixed_quantity = 0.01 lot
+```
+
+Regra:
+
+```text
+H4 define o regime direcional.
+
+H1 confirma a direcao.
+
+M15 gera o gatilho operacional.
+
+H4 bullish + H1 bullish + M15 bullish
+
+-> ENTER_LONG
+
+H4 bearish + H1 bearish + M15 bearish
+
+-> ENTER_SHORT
+
+Perda do alinhamento operacional
+
+-> EXIT
+
+caso contrario
+
+-> HOLD
+```
+
+Regra temporal:
+
+```text
+M15 e o relogio base de execucao.
+
+H1/H4 sao entregues a Strategy em context.timeframe_bars
+somente depois do fechamento do proprio candle superior.
+
+H1 10:00 so fica disponivel a partir de 11:00.
+
+H4 08:00 so fica disponivel a partir de 12:00.
+```
+
+Resultado zero-cost:
+
+```text
+trades:              6838
+net_profit:          -289.52
+total_return_pct:    -2.8952
+max_drawdown:        422.58
+max_drawdown_pct:    4.2258
+win_rate:            32.6600
+profit_factor:       0.935529
+average_trade:       -0.0423
+final_equity:        9710.48
+```
+
+Resultado com custos explicitos:
+
+```text
+spread_pips:                  2.0
+slippage_pips:                0.5
+commission_per_lot_per_side:  3.50
+
+trades:              6838
+net_profit:          -2819.58
+total_return_pct:    -28.1958
+max_drawdown:        2847.70
+max_drawdown_pct:    28.4770
+win_rate:            23.1400
+profit_factor:       0.554227
+average_trade:       -0.4123
+final_equity:        7180.42
+```
+
+Leitura:
+
+```text
+A infraestrutura multi-timeframe foi validada com H1/H4 causais.
+
+A regra primaria, porem, nao apresentou edge bruto em zero-cost.
+
+O numero alto de trades tornou a estrategia muito sensivel a custos.
+```
+
+Decisao:
+
+```text
+Nao promover para OOS.
+
+Registrar que a infraestrutura multi-timeframe esta pronta para pesquisa,
+mas esta especificacao primaria de momentum alinhado nao foi aprovada.
+```
+
+---
+
+## 20. Proximo Passo
 
 Avancar para:
 
 ```text
-Multi-Timeframe
+F7 - Risk Management
 ```
 
 Objetivo:
 
 ```text
-testar se sinais em M15 melhoram quando filtrados por contexto H1/H4
-sem quebrar causalidade ou alinhamento temporal
+separar decisao de mercado da decisao de exposicao financeira
+e substituir o fixed size baseline por controles de risco auditaveis
 ```

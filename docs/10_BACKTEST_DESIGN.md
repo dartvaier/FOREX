@@ -368,6 +368,7 @@ Order
 BAR t+1 OPEN
     ↓
 Fill
+```
 
 na implementação baseline.
 
@@ -2328,7 +2329,7 @@ Mas resultados deverão informar que existe posição não realizada.
 
 # 114. Multi-Timeframe
 
-A arquitetura deverá futuramente permitir:
+A arquitetura baseline agora permite:
 
 ```text
 H4 → regime
@@ -2339,6 +2340,25 @@ M15 → execution
 ```
 
 sem look-ahead.
+
+Implementação atual:
+
+```text
+BacktestEngine.run(..., higher_timeframe_dataframes={...})
+
+BacktestContext.timeframe_bars
+```
+
+Estratégias antigas continuam recebendo apenas `closed_bars` do timeframe
+base. Estratégias multi-timeframe podem declarar:
+
+```text
+higher_timeframes
+higher_timeframe_bar_limits
+```
+
+para que o runner e o engine carreguem apenas o contexto superior
+necessário.
 
 ---
 

@@ -1229,7 +1229,7 @@ Carry                    ✅ BASELINE TESTED
 
 Regime Detection         ✅ BASELINE TESTED
 
-Multi-Timeframe          NEXT
+Multi-Timeframe          ✅ BASELINE TESTED
 ```
 
 ---
@@ -2455,9 +2455,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-785 tests
+799 tests
 
-785 passed
+799 passed
 
 0 failed
 ```
@@ -2605,20 +2605,20 @@ Velocidade de execução não deve ser priorizada sobre correção.
 
 # 129. Próxima Ação Técnica
 
-Continuar a F6 com a próxima hipótese planejada:
+Iniciar a próxima fase planejada:
 
 ```text
-Multi-Timeframe
+F7 - Risk Management
 ```
 
 A tarefa técnica seguinte deverá ser:
 
 ```text
-definir uma especificação causal simples
-implementar a Strategy
-criar testes unitários
-rodar backtest zero-cost e com custos explícitos
-registrar os resultados
+separar decisao de mercado da exposicao financeira
+implementar limites basicos de risco
+evoluir position sizing alem de fixed size
+documentar invariantes de risco
+manter regression tests verdes
 ```
 
 ---

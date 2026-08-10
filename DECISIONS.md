@@ -542,7 +542,7 @@ separado.
 
 ```text
 ACCEPTED
-IMPLEMENTATION PENDING
+IMPLEMENTED
 ```
 
 ## Contexto
@@ -1335,6 +1335,22 @@ bar close time
 availability time
 ```
 
+A implementação atual disponibiliza candles superiores via:
+
+```text
+BacktestContext.timeframe_bars
+```
+
+com:
+
+```text
+Timeframe.H1
+Timeframe.H4
+```
+
+O `BacktestEngine` mantém o relógio base em M15 e só entrega candles
+H1/H4 cujo fechamento seja menor ou igual ao `current_time`.
+
 ## Consequências
 
 Um:
@@ -1348,6 +1364,10 @@ não poderá ser usado como fechado antes de:
 ```text
 12:00
 ```
+
+Estratégias multi-timeframe devem declarar os timeframes superiores
+necessários e, quando possível, os limites de janela para evitar carregar
+histórico superior completo em cada passo.
 
 ---
 
