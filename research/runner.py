@@ -19,6 +19,11 @@ Examples:
     python -m research.runner --strategy time_series_momentum --param lookback=192 --param entry_threshold=0.002
     python -m research.runner --strategy ema_trend --date-from 2015-01-01 --date-to 2020-12-31
     python -m research.runner --strategy mean_reversion --cost both --equity-csv
+
+Cost stress (F8):
+
+    python -m research.runner --strategy time_series_momentum --cost explicit --cost-multiplier 1.5 --tag cost1x5
+    python -m research.runner --strategy time_series_momentum --cost explicit --cost-multiplier 2.0 --tag cost2x
 """
 
 from __future__ import annotations
@@ -27,8 +32,10 @@ import argparse
 import hashlib
 import importlib
 import json
+import math
 from dataclasses import fields
 from datetime import datetime, timedelta, timezone
+from numbers import Real
 from pathlib import Path
 from typing import Any, get_type_hints
 
@@ -125,6 +132,64 @@ def _parse_bool(raw: str) -> bool:
         return False
 
     raise ValueError(f"cannot parse bool from {raw!r}")
+
+
+def validate_cost_multiplier(
+    multiplier: float,
+) -> float:
+    """
+    Validate a cost stress multiplier.
+
+    The multiplier must be a finite non-negative number.
+    1.0 reproduces the baseline explicit costs; 1.5 and 2.0
+    are the standard F8 cost stress levels.
+    """
+    if (
+        not isinstance(multiplier, Real)
+        or isinstance(multiplier, bool)
+        or not math.isfinite(multiplier)
+        or multiplier < 0.0
+    ):
+        raise ValueError(
+            "cost_multiplier must be a finite "
+            "non-negative number"
+        )
+
+    return float(multiplier)
+
+
+def scale_cost_params(
+    cost_params: dict[str, float],
+    multiplier: float,
+) -> dict[str, float]:
+    """
+    Scale explicit cost parameters by a stress multiplier.
+
+    Each of spread_pips, slippage_pips and
+    commission_per_lot_per_side is multiplied by the same
+    factor, preserving the relative structure of the baseline
+    cost model while stressing its absolute magnitude.
+
+    The base cost_params dict is never mutated.
+    """
+    if not isinstance(
+        cost_params,
+        dict,
+    ):
+        raise TypeError(
+            "cost_params must be a dict"
+        )
+
+    multiplier = validate_cost_multiplier(
+        multiplier
+    )
+
+    scaled = {
+        key: value * multiplier
+        for key, value in cost_params.items()
+    }
+
+    return scaled
 
 
 def coerce_strategy_params(
@@ -353,6 +418,7 @@ def build_report(
     timeframe: str,
     cost_mode: str,
     cost_params: dict[str, float],
+    cost_multiplier: float,
     strategy_params: dict[str, Any],
     strategy_module: str,
     tag: str | None,
@@ -415,6 +481,7 @@ def build_report(
             ),
             "cost_model": cost_mode,
             "cost_params": dict(cost_params),
+            "cost_multiplier": cost_multiplier,
             "ambiguous_bar_policy": str(
                 config.ambiguous_bar_policy
             ),
@@ -453,6 +520,7 @@ def build_report(
         "cost_analysis": {
             "round_trip_cost_money": round_trip_money,
             "round_trip_cost_pips": round_trip_pips,
+            "cost_multiplier": cost_multiplier,
             "trades_count": trade_metrics.total_trades,
             "total_cost_paid": sum(
                 trade.spread_cost
@@ -511,9 +579,14 @@ def run_single(
     fixed_quantity: float,
     cost_mode: str,
     cost_params: dict[str, float],
+    cost_multiplier: float,
     out_dir: Path,
     write_equity: bool,
 ) -> Path:
+    cost_multiplier = validate_cost_multiplier(
+        cost_multiplier
+    )
+
     dataframe = load_dataframe(symbol, timeframe)
 
     start, end = resolve_dates(
@@ -539,11 +612,17 @@ def run_single(
     )
 
     if cost_mode == "zero":
+        effective_cost_params = dict(cost_params)
         cost_model = ZeroCostModel(instrument)
     else:
+        effective_cost_params = scale_cost_params(
+            cost_params,
+            cost_multiplier,
+        )
+
         cost_model = FixedCostModel(
             instrument,
-            **cost_params,
+            **effective_cost_params,
         )
 
     risk_gate = FixedSizeRiskGate(
@@ -583,7 +662,7 @@ def run_single(
     round_trip_money = round_trip_cost_money(
         instrument,
         fixed_quantity,
-        cost_params,
+        effective_cost_params,
     )
 
     round_trip_pips = money_to_pips(
@@ -598,6 +677,7 @@ def run_single(
         timeframe=timeframe,
         cost_mode=cost_mode,
         cost_params=cost_params,
+        cost_multiplier=cost_multiplier,
         strategy_params=strategy_params,
         strategy_module=strategy_module,
         tag=tag,
@@ -777,6 +857,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--cost-multiplier",
+        type=float,
+        default=1.0,
+        help=(
+            "cost stress multiplier applied to spread, "
+            "slippage and commission (F8 cost stress; "
+            "ignored for cost=zero)"
+        ),
+    )
+
+    parser.add_argument(
         "--param",
         action="append",
         default=[],
@@ -853,6 +944,7 @@ def main() -> None:
                 fixed_quantity=args.fixed_quantity,
                 cost_mode=mode,
                 cost_params=cost_params,
+                cost_multiplier=args.cost_multiplier,
                 out_dir=args.out_dir,
                 write_equity=args.equity_csv,
             )

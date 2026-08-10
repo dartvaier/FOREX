@@ -31,10 +31,10 @@ O tamanho final da posicao pertence ao RiskGate.
 Status:
 
 ```text
-IN PROGRESS
+COMPLETE (F7)
 ```
 
-Primeiro bloco implementado:
+Blocos implementados:
 
 ```text
 RiskGate protocol
@@ -50,6 +50,10 @@ StopBasedRiskGate
 ExposureLimitRiskGate
 
 DailyLossRiskGate
+
+DrawdownRiskGate
+
+KillSwitchRiskGate
 ```
 
 ---
@@ -433,8 +437,20 @@ Sinais HOLD sempre passam (nao produzem Order).
 
 ## 13. Proximo Passo
 
-Avancar para:
+A F7 (Risk Management) esta completa.
+
+A fase seguinte e:
 
 ```text
-Portfolio-level risk
+F8 - Robustness & Validation
 ```
+
+Primeiro bloco F8 ja iniciado:
+
+```text
+cost stress no research runner
+(--cost-multiplier)
+```
+
+Portfolio-level risk e multi-symbol risk permanecem documentados como
+evolucao futura, dependentes de suporte multi-symbol (roadmap §104-105).

@@ -56,6 +56,8 @@ Strategy Research
 - DailyLossRiskGate wrapper with absolute and percentage daily loss limits.
 - DrawdownRiskGate wrapper with absolute and percentage all-time-high drawdown locks.
 - KillSwitchRiskGate wrapper with latch kill/reset and SOFT/HARD modes (ADR-045).
+- Cost stress support in the research runner (--cost-multiplier 1.0/1.5/2.0) with
+  auditable base params + multiplier in reports (F8 first block).
 
 ---
 

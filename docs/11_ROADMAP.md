@@ -74,9 +74,9 @@ F5  Backtest Engine             ✅ COMPLETE
 
 F6  Strategy Research           ✅ COMPLETE BASELINE
 
-F7  Risk Management             🟡 IN PROGRESS
+F7  Risk Management             ✅ COMPLETE
 
-F8  Robustness & Validation     ⬜ NOT STARTED
+F8  Robustness & Validation     🟡 IN PROGRESS
 
 F9  Demo Execution              ⬜ NOT STARTED
 
@@ -1275,7 +1275,7 @@ Para cada Strategy:
 Status:
 
 ```text
-IN PROGRESS
+COMPLETE
 ```
 
 ---
@@ -1347,19 +1347,23 @@ position size
 Implementado no primeiro bloco F7:
 
 ```text
-RiskGate protocol
+[x] implementation of RiskGate protocol
 
-VolumeRules
+[x] VolumeRules
 
-FixedSizeRiskGate com validação de volume_step
+[x] FixedSizeRiskGate com validação de volume_step
 
-StopBasedRiskGate
+[x] StopBasedRiskGate
 
-ExposureLimitRiskGate
+[x] ExposureLimitRiskGate
 
-DailyLossRiskGate
+[x] DailyLossRiskGate
 
-entry_price + stop_loss metadata
+[x] DrawdownRiskGate
+
+[x] KillSwitchRiskGate
+
+[x] entry_price + stop_loss metadata
 
 risk_fraction
 
@@ -1370,6 +1374,12 @@ max_notional opcional
 max_daily_loss opcional
 
 max_daily_loss_fraction opcional
+
+[x] max_drawdown opcional
+
+[x] max_drawdown_pct opcional
+
+[x] kill()/reset() latch
 ```
 
 ---
@@ -1411,9 +1421,9 @@ kill switch bloqueia execução
 
 [x] daily loss
 
-[ ] drawdown protection
+[x] drawdown protection
 
-[ ] kill switch
+[x] kill switch
 
 [x] testes automatizados
 ```
@@ -1425,10 +1435,17 @@ kill switch bloqueia execução
 Status:
 
 ```text
-NOT STARTED
+IN PROGRESS
 ```
 
 Essa fase é quantitativa, não apenas de engenharia.
+
+Primeiro bloco implementado:
+
+```text
+cost stress no research runner
+(--cost-multiplier 1.5 / 2.0)
+```
 
 ---
 
@@ -2489,9 +2506,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-830 tests
+869 tests
 
-830 passed
+869 passed
 
 0 failed
 ```

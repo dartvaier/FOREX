@@ -27,3 +27,5 @@ research/reports/
 data/raw/
 data/processed/
 data/cache/
+# Agent Cluster workspace
+.cluster/

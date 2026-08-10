@@ -23,6 +23,7 @@ COLUMNS = [
     "strategy",
     "tf",
     "cost",
+    "cost_multiplier",
     "tag",
     "from",
     "to",
@@ -59,6 +60,10 @@ def extract_row(report: dict) -> dict:
         "strategy": config["strategy_id"],
         "tf": config["timeframe"],
         "cost": config["cost_model"],
+        "cost_multiplier": config.get(
+            "cost_multiplier",
+            1.0,
+        ),
         "tag": config.get("tag") or "",
         "from": config["date_from"][:10],
         "to": config["date_to"][:10],

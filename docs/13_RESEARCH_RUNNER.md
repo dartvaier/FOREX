@@ -41,6 +41,10 @@ python -m research.runner --strategy ema_trend --timeframe H1
 
 # Gravando também a curva de equity completa
 python -m research.runner --strategy mean_reversion --equity-csv
+
+# Cost stress (F8): baseline, 1.5x e 2.0x dos custos explícitos
+python -m research.runner --strategy time_series_momentum --cost explicit --cost-multiplier 1.5 --tag cost1x5
+python -m research.runner --strategy time_series_momentum --cost explicit --cost-multiplier 2.0 --tag cost2x
 ```
 
 ### Opções principais
@@ -57,9 +61,33 @@ python -m research.runner --strategy mean_reversion --equity-csv
 | `--spread-pips` | `2.0` | Spread (pips) do `FixedCostModel` |
 | `--slippage-pips` | `0.5` | Slippage por lado (pips) |
 | `--commission` | `3.50` | Comissão por lote por lado (USD) |
+| `--cost-multiplier` | `1.0` | Multiplicador de stress aplicado a spread, slippage e comissão (F8; ignorado em `zero`) |
 | `--param KEY=VALUE` | — | Sobrescreve parâmetro da estratégia (repetível) |
 | `--tag` | vazio | Sufixo nos nomes dos relatórios para distinguir variações da mesma estratégia (ex.: `--tag V1`) |
 | `--equity-csv` | off | Grava também a curva de equity |
+
+## Cost Stress (F8)
+
+O `--cost-multiplier` escala os três parâmetros de custo explícito pelo mesmo
+fator, preservando a estrutura relativa do `FixedCostModel`:
+
+```text
+multiplier 1.0  -> custo baseline
+multiplier 1.5  -> stress moderado
+multiplier 2.0  -> stress forte
+```
+
+O relatório JSON registra de forma auditável:
+
+```text
+config.cost_params          -> parâmetros BASE (não escalados)
+config.cost_multiplier      -> fator de stress aplicado
+cost_analysis.round_trip_*  -> custo efetivo (já escalado)
+```
+
+Isso permite comparar a fragilidade de uma estratégia ao custo: se 1.5x ou 2.0x
+destroem o resultado, o edge é frágil (repo §17). O `research.summarize` exibe
+a coluna `cost_multiplier` para comparar execuções lado a lado.
 
 ## Saída
 
