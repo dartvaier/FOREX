@@ -201,6 +201,20 @@ Descobertas de engenharia corrigidas no adapter (commit `8ec51c2`):
 3. positions_get() sem argumento quando nao ha filtro
 ```
 
-Status: ativacao validada. Proximo: periodo de validacao demo (ordens de
-teste ao longo do tempo para coletar metricas de execucao reais e fechar
-o DoD F9).
+### Evento de validacao demo (2026-08-10 19:25 UTC-3)
+
+```text
+5/5 round-trips EURUSD 0.01 (BUY + close por ticket)
+comparisons: 5 (within 5, outside 0) | within_rate: 100%
+avg latency: 231 ms | max latency: 233 ms
+avg slippage: 0.00 pips | rejeicoes: 0 | reconciliacao OK em todos
+posicoes finais: 0 | custo total: 0.01 USD virtual
+```
+
+DoD F9 completo (roadmap §88): F9 = COMPLETE. A amostra de execucao
+real (10 ordens no total, incluindo o teste de ativacao) mostra
+execucao saudavel: latencia ~230 ms, slippage zero, spread minimo.
+
+Nota: validamos EXECUCAO. Nenhuma estrategia do baseline tem edge
+com custos (F8/OOS) — o projeto permanece research/demo platform
+(roadmap §93) ate existir uma hipotese que passe na validacao.

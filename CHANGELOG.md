@@ -108,6 +108,10 @@ Strategy Research
   Adapter fixes from real-broker findings: symbol-derived filling mode
   (retcode 10030), close_position() by ticket for hedging accounts, and
   positions_get() without symbol=None. 1012 tests.
+- F9 COMPLETE: demo validation period executed (2026-08-10, authorized).
+  5/5 round-trips within tolerance, 100% fill rate, 0 rejections, avg
+  latency 231ms, slippage 0.00 pips; execution comparison summary closes
+  the F9 DoD (8/8). Platform remains research/demo (no strategy has edge).
 
 ---
 
