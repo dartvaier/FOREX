@@ -54,6 +54,8 @@ Strategy Research
 - RiskGate protocol, volume-step validation and StopBasedRiskGate sizing from entry/stop metadata.
 - ExposureLimitRiskGate wrapper with max quantity and max notional checks.
 - DailyLossRiskGate wrapper with absolute and percentage daily loss limits.
+- DrawdownRiskGate wrapper with absolute and percentage all-time-high drawdown locks.
+- KillSwitchRiskGate wrapper with latch kill/reset and SOFT/HARD modes (ADR-045).
 
 ---
 

@@ -2301,7 +2301,7 @@ capital real
 
 ```text
 ACCEPTED
-IMPLEMENTATION FUTURE
+IMPLEMENTED
 ```
 
 ## Decisão
@@ -2313,6 +2313,12 @@ Kill Switch
 ```
 
 independente da Strategy.
+
+## Implementação
+
+`KillSwitchRiskGate` em `backtest/risk.py`: wrapper composicional com latch
+`kill()`/`reset()`, modos SOFT (bloqueia entradas, permite exits) e HARD
+(`block_exits=True`, bloqueia entradas e exits). HOLD sempre passa.
 
 ## Consequências
 
@@ -2501,7 +2507,7 @@ Data & Infrastructure Foundation
 | 042 | Backtest lucrativo não basta | ✅ Aceito |
 | 043 | OOS como lockbox | 🟡 Futuro |
 | 044 | Demo antes de Live | ✅ Aceito |
-| 045 | Kill Switch obrigatório | 🟡 Futuro |
+| 045 | Kill Switch obrigatório | ✅ Implementado |
 | 046 | Trading flag não basta | 🟡 Futuro |
 | 047 | Estado = Research/Development | ✅ Atual |
 | 048 | v0.1 = Data Foundation | ✅ Atual |

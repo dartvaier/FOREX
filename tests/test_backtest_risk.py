@@ -14,6 +14,7 @@ from backtest.risk import (
     DrawdownRiskGate,
     ExposureLimitRiskGate,
     FixedSizeRiskGate,
+    KillSwitchRiskGate,
     RiskDecision,
     StopBasedRiskGate,
     VolumeRules,
@@ -1452,3 +1453,257 @@ def test_drawdown_gate_current_drawdown_is_zero_when_no_equity_observed():
     assert gate.current_drawdown == 0.0
     assert gate.current_drawdown_pct == 0.0
     assert gate.peak_equity is None
+
+
+# ---------------------------------------------------------------------------
+# KillSwitchRiskGate
+# ---------------------------------------------------------------------------
+
+
+def test_kill_switch_starts_inactive():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    assert gate.is_active is False
+    assert gate.block_exits is False
+
+
+def test_kill_switch_arms_and_resets_latch():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    gate.kill()
+    assert gate.is_active is True
+
+    gate.kill()
+    assert gate.is_active is True
+
+    gate.reset()
+    assert gate.is_active is False
+
+
+def test_kill_switch_inactive_delegates_approval():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == 0.03
+    assert "KillSwitchRiskGate" in decision.reason
+
+
+def test_kill_switch_soft_mode_rejects_entries_when_active():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    gate.kill()
+
+    long_decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    short_decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_SHORT
+        )
+    )
+
+    assert long_decision.approved is False
+    assert long_decision.quantity is None
+    assert "kill switch" in long_decision.reason
+    assert short_decision.approved is False
+    assert short_decision.quantity is None
+
+
+def test_kill_switch_soft_mode_allows_exit_when_active():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    gate.kill()
+
+    exit_decision = gate.evaluate(
+        make_signal(
+            SignalAction.EXIT
+        )
+    )
+
+    assert exit_decision.approved is True
+    assert exit_decision.quantity is None
+
+
+def test_kill_switch_allows_hold_when_active():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    gate.kill()
+
+    hold_decision = gate.evaluate(
+        make_signal(
+            SignalAction.HOLD
+        )
+    )
+
+    assert hold_decision.approved is True
+    assert hold_decision.quantity is None
+
+
+def test_kill_switch_hard_mode_blocks_exit_when_active():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        block_exits=True,
+    )
+
+    gate.kill()
+
+    exit_decision = gate.evaluate(
+        make_signal(
+            SignalAction.EXIT
+        )
+    )
+
+    assert exit_decision.approved is False
+    assert exit_decision.quantity is None
+    assert "kill switch" in exit_decision.reason
+
+
+def test_kill_switch_hard_mode_allows_hold_when_active():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        block_exits=True,
+    )
+
+    gate.kill()
+
+    hold_decision = gate.evaluate(
+        make_signal(
+            SignalAction.HOLD
+        )
+    )
+
+    assert hold_decision.approved is True
+    assert hold_decision.quantity is None
+
+
+def test_kill_switch_after_reset_approves_entries_again():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    gate.kill()
+
+    blocked = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert blocked.approved is False
+
+    gate.reset()
+
+    approved = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG
+        )
+    )
+
+    assert approved.approved is True
+    assert approved.quantity == 0.03
+
+
+def test_kill_switch_preserves_inner_rejection():
+    gate = KillSwitchRiskGate(
+        inner=StopBasedRiskGate(
+            instrument=make_instrument(),
+            account_equity=10000.0,
+            risk_fraction=0.01,
+        ),
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+            },
+        )
+    )
+
+    assert decision.approved is False
+    assert "stop_loss" in decision.reason
+
+
+def test_kill_switch_validates_configuration():
+    with pytest.raises(
+        TypeError,
+        match="RiskGate",
+    ):
+        KillSwitchRiskGate(
+            inner=object(),  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(
+        TypeError,
+        match="block_exits",
+    ):
+        KillSwitchRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            block_exits=1,  # type: ignore[arg-type]
+        )
+
+
+def test_kill_switch_delegates_instrument():
+    inner = FixedSizeRiskGate(
+        instrument=make_instrument(),
+        fixed_quantity=0.01,
+    )
+
+    gate = KillSwitchRiskGate(
+        inner=inner,
+    )
+
+    assert gate.instrument is inner.instrument
+    assert gate.inner is inner

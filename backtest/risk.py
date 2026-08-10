@@ -1321,3 +1321,156 @@ class DrawdownRiskGate:
             raise ValueError(
                 f"{name} must be a finite positive number"
             )
+
+
+class KillSwitchRiskGate:
+    """
+    Risk Gate wrapper that blocks execution when armed.
+
+    The kill switch is an independent safety mechanism: once
+    triggered through kill(), it stays active until an explicit
+    operator reset() call. It is a latch, not a dynamic guard.
+
+    Supported modes:
+
+    - SOFT (default):
+        ENTER_LONG / ENTER_SHORT are rejected while active.
+        HOLD and EXIT pass through, so existing exposure can
+        still be reduced or closed.
+
+    - HARD (block_exits=True):
+        ENTER_LONG / ENTER_SHORT and EXIT are rejected while
+        active (full freeze). HOLD always passes because it
+        produces no Order.
+
+    While inactive, the gate delegates to the inner RiskGate
+    without altering its decisions.
+
+    This satisfies ADR-045: a kill switch independent of the
+    Strategy that can block execution even when the Strategy
+    is functioning normally.
+    """
+
+    def __init__(
+        self,
+        *,
+        inner: RiskGate,
+        block_exits: bool = False,
+    ) -> None:
+        if not isinstance(
+            inner,
+            RiskGate,
+        ):
+            raise TypeError(
+                "inner must satisfy the RiskGate protocol"
+            )
+
+        if not isinstance(
+            block_exits,
+            bool,
+        ):
+            raise TypeError(
+                "block_exits must be a bool"
+            )
+
+        self._inner = inner
+        self._block_exits = block_exits
+        self._active = False
+
+    @property
+    def inner(self) -> RiskGate:
+        return self._inner
+
+    @property
+    def instrument(
+        self,
+    ) -> InstrumentSpecification:
+        return self._inner.instrument
+
+    @property
+    def block_exits(self) -> bool:
+        return self._block_exits
+
+    @property
+    def is_active(self) -> bool:
+        return self._active
+
+    def kill(self) -> None:
+        """
+        Arm the kill switch (latch).
+
+        Once armed, the switch stays active until reset() is
+        called by the operator. No equity observation is
+        required: the switch is manual by design.
+        """
+        self._active = True
+
+    def reset(self) -> None:
+        """
+        Disarm the kill switch (operator action).
+
+        After reset, the gate delegates to the inner RiskGate
+        again without blocking.
+        """
+        self._active = False
+
+    def evaluate(
+        self,
+        signal: Signal,
+    ) -> RiskDecision:
+        decision = self._inner.evaluate(signal)
+
+        if not decision.approved:
+            return decision
+
+        if signal.action == SignalAction.HOLD:
+            return decision
+
+        if signal.action not in (
+            SignalAction.ENTER_LONG,
+            SignalAction.ENTER_SHORT,
+            SignalAction.EXIT,
+        ):
+            raise ValueError(
+                f"unsupported SignalAction: {signal.action}"
+            )
+
+        if not self._active:
+            return RiskDecision(
+                signal_id=decision.signal_id,
+                approved=True,
+                quantity=decision.quantity,
+                reason=(
+                    f"{decision.reason}; approved by "
+                    "KillSwitchRiskGate"
+                ),
+            )
+
+        if signal.action in (
+            SignalAction.ENTER_LONG,
+            SignalAction.ENTER_SHORT,
+        ):
+            return self._reject(
+                decision,
+                "kill switch active",
+            )
+
+        if self._block_exits:
+            return self._reject(
+                decision,
+                "kill switch active (hard mode blocks exits)",
+            )
+
+        return decision
+
+    @staticmethod
+    def _reject(
+        decision: RiskDecision,
+        reason: str,
+    ) -> RiskDecision:
+        return RiskDecision(
+            signal_id=decision.signal_id,
+            approved=False,
+            quantity=None,
+            reason=reason,
+        )

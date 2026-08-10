@@ -250,6 +250,10 @@ daily loss atingiu max_daily_loss_fraction
 drawdown atingiu max_drawdown
 
 drawdown atingiu max_drawdown_pct
+
+kill switch ativo (soft)
+
+kill switch ativo (hard, bloqueia exits)
 ```
 
 Essas rejeicoes retornam:
@@ -276,13 +280,13 @@ max exposure
 daily loss guard
 
 drawdown guard
+
+kill switch
 ```
 
 Ainda nao implementado:
 
 ```text
-kill switch
-
 portfolio-level risk
 
 multi-symbol risk
@@ -311,6 +315,8 @@ DailyLossRiskGate
 
 DrawdownRiskGate
 
+KillSwitchRiskGate
+
 missing entry_price
 
 missing stop_loss
@@ -338,6 +344,16 @@ drawdown unlock on recovery
 drawdown unlock on new peak
 
 drawdown HOLD/EXIT passthrough
+
+kill switch latch arm/reset
+
+kill switch soft mode
+
+kill switch hard mode
+
+kill switch HOLD passthrough
+
+kill switch inner rejection
 
 engine integration
 ```
@@ -374,10 +390,51 @@ Sinais HOLD e EXIT continuam permitidos.
 
 ---
 
-## 12. Proximo Passo
+## 12. KillSwitchRiskGate
+
+Mecanismo de seguranca independente da Strategy (ADR-045).
+
+Envolve outro RiskGate:
+
+```text
+inner RiskGate
+  ->
+KillSwitchRiskGate
+```
+
+Quando inativo, delega ao inner sem alterar decisoes.
+
+Metodos:
+
+```text
+kill()
+  arma o switch (latch)
+
+reset()
+  desarma (acao do operador)
+```
+
+Modos:
+
+```text
+SOFT (default)
+  entradas bloqueadas; HOLD e EXIT passam
+
+HARD (block_exits=True)
+  entradas e exits bloqueados; HOLD passa
+```
+
+O kill switch e um latch: uma vez armado, permanece ativo ate reset()
+explicito. Diferente do DrawdownRiskGate, nao desarma sozinho.
+
+Sinais HOLD sempre passam (nao produzem Order).
+
+---
+
+## 13. Proximo Passo
 
 Avancar para:
 
 ```text
-Kill switch
+Portfolio-level risk
 ```
