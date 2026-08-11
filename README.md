@@ -4,7 +4,10 @@ Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para Fore
 
 O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> Status atual: F7 - Risk Management em andamento após oito hipóteses baseline testadas na F6.
+> Status atual: F0-F9 completos; F10 pronto (aguarda decisão de
+> capital real, sob o operador). Busca de edge encerrada (docs/24,
+> roadmap §93): nenhuma hipótese baseline sobrevive a custos
+> explícitos — plataforma permanece research/demo.
 
 ---
 
@@ -18,10 +21,11 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 | F3 | Historical Data Layer | Concluída |
 | F4 | Data Transformation | Concluída |
 | F5 | Backtest Engine | Concluída |
-| F6 | Strategy Research | Concluída no baseline inicial |
-| F7 | Risk Engine | Em andamento |
-| F8 | Robustness & Validation | Não iniciada |
-| F9 | Demo Execution | Não iniciada |
+| F6 | Strategy Research | Concluída |
+| F7 | Risk Engine | Concluída |
+| F8 | Robustness & Validation | Concluída |
+| F9 | Demo Execution | Concluída (10 ordens demo reais) |
+| F10 | Live Readiness | Infra pronta; decisão de capital sob o operador |
 
 ---
 
@@ -46,6 +50,17 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Sexta hipótese simples: `SimpleCarryStrategy`.
 - Sétima hipótese simples: `SimpleRegimeDetectionStrategy`.
 - Oitava hipótese simples: `MultiTimeframeMomentumStrategy`.
+- Risk Gates: drawdown e kill switch (F7).
+- Harness de robustez: sweep local, subperiods, Dev/Val/OOS com
+  lockbox, stability, walk-forward (F8).
+- Camada de execução: `execution/` (validação de ordem/fill,
+  reconciliação, audit log JSONL, monitoramento, comparação
+  expected-vs-observed, adapter MT5 com guard de trading).
+- Readiness: `readiness/` (review, risk limits, safety, CLI).
+- Multi-symbol: registry de 7 majors, coleta/build parametrizados,
+  conversão de moeda quote→USD (docs/20-22).
+- Documentação: docs/01..24 (metodologia, robustez, execução,
+  readiness, pesquisa multi-par e encerramento da busca de edge).
 
 ---
 
