@@ -1,5 +1,18 @@
 # Architecture & Engineering Decisions
 
+## TF-01 / Encerramento da busca de edge (2026-08-10)
+
+- **Decisao**: TF-01 REJEITADO (H1: exp -0.14 dev / -0.82 val;
+  H4: sem edge bruto). BUSCA DE EDGE ENCERRADA para os baselines.
+- **Racional**: aritmetica estrutural - o TSM ganha 1.4-2.3 pips
+  por trade bruto, abaixo do custo de 3.7 pips; nenhuma variacao
+  de entrada (RF-01), saida (SO-01), par (MS) ou timeframe (TF-01)
+  muda isso.
+- **Consequencia**: plataforma permanece research/demo (roadmap
+  §93); execucao demo validada e infra pronta (§92, decisoes de
+  capital real sob o operador). ML/HMM (§108-109) seria projeto
+  novo, sem promessa de edge.
+
 ## SO-01 (2026-08-10): Trailing ATR — piora; turnover e o problema
 
 - **Decisao**: hipotese SO-01 REJEITADA (trailing ATR M15 aumenta

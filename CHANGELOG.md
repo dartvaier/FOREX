@@ -165,6 +165,14 @@ Strategy Research
   consumed by turnover costs (~517 USD costs vs +192 gross).
   Next hypothesis: same TSM on H1/H4 (fewer trades, lower
   relative cost). OOS lockbox not consulted.
+- TF-01 timeframe (docs/24): TSM on H1/H4 - REJECT. H1 cuts
+  dev losses 5x vs M15 (-64 vs -325) but expectancy stays
+  negative; H4 has no raw edge (zero-cost -96). Structural
+  pattern: TSM gross edge is ~1.4-2.3 pips/trade, always below
+  the 3.7-pip round-trip cost. EDGE SEARCH CLOSED (roadmap #93):
+  no baseline hypothesis survives explicit costs; platform stays
+  research/demo. ML/HMM frontier is a separate project, not an
+  incremental continuation.
 
 ---
 

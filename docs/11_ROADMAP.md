@@ -2748,10 +2748,12 @@ Decisao de capital real — operador, nunca automatica
 Itens futuros:
 
 ```text
-Walk-Forward (75) — DONE 2026-08-10 (docs/18): 3 baselines REJECT,
-   nenhum edge transferivel; lockbox OOS selado
-Monte Carlo (76) | Advanced Robustness DSR/PBO/CSCV (77) | D1 (103)
-Multiple Symbols (104) | Multi-Timeframe Runtime (106)
+Walk-Forward (75) — DONE (docs/18): 3 baselines REJECT
+Multiple Symbols (104) — dados 6 majors + 19 backtests (docs/21)
+Multi-Timeframe Runtime (106) — DONE (docs/20)
+Conversao de moeda quote->USD — DONE (docs/22)
+Busca de edge — ENCERRADA (docs/24, roadmap §93: research/demo)
+Monte Carlo (76) | DSR/PBO/CSCV (77) | D1 (103)
 Feature Engineering (107) | ML (108) | HMM (109)
 Banco de Dados (110) | Experiment Tracking (112)
 Dataset Versioning (113) | CI/CD (114)
