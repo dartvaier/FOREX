@@ -1,5 +1,17 @@
 # Architecture & Engineering Decisions
 
+## SO-01 (2026-08-10): Trailing ATR — piora; turnover e o problema
+
+- **Decisao**: hipotese SO-01 REJEITADA (trailing ATR M15 aumenta
+  turnover e perde mais sob custos; nenhuma config vence baseline).
+- **Racional**: folga de 2x ATR e pequena na escala M15 -> saidas
+  prematuras + reentradas caras. Zero-cost baseline e POSITIVO
+  (+1.9% dev): o edge bruto existe, mas ~517 USD de custos de
+  turnover consomem os +192 USD de lucro bruto.
+- **Consequencia**: a alavanca e TURNOVER, nao entrada nem saida.
+  Proxima hipotese: TSM em H1/H4 (menos trades, custo relativo
+  menor). Se falhar, encerrar busca de edge (roadmap §93).
+
 ## RF-01 (2026-08-10): Filtro de regime — reduz perda, nao cria edge
 
 - **Decisao**: hipotese RF-01 REJEITADA (expectancy permanece

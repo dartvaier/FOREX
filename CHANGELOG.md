@@ -155,6 +155,16 @@ Strategy Research
   -401 USD (dd 40% -> 4%). All 19 pair/strategy dev backtests now
   valid and negative - no pair has edge under costs. +8 tests
   (1057 total). Crosses (triangular) still future work.
+- SO-01 trailing ATR exit (docs/23): TSM gains exit_mode=
+  trailing_atr (ATR trailing stop replaces momentum exit; default
+  momentum preserves regression, +8 tests). REJECT: trailing
+  increases turnover (1397->3672 trades) and loses more under
+  explicit costs (-1226 vs -325 dev baseline; no mult/lookback
+  config beats baseline). Key finding: zero-cost dev baseline is
+  POSITIVE (+192, exp +0.137) - the raw edge exists but is fully
+  consumed by turnover costs (~517 USD costs vs +192 gross).
+  Next hypothesis: same TSM on H1/H4 (fewer trades, lower
+  relative cost). OOS lockbox not consulted.
 
 ---
 
