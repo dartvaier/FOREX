@@ -1,5 +1,5 @@
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from numbers import Integral, Real
 
 import numpy as np
@@ -12,6 +12,13 @@ REGIME_FILTER_H4_VOL_HIGH = "h4_vol_high"
 REGIME_FILTERS = (
     REGIME_FILTER_NONE,
     REGIME_FILTER_H4_VOL_HIGH,
+)
+
+EXIT_MODE_MOMENTUM = "momentum"
+EXIT_MODE_TRAILING_ATR = "trailing_atr"
+EXIT_MODES = (
+    EXIT_MODE_MOMENTUM,
+    EXIT_MODE_TRAILING_ATR,
 )
 
 
@@ -54,6 +61,27 @@ class TimeSeriesMomentumStrategy:
     regime_filter: str = REGIME_FILTER_NONE
     regime_lookback: int = 48
     regime_context_lookback: int = 250
+
+    # Exit management (SO-01, docs/23): the default "momentum" exit
+    # preserves the baseline exactly; "trailing_atr" replaces the
+    # exit with an ATR trailing stop (entry logic unchanged).
+    exit_mode: str = EXIT_MODE_MOMENTUM
+    trail_atr_lookback: int = 14
+    trail_atr_mult: float = 2.0
+
+    # Runtime state (mutated via object.__setattr__; frozen contract
+    # kept). Cleared by reset() which the engine calls per run.
+    _in_long: bool = field(default=False, init=False, repr=False)
+    _highest_close: float | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
+    _entry_price: float | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         if (
@@ -119,9 +147,43 @@ class TimeSeriesMomentumStrategy:
                     "regime_context_lookback"
                 )
 
+        if self.exit_mode not in EXIT_MODES:
+            raise ValueError(
+                f"exit_mode must be one of {EXIT_MODES}, "
+                f"got {self.exit_mode!r}"
+            )
+
+        if self.exit_mode == EXIT_MODE_TRAILING_ATR:
+            self._validate_period(
+                "trail_atr_lookback",
+                self.trail_atr_lookback,
+            )
+
+            self._validate_number(
+                "trail_atr_mult",
+                self.trail_atr_mult,
+            )
+
+            if self.trail_atr_mult <= 0:
+                raise ValueError(
+                    "trail_atr_mult must be positive"
+                )
+
     @property
     def closed_bar_limit(self) -> int:
+        if (
+            self.exit_mode == EXIT_MODE_TRAILING_ATR
+            and self.trail_atr_lookback > self.lookback
+        ):
+            return self.trail_atr_lookback + 1
+
         return self.lookback + 1
+
+    def reset(self) -> None:
+        """Clear runtime state (called by the engine per run)."""
+        object.__setattr__(self, "_in_long", False)
+        object.__setattr__(self, "_highest_close", None)
+        object.__setattr__(self, "_entry_price", None)
 
     @property
     def higher_timeframes(self) -> tuple[Timeframe, ...]:
@@ -178,7 +240,15 @@ class TimeSeriesMomentumStrategy:
             "entry_threshold": self.entry_threshold,
             "exit_threshold": self.exit_threshold,
             "regime_filter": self.regime_filter,
+            "exit_mode": self.exit_mode,
         }
+
+        if self.exit_mode == EXIT_MODE_TRAILING_ATR:
+            return self._on_bar_trailing_atr(
+                context,
+                momentum_return,
+                metadata,
+            )
 
         if momentum_return < self.exit_threshold:
             # EXIT is never blocked by the regime filter (RF-01:
@@ -229,6 +299,161 @@ class TimeSeriesMomentumStrategy:
             reason="Positive momentum in favorable regime",
             metadata=metadata,
         )
+
+    def _on_bar_trailing_atr(
+        self,
+        context: BacktestContext,
+        momentum_return: float,
+        metadata: dict,
+    ) -> Signal:
+        """
+        SO-01 exit management: ATR trailing stop replaces the
+        momentum exit. Entries are unchanged; while in a LONG, the
+        stop ratchets up with the highest close and the position is
+        closed when the close falls below the trailing level.
+        """
+        current_bar = context.closed_bars[-1]
+
+        if not self._in_long:
+            if momentum_return <= self.entry_threshold:
+                return self._signal(
+                    context,
+                    action=SignalAction.HOLD,
+                    reason="No time-series momentum signal",
+                    metadata=metadata,
+                )
+
+            if self.regime_filter == REGIME_FILTER_NONE:
+                object.__setattr__(self, "_in_long", True)
+                object.__setattr__(
+                    self,
+                    "_highest_close",
+                    current_bar.close,
+                )
+                object.__setattr__(
+                    self,
+                    "_entry_price",
+                    current_bar.close,
+                )
+
+                return self._signal(
+                    context,
+                    action=SignalAction.ENTER_LONG,
+                    reason="Positive time-series momentum",
+                    metadata=metadata,
+                )
+
+            regime_ok, regime_stats = self._regime_allows_entry(
+                context,
+            )
+
+            metadata = {
+                **metadata,
+                **regime_stats,
+            }
+
+            if not regime_ok:
+                return self._signal(
+                    context,
+                    action=SignalAction.HOLD,
+                    reason="Regime filter blocked entry",
+                    metadata=metadata,
+                )
+
+            object.__setattr__(self, "_in_long", True)
+            object.__setattr__(
+                self,
+                "_highest_close",
+                current_bar.close,
+            )
+            object.__setattr__(
+                self,
+                "_entry_price",
+                current_bar.close,
+            )
+
+            return self._signal(
+                context,
+                action=SignalAction.ENTER_LONG,
+                reason="Positive momentum in favorable regime",
+                metadata=metadata,
+            )
+
+        # In a LONG: ratchet the trailing level and check the exit.
+        highest_close = max(
+            float(self._highest_close or current_bar.close),
+            current_bar.close,
+        )
+
+        object.__setattr__(
+            self,
+            "_highest_close",
+            highest_close,
+        )
+
+        atr = self._atr(context)
+        trail_level = (
+            highest_close
+            - self.trail_atr_mult * atr
+        )
+
+        metadata = {
+            **metadata,
+            "trail_atr": round(atr, 8),
+            "trail_level": round(trail_level, 8),
+            "highest_close": round(highest_close, 8),
+        }
+
+        if current_bar.close < trail_level:
+            object.__setattr__(self, "_in_long", False)
+            object.__setattr__(self, "_highest_close", None)
+            object.__setattr__(self, "_entry_price", None)
+
+            return self._signal(
+                context,
+                action=SignalAction.EXIT,
+                reason="Trailing ATR stop hit",
+                metadata=metadata,
+            )
+
+        return self._signal(
+            context,
+            action=SignalAction.HOLD,
+            reason="Long held; trailing stop intact",
+            metadata=metadata,
+        )
+
+    def _atr(
+        self,
+        context: BacktestContext,
+    ) -> float:
+        """
+        Average True Range over the last trail_atr_lookback closed
+        bars (M15). True range uses the previous close for gaps.
+        """
+        bars = context.closed_bars[
+            -(self.trail_atr_lookback + 1):
+        ]
+
+        total = 0.0
+
+        for index in range(1, len(bars)):
+            previous = bars[index - 1]
+            bar = bars[index]
+
+            high = float(bar.high)
+            low = float(bar.low)
+            previous_close = float(previous.close)
+
+            true_range = max(
+                high - low,
+                abs(high - previous_close),
+                abs(low - previous_close),
+            )
+
+            total += true_range
+
+        return total / (len(bars) - 1)
 
     def _regime_allows_entry(
         self,
