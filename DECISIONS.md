@@ -1,5 +1,33 @@
 # Architecture & Engineering Decisions
 
+## H08 REJECTED + H09 INCONCLUSIVA (2026-08-12, ciclo 2)
+
+- **H08** (gap semanal + filtro de liquidez): REJEITADA — net ~0.2
+  pips com CI contendo zero; o filtro removeu sinal (reversao do gap
+  concentra-se nos opens caros, racional invertido).
+- **H09** (reversao apos comprimida + fechamento no extremo):
+  INCONCLUSIVA — primeiro sinal com net positivo em todas as
+  variacoes de fronteira (+0.003% a +0.012% no h4, leave-one-year-out
+  sempre > 0), mas net marginal, concentrado em 2015 e so no grupo
+  high/h4.
+- **Proximos passos**: estagio 2 focado do H09 (condicionado ao
+  operador); H10 (momentum 1a hora Londres) e H11 (DE em H1, custo
+  relativo menor) seguem pre-registradas (docs/26 §29-§30).
+
+# Architecture & Engineering Decisions
+
+## H08 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H08 (gap semanal com filtro de liquidez no open)
+  REJEITADA — net ~0.2 pips com CI contendo zero em 1.2/1.0/0.8 pips.
+- **Achado**: o filtro removeu sinal (bruto 0.031% -> 0.025%): a
+  reversao do gap concentra-se nos opens caros (noticia), nao nos
+  calmos — racional da hipotese invertido.
+- **Consequencia**: ciclo 2 continua com H09 (reversao apos comprimida
+  + extremo), H10 (momentum 1a hora Londres), H11 (DE em H1).
+
+# Architecture & Engineering Decisions
+
 ## BATERIA DOCS/21 REAVALIADA COM CUSTOS CALIBRADOS (2026-08-12)
 
 - **Decisao**: medidos os spreads reais dos 7 pares (EURUSD 0.20 a
