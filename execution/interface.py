@@ -99,6 +99,12 @@ class ExecutionReport:
 
     status == FILLED implies a fill; a fill attached to a non-FILLED
     report is invalid (caught in __post_init__).
+
+    Hardening ES-04 (docs/25): broker execution status and local
+    validation verdict are SEPARATE concepts. A broker-executed
+    fill that fails a local tolerance check keeps status=FILLED and
+    flags `requires_reconciliation=True`; it is never downgraded to
+    REJECTED (the real execution must not be erased).
     """
 
     order_id: str
@@ -106,6 +112,8 @@ class ExecutionReport:
     message: str = ""
     broker_order_id: str | None = None
     fill: Fill | None = None
+    validation_status: str | None = None
+    requires_reconciliation: bool = False
 
     def __post_init__(self) -> None:
         if not self.order_id:

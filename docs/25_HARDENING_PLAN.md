@@ -75,7 +75,7 @@ Nenhuma nova estratégia deve ter prioridade sobre um P0 ou P1 aberto.
 ## Status
 
 ```text
-PLANNED
+DONE (2026-08-12)
 ```
 
 ## Objetivo
@@ -124,9 +124,9 @@ mock não deve inventar API inexistente
 ### Critério de aceite
 
 ```text
-[ ] cancel usa somente superfície suportada pelo adapter MT5 real
-[ ] testes reproduzem a API real utilizada
-[ ] nenhuma regressão nos submits existentes
+[x] cancel usa somente superfície suportada pelo adapter MT5 real
+[x] testes reproduzem a API real utilizada
+[x] nenhuma regressão nos submits existentes
 ```
 
 ### Commit sugerido
@@ -173,9 +173,9 @@ retcode 10030 regression
 ### Critério de aceite
 
 ```text
-[ ] seleção de filling possui regra documentada
-[ ] bit/enum do broker não é interpretado por suposição
-[ ] regression test cobre retcode 10030
+[x] seleção de filling possui regra documentada
+[x] bit/enum do broker não é interpretado por suposição
+[x] regression test cobre retcode 10030
 ```
 
 ### Commit sugerido
@@ -255,10 +255,10 @@ ordem válida em demo alcança broker
 ### Critério de aceite
 
 ```text
-[ ] nenhuma chamada mutável ao broker ignora o gate final
-[ ] conta real não pode executar por acidente
-[ ] kill switch é checado no caminho de submit
-[ ] ambiente Demo continua funcionando
+[x] nenhuma chamada mutável ao broker ignora o gate final
+[x] conta real não pode executar por acidente
+[x] kill switch é checado no caminho de submit
+[x] ambiente Demo continua funcionando
 ```
 
 ### Commit sugerido
@@ -345,9 +345,9 @@ nenhuma duplicação/reenvio automático
 ### Critério de aceite
 
 ```text
-[ ] execução real nunca é apagada pela camada de validação
-[ ] violation é representável no modelo
-[ ] estado exige reconciliação antes de continuar
+[x] execução real nunca é apagada pela camada de validação
+[x] violation é representável no modelo
+[x] estado exige reconciliação antes de continuar
 ```
 
 ### Commit sugerido
@@ -392,7 +392,7 @@ limite exatamente no boundary
 ### Critério de aceite
 
 ```text
-[ ] nenhuma validação multi-symbol usa pip default implícito
+[x] nenhuma validação multi-symbol usa pip default implícito
 ```
 
 ### Commit sugerido

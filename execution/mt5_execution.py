@@ -19,7 +19,7 @@ broker state.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from backtest.models.enums import (
     OrderSide,
@@ -49,6 +49,9 @@ DEFAULT_MAGIC = 20260810
 
 # MT5 trade request action: immediate market execution
 _TRADE_ACTION_DEAL = 1
+
+# MT5 trade request action: remove a pending order (cancel)
+_TRADE_ACTION_REMOVE = 5
 
 # Order types: 0 = buy, 1 = sell
 _ORDER_TYPE_BUY = 0
@@ -89,6 +92,13 @@ class MT5Execution(ExecutionInterface):
         Max price deviation (points) sent with the trade request.
     magic:
         Expert advisor magic number for order tagging.
+    allowed_trade_modes:
+        Account trade modes permitted on the MUTATING paths. Default
+        is only ("demo",): real accounts are rejected unless an
+        explicit separate policy opts them in (docs/25 ES-03).
+    kill_switch:
+        Optional callable returning True when a freeze is active.
+        Checked on every mutating path (submit/cancel/close).
     """
 
     def __init__(
@@ -99,6 +109,8 @@ class MT5Execution(ExecutionInterface):
         max_slippage_pips: float = 2.0,
         deviation_points: int = 20,
         magic: int = DEFAULT_MAGIC,
+        allowed_trade_modes: tuple[str, ...] = ("demo",),
+        kill_switch: Callable[[], bool] | None = None,
     ) -> None:
         self._trading_enabled = bool(trading_enabled)
         self._validation_config = (
@@ -107,6 +119,8 @@ class MT5Execution(ExecutionInterface):
         self._max_slippage_pips = max_slippage_pips
         self._deviation_points = deviation_points
         self._magic = magic
+        self._allowed_trade_modes = tuple(allowed_trade_modes)
+        self._kill_switch = kill_switch
         self._connected = False
 
     # ------------------------------------------------------------------
@@ -179,9 +193,9 @@ class MT5Execution(ExecutionInterface):
         if not mode:
             return None
 
-        fok = getattr(mt5, "ORDER_FILLING_FOK", 1)  # type: ignore[union-attr]
-        ioc = getattr(mt5, "ORDER_FILLING_IOC", 2)  # type: ignore[union-attr]
-        ret = getattr(mt5, "ORDER_FILLING_RETURN", 3)  # type: ignore[union-attr]
+        fok = getattr(mt5, "ORDER_FILLING_FOK", 0)  # type: ignore[union-attr]
+        ioc = getattr(mt5, "ORDER_FILLING_IOC", 1)  # type: ignore[union-attr]
+        ret = getattr(mt5, "ORDER_FILLING_RETURN", 2)  # type: ignore[union-attr]
 
         if mode & 1:
             return fok
@@ -193,6 +207,62 @@ class MT5Execution(ExecutionInterface):
             return ret
 
         return None
+
+    def _account_mode_policy(self, account: BrokerAccountState) -> str | None:
+        """
+        Enforce the account trade-mode policy on mutating paths
+        (docs/25 ES-03).
+
+        Returns None when the account mode is allowed, or a rejection
+        message describing the violation. Default policy allows only
+        demo accounts; real accounts require an explicit separate
+        policy (allowed_trade_modes) and can never execute by accident.
+        """
+        if not account.trade_mode or account.trade_mode == "unknown":
+            return (
+                "broker account trade mode is unknown; "
+                "cannot authorize a mutating request"
+            )
+
+        if account.trade_mode not in self._allowed_trade_modes:
+            allowed = ", ".join(self._allowed_trade_modes) or "<none>"
+            return (
+                f"account trade_mode={account.trade_mode!r} is not in "
+                f"allowed_trade_modes=({allowed}); real trading requires "
+                "an explicit separate policy"
+            )
+
+        return None
+
+    def _kill_switch_active(self) -> bool:
+        if self._kill_switch is None:
+            return False
+
+        return bool(self._kill_switch())
+
+    @staticmethod
+    def _pip_size(symbol: str) -> float:
+        """
+        Real pip size for the symbol (docs/25 ES-05).
+
+        Derived from symbol digits: pip = 10 ** -(digits - 1).
+        EURUSD (5 digits) -> 0.0001; USDJPY (3 digits) -> 0.01.
+        """
+        info = mt5.symbol_info(symbol)  # type: ignore[union-attr]
+
+        if info is None:
+            raise RuntimeError(
+                f"no symbol info for {symbol}: {mt5.last_error()}"  # type: ignore[union-attr]
+            )
+
+        digits = getattr(info, "digits", None)
+
+        if not digits or digits <= 0:
+            raise RuntimeError(
+                f"invalid digits for {symbol}: {digits}"
+            )
+
+        return float(10 ** -(digits - 1))
 
     @staticmethod
     def _to_utc(epoch_seconds: int | None) -> datetime:
@@ -213,6 +283,24 @@ class MT5Execution(ExecutionInterface):
         self._require_mt5()
 
         account = self.fetch_account()
+
+        # Hardening ES-03: kill switch + account mode policy are
+        # checked on the mandatory path, before any broker mutation.
+        if self._kill_switch_active():
+            return ExecutionReport(
+                order_id=order.order_id,
+                status=OrderStatus.REJECTED,
+                message="kill switch is active; order submission blocked",
+            )
+
+        mode_error = self._account_mode_policy(account)
+
+        if mode_error is not None:
+            return ExecutionReport(
+                order_id=order.order_id,
+                status=OrderStatus.REJECTED,
+                message=mode_error,
+            )
 
         validation = validate_order(
             order,
@@ -264,38 +352,94 @@ class MT5Execution(ExecutionInterface):
         if translated.status != OrderStatus.FILLED:
             return translated
 
+        # Hardening ES-04: a real broker execution is NEVER downgraded
+        # to REJECTED by a local validation. Slippage outside tolerance
+        # flags the report for reconciliation instead.
         fill_validation = validate_fill(
             order,
             translated.fill,
             max_slippage_pips=self._max_slippage_pips,
+            pip_size=self._pip_size(order.symbol),
         )
 
         if not fill_validation.valid:
             return ExecutionReport(
                 order_id=order.order_id,
-                status=OrderStatus.REJECTED,
-                message="fill failed validation: " + "; ".join(
+                status=OrderStatus.FILLED,
+                message="filled; local fill validation failed: " + "; ".join(
                     fill_validation.errors
                 ),
                 broker_order_id=translated.broker_order_id,
+                fill=translated.fill,
+                validation_status="OUTSIDE_TOLERANCE",
+                requires_reconciliation=True,
             )
 
         return translated
 
     def cancel(self, order_id: str) -> ExecutionReport:
+        """
+        Cancel a pending order using the official MT5 surface.
+
+        Hardening ES-01 (docs/25): `mt5.order_delete()` does NOT exist
+        in the MetaTrader5 Python API. Cancellation of a pending order
+        is a trade request with TRADE_ACTION_REMOVE via order_send().
+        `order_id` must be the BROKER TICKET of the pending order.
+        """
         self._require_trading()
         self._require_mt5()
         self._ensure_connected()
 
-        result = mt5.order_delete(order_id)  # type: ignore[union-attr]
-
-        if not result:
+        try:
+            ticket = int(order_id)
+        except (TypeError, ValueError):
             return ExecutionReport(
                 order_id=order_id,
-                status=OrderStatus.CANCELLED,
+                status=OrderStatus.REJECTED,
                 message=(
-                    f"order_delete failed: "
-                    f"{mt5.last_error()}"  # type: ignore[union-attr]
+                    "cancel requires the broker ticket as order_id "
+                    f"(got {order_id!r})"
+                ),
+            )
+
+        account = self.fetch_account()
+
+        if self._kill_switch_active():
+            return ExecutionReport(
+                order_id=order_id,
+                status=OrderStatus.REJECTED,
+                message="kill switch is active; cancel blocked",
+            )
+
+        mode_error = self._account_mode_policy(account)
+
+        if mode_error is not None:
+            return ExecutionReport(
+                order_id=order_id,
+                status=OrderStatus.REJECTED,
+                message=mode_error,
+            )
+
+        request: dict[str, Any] = {
+            "action": _TRADE_ACTION_REMOVE,
+            "order": ticket,
+            "magic": self._magic,
+            "comment": f"cancel:{order_id}",
+        }
+
+        result = mt5.order_send(request)  # type: ignore[union-attr]
+
+        if result is None or result.retcode != _RETCODE_DONE:
+            return ExecutionReport(
+                order_id=order_id,
+                status=OrderStatus.REJECTED,
+                message=(
+                    f"cancel failed (retcode "
+                    f"{getattr(result, 'retcode', None)}): "
+                    f"{getattr(result, 'comment', 'no comment')}"
+                ),
+                broker_order_id=str(
+                    getattr(result, "order", None) or ""
                 ),
             )
 
@@ -303,6 +447,9 @@ class MT5Execution(ExecutionInterface):
             order_id=order_id,
             status=OrderStatus.CANCELLED,
             message="cancelled",
+            broker_order_id=str(
+                getattr(result, "order", None) or ""
+            ),
         )
 
     def _translate_result(
@@ -371,6 +518,25 @@ class MT5Execution(ExecutionInterface):
         self._require_trading()
         self._require_mt5()
         self._ensure_connected()
+
+        account = self.fetch_account()
+
+        # Hardening ES-03: same mandatory gate as submit().
+        if self._kill_switch_active():
+            return ExecutionReport(
+                order_id=position.identifier,
+                status=OrderStatus.REJECTED,
+                message="kill switch is active; close blocked",
+            )
+
+        mode_error = self._account_mode_policy(account)
+
+        if mode_error is not None:
+            return ExecutionReport(
+                order_id=position.identifier,
+                status=OrderStatus.REJECTED,
+                message=mode_error,
+            )
 
         close_side = (
             OrderSide.SELL

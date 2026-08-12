@@ -309,6 +309,7 @@ def test_valid_fill_passes():
         order,
         fill,
         max_slippage_pips=2.0,
+        pip_size=0.0001,
     )
 
     assert result.valid
@@ -321,6 +322,7 @@ def test_fill_order_id_mismatch_rejected():
         make_order(),
         fill,
         max_slippage_pips=2.0,
+        pip_size=0.0001,
     )
 
     assert not result.valid
@@ -334,6 +336,7 @@ def test_fill_quantity_mismatch_rejected():
         make_order(quantity=0.1),
         fill,
         max_slippage_pips=2.0,
+        pip_size=0.0001,
     )
 
     assert not result.valid
@@ -349,6 +352,7 @@ def test_fill_before_order_creation_rejected():
         make_order(),
         fill,
         max_slippage_pips=2.0,
+        pip_size=0.0001,
     )
 
     assert not result.valid
@@ -383,6 +387,7 @@ def test_fill_slippage_within_tolerance_passes():
         make_order(),
         fill,
         max_slippage_pips=2.0,
+        pip_size=0.0001,
     )
 
     assert result.valid

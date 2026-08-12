@@ -13,9 +13,6 @@ from dataclasses import dataclass, field
 from backtest.models.fill import Fill
 from backtest.models.order import Order
 
-PIP_DEFAULT = 0.0001
-
-
 @dataclass(frozen=True, slots=True)
 class FillValidationResult:
     """Verdict of a single fill validation."""
@@ -32,7 +29,7 @@ def validate_fill(
     fill: Fill,
     *,
     max_slippage_pips: float,
-    pip_size: float = PIP_DEFAULT,
+    pip_size: float,
 ) -> FillValidationResult:
     """
     Validate a broker fill against its order.
@@ -40,7 +37,15 @@ def validate_fill(
     Checks: identity (order_id), exact quantity, positive price,
     causal timing (fill cannot precede order creation) and slippage
     tolerance relative to the reference price.
+
+    Hardening ES-05 (docs/25): `pip_size` is REQUIRED and must be the
+    real pip size of the instrument (e.g. 0.0001 for EURUSD, 0.01 for
+    USDJPY). No implicit default: a multi-symbol validation must never
+    assume 0.0001.
     """
+    if pip_size <= 0:
+        raise ValueError("pip_size must be positive")
+
     errors: list[str] = []
 
     if fill.order_id != order.order_id:
