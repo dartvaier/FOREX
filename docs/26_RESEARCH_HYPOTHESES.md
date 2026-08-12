@@ -2330,3 +2330,85 @@ Series por evento re-derivadas com a formula EXATA do run_multipair
 
 Registros: research/data_mining_tests.py, tests/test_data_mining_tests.py
 (9 testes), research/reports/h07mp_wrc_audit.json.
+
+
+---
+
+# 43. Pre-registro do Ciclo 3: H12/H13/H14 (2026-08-12)
+
+Imutavel. Nenhum backtest do ciclo 3 executado antes deste registro.
+Origem: teorias de movimento nao-aleatorio do Aronson cap. 7
+(extraidas na secao 42). Custo padrao por evento: spread medido da
+barra de entrada + 0.40 + 1.0 + 0.7 pips (PIP_SIZE 0.0001;
+USDJPY 0.01). Instrumento: EURUSD M15 (salvo indicado).
+
+## H12 — Liquidity premium (analogia Cooper)
+
+Racional: acoes muito fracas por ~2 semanas com volume DECLINANTE
+sobem na semana seguinte (Cooper: 44.95% vs 17.91% benchmark,
+walk-forward 1978-1993) — premium por prover liquidez a vendedores
+distressed. Analogia FX: queda acentuada + ausencia de compradores
+(volume caindo) -> reversao na semana seguinte.
+
+- Sessao diaria: M15 -> D1 (close do dia, tick_volume somado).
+- Sinal (fim da sessao t): retorno acumulado das 10 sessoes
+  [t-9, t] <= -1.0% (threshold fixo, baseado na vol diaria do
+  EURUSD ~0.4-0.5%) E tick_volume medio das 10 sessoes < media das
+  20 sessoes anteriores (volume declinante, causal).
+- Entrada: open da sessao t+1 (sem look-ahead).
+- Saida: close da sessao t+5 (1 semana de sessoes).
+- Custo: spread medido da barra M15 de entrada + 2.1 pips.
+- Critérios: (1) n >= 50 sessoes; (2) net medio > 0; (3) LOYO
+  (por ano) > 0; (4) bootstrap CI95 do net medio exclui zero.
+- Classificacao: 4/4 -> CONFIRMADA (stage 1); net > 0 mas CI
+  contem zero -> INCONCLUSIVA; net <= 0 -> REFUTADA.
+
+## H13 — Regras complexas (voting, analogia Hsu-Kuan)
+
+Racional: em 39.832 regras testadas (Hsu-Kuan, 4 indices), 82% das
+significativas eram COMPLEXAS (voting/fractional position) — regras
+simples individuais foram refutadas no nosso programa (H01-H11,
+runner 21/21), mas combinacoes podem capturar sinergia nao
+disponivel nas partes.
+
+- Universo de N=8 regras simples binarias (+1 long / -1 short) no
+  M15 EURUSD, todas ja validadas individualmente como NAO
+  lucrativas (sem sobrevies de selecao):
+  1. EMA(10,50) cross; 2. EMA(20,100) cross; 3. TSM lookback 192;
+  4. Channel breakout 20x60; 5. RSI(14) 30/70; 6. Bollinger(20,2)
+  toque inferior/superior; 7. Gap reversion h1 (0.50 ATR);
+  8. Range compression (H09 stage-1, p30/CLV 0.80).
+- Regra complexa: posicao = sign(sum dos 8 sinais) — voting
+  majoritario. Atualizacao a cada barra M15 fechada.
+- Fwd: retorno da proxima barra M15. Custo por flip: spread medido
+  + 2.1 pips (contabilizado so quando a posicao muda de lado).
+- Critérios: (1) n >= 2000 barras com posicao; (2) net medio por
+  barra > 0; (3) LOYO > 0; (4) WRC sobre as 8 regras individuais
+  (correcao de data-mining, secao 42): voting significativo a 5%.
+- Classificacao: 4/4 -> CONFIRMADA; 2-3 -> INCONCLUSIVA; <= 1 ->
+  REFUTADA.
+
+## H14 — Trend following semanal (hedge risk premium)
+
+Racional: trend following em futuros e compensacao por transferencia
+de risco de hedgers (MLM index: 12-month MA crossover em 25
+commodities, Sharpe ~0.60 vs 0.05 em acoes). Nosso TSM intraday foi
+refutado (docs/21) — mas o premium e um fenomeno de HORIZONTE
+LONGO; semanal/mensal tem custo proporcionalmente menor.
+
+- Agregacao: M15 -> W1 (fechamento domingo-sexta, 1 barra/semana).
+- Regra MLM analogica: preco > media movel de 12 semanas -> LONG;
+  < -> SHORT; posicao mantida por 1 semana (revisao semanal).
+- Entrada: open da semana seguinte ao sinal (causal); saida: close.
+- Custo: spread medido do open semanal + 2.1 pips.
+- Critérios: (1) n >= 100 semanas; (2) net medio semanal > 0;
+  (3) LOYO (por ano) > 0; (4) bootstrap CI95 exclui zero.
+- Classificacao: 4/4 -> CONFIRMADA; net > 0 com CI contendo zero ->
+  INCONCLUSIVA; net <= 0 -> REFUTADA.
+
+## Controle de multiplos testes
+
+3 hipoteses pre-registradas neste ciclo; WRC aplicado ao H13 (8
+regras internas). OOS 2024-2027 permanece contaminado (informativo
+apenas). Resultados avaliados pelos criterios acima SEM redefinicao
+pos-hoc.
