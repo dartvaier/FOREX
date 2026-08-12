@@ -2812,10 +2812,11 @@ Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
    bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
    runner corrigido (bug RA-04) e agora aceita --spread-pips
    calibrado por instrumento
-CICLO 2 (docs/26 §26-§32): H08 REJECTED (filtro de liquidez removeu
-   sinal), H09 INCONCLUSIVA (reversao comprimida+high h4: net +0.003%
-   a +0.012% em todas as fronteiras; estagio 2 condicionado ao
-   operador), H10/H11 pre-registradas
+CICLO 2 FECHADO (docs/26 §26-§35): H08 REJECTED, H09 INCONCLUSIVA
+   (comprimida+high h4: estagio 2 condicionado ao operador),
+   H10 REJECTED (sem momentum 1a hora Londres), H11 REJECTED (DE H1
+   sem poder vs controle) — 11 hipoteses na base de registros
+   (research/hypotheses_log.json), 10 refutadas + 1 inconclusiva
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 

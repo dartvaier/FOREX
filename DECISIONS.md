@@ -1,5 +1,18 @@
 # Architecture & Engineering Decisions
 
+## H10 E H11 ESTAGIO 1 REJECTED (2026-08-12, ciclo 2)
+
+- **H10** (momentum 1a hora Londres): REJEITADA — net -0.023%, 9 de
+  12 anos negativos; retorno pos-janela indiferente ao sinal.
+- **H11** (DE + volume em H1): REJEITADA — filtro pior que o controle
+  em todas as variacoes (DE 0.60/0.80, TV p40/p60); continuacao
+  H1-a-H1 inexistente.
+- **Ciclo 2 fechado**: 3 refutadas (H08/H10/H11) + 1 inconclusiva
+  (H09 — estagio 2 condicionado ao operador). Base de registros
+  `research/hypotheses_log.json` atualizada (11 hipoteses no total).
+
+# Architecture & Engineering Decisions
+
 ## H08 REJECTED + H09 INCONCLUSIVA (2026-08-12, ciclo 2)
 
 - **H08** (gap semanal + filtro de liquidez): REJEITADA — net ~0.2

@@ -1867,3 +1867,76 @@ refutada (sinal real e consistente). Recomendacao: estagio 2 focado
 faixa, stop alem do extremo) + walk-forward — condicionado a
 aceitacao do operador; validar tambem o padrao em H1 (custo relativo
 menor, docs/26 §30 H11).
+
+
+---
+
+# 33. Resultado H10 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Experimento `research/h10_experiment.py`: janela 07:00-08:00
+  Europe/London (zoneinfo); retorno da janela; fwd = close 22:00
+  London / close 08:00 London - 1; signed = sign(janela) * fwd;
+  net = signed - custo (spread de entrada medido 0.335 pips medio +
+  0.40 saida + 1.0 + 0.7).
+- 2.998 dias uteis.
+
+## Resultados
+
+- net medio: **-0.023%** (pos 47.0%) — retorno bruto pos-janela ~0,
+  o net negativo e essencialmente o custo.
+- Por ano: negativo em 9 de 12 anos (-0.072% a +0.006%).
+
+## Decisao
+
+**H10 REJEITADA** — nao ha momentum da primeira hora de Londres: o
+retorno do resto do dia e indiferente ao sinal da janela inicial.
+
+
+---
+
+# 34. Resultado H11 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Experimento `research/h11_experiment.py`: H1 agregado do M15;
+  directional_efficiency + slot_percentile do tick_volume (60 slots
+  causais); sinal DE >= 0.70 e TV >= p50; signed = direcao do candle
+  * fwd (proximo H1); net = signed - 1.9 pips calibrados; controle =
+  direcao do candle sem filtro; sensibilidade DE 0.60/0.80 e
+  TV p40/p60.
+- 72.080 barras H1; filtro n=7.622.
+
+## Resultados (bruto / net)
+
+| modelo | n | bruto | pos% | net |
+|---|---|---|---|---|
+| DE_TV (base) | 7.622 | -0.002% | 46.6% | -0.021% |
+| controle (candle) | 72.079 | -0.001% | 48.1% | -0.020% |
+| DE 0.60 | 11.800 | -0.002% | 46.7% | -0.021% |
+| DE 0.80 | 3.953 | -0.005% | 45.4% | -0.024% |
+| TV p40 | 8.839 | -0.003% | 46.4% | -0.022% |
+| TV p60 | 6.376 | -0.002% | 46.5% | -0.021% |
+
+## Decisao
+
+**H11 REJEITADA** — a eficiencia direcional com volume em H1 NAO
+adiciona poder preditivo vs o controle (candle simples): o filtro e
+levemente PIOR em todas as variacoes. A continuacao H1-a-H1 nao
+existe (bruto ~0 e negativo).
+
+---
+
+# 35. Fechamento do Ciclo 2 (2026-08-12)
+
+| ID | Resultado | Resumo |
+|---|---|---|
+| H08 | REFUTADA | filtro de liquidez removeu sinal (reversao do gap vive nos opens caros) |
+| H09 | INCONCLUSIVA | comprimida+high h4: net +0.003% a +0.012% em todas as fronteiras; marginal e concentrado em 2015 |
+| H10 | REFUTADA | sem momentum da 1a hora de Londres (net -0.023%) |
+| H11 | REFUTADA | DE/TV em H1 nao adiciona vs controle (net ~-0.021%) |
+
+Ciclo 2: 3 refutadas, 1 inconclusiva (H09 — candidata a estagio 2
+condicionado ao operador). Base de registros atualizada em
+`research/hypotheses_log.json`.

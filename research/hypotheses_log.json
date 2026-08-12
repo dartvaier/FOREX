@@ -1,201 +1,301 @@
 {
-  "program": "FOREX Research Program — Hypotheses H01-H07 (docs/26)",
-  "repository": "C:\\Users\\Gabriel\\Desktop\\FOREX",
-  "branch": "feature/backtest-core-models",
-  "dataset": "EURUSD M15 2015-01-02..2026-08-10 (288,223 candles) + H1 processed (ATR)",
-  "methodology": "Pre-registro imutavel (docs/26 §5) -> estagio 1 (previsao condicional, sem trade) -> criterios de rejeicao pre-registrados -> classificacao",
-  "periods": {
-    "development": "2015-01-01..2021-01-01",
-    "validation": "2021-01-01..2024-01-01",
-    "oos": "2024-01-01..2027-01-01 (CONTAMINADO — consultado 2026-08-10; confirmacao final so com --allow-oos + evento)"
+ "program": "FOREX Research Program — Hypotheses H01-H07 (docs/26)",
+ "repository": "C:\\Users\\Gabriel\\Desktop\\FOREX",
+ "branch": "feature/backtest-core-models",
+ "dataset": "EURUSD M15 2015-01-02..2026-08-10 (288,223 candles) + H1 processed (ATR)",
+ "methodology": "Pre-registro imutavel (docs/26 §5) -> estagio 1 (previsao condicional, sem trade) -> criterios de rejeicao pre-registrados -> classificacao",
+ "periods": {
+  "development": "2015-01-01..2021-01-01",
+  "validation": "2021-01-01..2024-01-01",
+  "oos": "2024-01-01..2027-01-01 (CONTAMINADO — consultado 2026-08-10; confirmacao final so com --allow-oos + evento)"
+ },
+ "cost_baseline_pips": {
+  "spread": 2.0,
+  "slippage": 0.5,
+  "commission_per_lot_per_side": 3.5,
+  "round_trip_reference": 3.7
+ },
+ "hypotheses": [
+  {
+   "id": "H03",
+   "name": "Surpresa de volatilidade intradiarua",
+   "priority": 1,
+   "acceptance_criteria": "Retorno condicional medio significativo e estavel por ano; sobreviver a 1.5x custo",
+   "status_initial": "ACTIVE (prioridade 1)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "volatility_surprise (mediana por slot, 60 slots) -> retorno condicional por janela 40/60/80 x h1/2/4/8 x ano x hora",
+   "evidence": [
+    "docs/26 §10-§11",
+    "research/features.py (volatility_surprise, 11 testes)",
+    "research/h03_experiment.py",
+    "research/reports/h03_experiment{,_lb40,_lb80}.json",
+    "tests/test_research_features.py"
+   ],
+   "metrics": {
+    "rows": 288223,
+    "events": "54,338-55,057 (lb40/60/80)",
+    "overall_mean_signed": "0.000%",
+    "h8_by_year_range": "-0.011% a +0.012%",
+    "best_highlight": "00:00 UTC +0.018% (61.3% pos, n=2,691) ~ 1.98 pips brutos < 3.7 pips"
+   },
+   "classification": "REFUTADA",
+   "justification": "Retorno condicional ~0 em todas as janelas; unico highlight (00:00 UTC) nao cobre custo e tem risco de multiple testing (24 slots inspecionados)"
   },
-  "cost_baseline_pips": {
-    "spread": 2.0,
-    "slippage": 0.5,
-    "commission_per_lot_per_side": 3.5,
-    "round_trip_reference": 3.7
+  {
+   "id": "H05",
+   "name": "Reversao apos choque ineficiente (DE baixa)",
+   "priority": 2,
+   "acceptance_criteria": "DE adicionar poder explicativo vs controles; estavel entre subperiodos; sobreviver a custos",
+   "status_initial": "ACTIVE (prioridade 2, com H06)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "directional_efficiency + slot_percentile -> matriz 6 celulas (range x tick x DE) -> h1/2/4/8 -> p85/p90/p95 -> por ano",
+   "evidence": [
+    "docs/26 §12-§13",
+    "research/features.py (directional_efficiency, slot_percentile)",
+    "research/h05_h06_experiment.py",
+    "research/reports/h0506_experiment{,_p85,_p95}.json",
+    "tests/test_research_features.py"
+   ],
+   "metrics": {
+    "events_H05": 2999,
+    "h8_signed": "+0.003%",
+    "by_year_sign_flips": 3,
+    "p85_p95": "mesmo padrao (~0)"
+   },
+   "classification": "REFUTADA",
+   "justification": "DE nao discrimina (controles com DE alta tem mesmo padrao); H05 ~0 com 3 inversoes de sinal por ano; magnitude <= 0.037%"
   },
-  "hypotheses": [
-    {
-      "id": "H03",
-      "name": "Surpresa de volatilidade intradiarua",
-      "priority": 1,
-      "acceptance_criteria": "Retorno condicional medio significativo e estavel por ano; sobreviver a 1.5x custo",
-      "status_initial": "ACTIVE (prioridade 1)",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "volatility_surprise (mediana por slot, 60 slots) -> retorno condicional por janela 40/60/80 x h1/2/4/8 x ano x hora",
-      "evidence": [
-        "docs/26 §10-§11",
-        "research/features.py (volatility_surprise, 11 testes)",
-        "research/h03_experiment.py",
-        "research/reports/h03_experiment{,_lb40,_lb80}.json",
-        "tests/test_research_features.py"
-      ],
-      "metrics": {
-        "rows": 288223,
-        "events": "54,338-55,057 (lb40/60/80)",
-        "overall_mean_signed": "0.000%",
-        "h8_by_year_range": "-0.011% a +0.012%",
-        "best_highlight": "00:00 UTC +0.018% (61.3% pos, n=2,691) ~ 1.98 pips brutos < 3.7 pips"
-      },
-      "classification": "REFUTADA",
-      "justification": "Retorno condicional ~0 em todas as janelas; unico highlight (00:00 UTC) nao cobre custo e tem risco de multiple testing (24 slots inspecionados)"
-    },
-    {
-      "id": "H05",
-      "name": "Reversao apos choque ineficiente (DE baixa)",
-      "priority": 2,
-      "acceptance_criteria": "DE adicionar poder explicativo vs controles; estavel entre subperiodos; sobreviver a custos",
-      "status_initial": "ACTIVE (prioridade 2, com H06)",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "directional_efficiency + slot_percentile -> matriz 6 celulas (range x tick x DE) -> h1/2/4/8 -> p85/p90/p95 -> por ano",
-      "evidence": [
-        "docs/26 §12-§13",
-        "research/features.py (directional_efficiency, slot_percentile)",
-        "research/h05_h06_experiment.py",
-        "research/reports/h0506_experiment{,_p85,_p95}.json",
-        "tests/test_research_features.py"
-      ],
-      "metrics": {
-        "events_H05": 2999,
-        "h8_signed": "+0.003%",
-        "by_year_sign_flips": 3,
-        "p85_p95": "mesmo padrao (~0)"
-      },
-      "classification": "REFUTADA",
-      "justification": "DE nao discrimina (controles com DE alta tem mesmo padrao); H05 ~0 com 3 inversoes de sinal por ano; magnitude <= 0.037%"
-    },
-    {
-      "id": "H06",
-      "name": "Continuacao apos choque eficiente (DE alta + CLV)",
-      "priority": 2,
-      "acceptance_criteria": "DE adicionar poder explicativo vs controles; estavel entre subperiodos; sobreviver a custos",
-      "status_initial": "ACTIVE (prioridade 2, com H05)",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "mesma matriz de H05; confirmacao CLV >= 0.90/<= 0.10",
-      "evidence": [
-        "docs/26 §12-§13",
-        "research/h05_h06_experiment.py",
-        "research/reports/h0506_experiment{,_p85,_p95}.json"
-      ],
-      "metrics": {
-        "events_H06": 3296,
-        "h8_signed": "-0.004% (NEGATIVO, pos 44-48%)",
-        "by_year": "negativo (2015-2020) e ~0 (2021+)"
-      },
-      "classification": "REFUTADA",
-      "justification": "Efeito NEGATIVO (oposto da hipotese); controles com DE alta tem o mesmo padrao"
-    },
-    {
-      "id": "H01",
-      "name": "Falso rompimento da faixa asiatica",
-      "priority": 3,
-      "acceptance_criteria": "Retorno assinado medio > 0; estavel entre subperiodos; sem ilha de parametro; sobreviver a custos",
-      "status_initial": "ACTIVE (prioridade 3)",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "faixa Asia Europe/London [00:00,07:00) zoneinfo -> ATR(H1,14) causal -> rompimento buffer 0.10/0.15/0.20 -> confirmacao {N,N+1,N+2} -> 1 evento/lado/dia -> h1/2/4/8 -> por ano/lado",
-      "evidence": [
-        "docs/26 §14-§15",
-        "research/h01_experiment.py",
-        "research/reports/h01_experiment{,_b010,_b020}.json"
-      ],
-      "metrics": {
-        "events_b015": 3956,
-        "h8_signed": "+0.003% (levemente POSITIVO — continuacao, nao reversao)",
-        "buffers": "0.10: +0.004% / 0.20: +0.003%",
-        "by_year_sign_flips": 4,
-        "midpoint_touch_rate": "1.00 (nao discrimina)"
-      },
-      "classification": "REFUTADA",
-      "justification": "Signed ~0 e levemente positivo (direcao contraria); 4 inversoes de sinal por ano; magnitude ~0.4 pips vs custo 3.7 pips"
-    },
-    {
-      "id": "H02",
-      "name": "Handoff Asia-Londres condicionado ao formato da sessao",
-      "priority": 3,
-      "acceptance_criteria": "Direcao esperada estavel entre subperiodos/regimes/fronteiras; retorno assinado medio > 0 por grupo",
-      "status_initial": "ACTIVE (prioridade 3)",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "percentil empirico range 60d + CLV -> 4 grupos (p30/p70 x CLV 0.2/0.8) -> fwd 1/2/4h -> sensibilidade p25-75 / CLV 0.15-0.85 -> por ano",
-      "evidence": [
-        "docs/26 §16-§17",
-        "research/h02_experiment.py",
-        "research/reports/h02_experiment.json + h02_exp_{p25_p35,p65_p75,clv_75_85,clv_15_25}.json"
-      ],
-      "metrics": {
-        "sessions": 3363,
-        "continuation_up_h4": "-0.035% (NEGATIVO em todas as variacoes e 10/12 anos)",
-        "reversal_down_h4": "+0.011% (mas h1/h2 negativos; 2016 +0.087% vs 2025 -0.045%)",
-        "continuation_down_h4": "-0.000%",
-        "reversal_up_h4": "+0.000%"
-      },
-      "classification": "REFUTADA",
-      "justification": "Unico grupo consistente (continuation_up) e negativo na direcao OPOSTA; demais instaveis; amostras 5-31/ano; padrao anti-H02 nao elevado (multiple testing)"
-    },
-    {
-      "id": "H04",
-      "name": "Compressao seguida por choque de preco e atividade",
-      "priority": 3,
-      "acceptance_criteria": "A4 superar controle de breakout simples; ablation incremental; sem efeito so de horario; sem dependencia de eventos extremos",
-      "status_initial": "ACTIVE (prioridade 3)",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "realized_range_16 slot_percentile p25 + TR p90 + TV p80 + CLV -> ablation A1/A2/A3/A4 + CTRL breakout simples -> h1/2/4/8 -> por ano/hora",
-      "evidence": [
-        "docs/26 §18",
-        "research/h04_experiment.py",
-        "research/reports/h04_experiment.json"
-      ],
-      "metrics": {
-        "A1_h8": "-0.001% (n=75,629)",
-        "A2_h8": "-0.000% (n=1,825)",
-        "A3_h8": "+0.005% (n=694)",
-        "A4_h8": "+0.009% (n=439, pos 48.97%)",
-        "CTRL_h8": "-0.002% (n=32,174)",
-        "A4_by_year": "6 pos / 6 neg (2017 -0.036% vs 2023 +0.060%)",
-        "A4_hourly": "n 6-23/slot, sinais alternando"
-      },
-      "classification": "REFUTADA",
-      "justification": "A4 nao supera CTRL consistentemente (h1 -0.003% vs -0.002%); pos < 50% com media > 0 = cauda (eventos extremos); instavel por ano; ablation sem melhora monotona"
-    },
-    {
-      "id": "H07",
-      "name": "Reversao parcial do gap semanal",
-      "priority": 4,
-      "acceptance_criteria": "Retorno assinado medio > 0; robusto a leave-one-year-out e sem top-5; cobrir custos conservadores",
-      "status_initial": "PROPOSED / LOW SAMPLE PRIORITY",
-      "execution_date": "2026-08-12",
-      "stage": "estagio 1",
-      "steps": "gap semanal = first_open - last_close (sem criar candles de fim de semana); normalized = |gap|/ATR(H1,14) causal >= 0.50 (sensibilidade 0.40/0.60); fwd 1/4/8/16h; bootstrap CI; leave-one-year-out; sem top-5",
-      "evidence": [
-        "docs/26 §19",
-        "research/h07_experiment.py",
-        "research/reports/h07_experiment.json"
-      ],
-      "metrics": {
-        "events": 301,
-        "h1_signed": "+0.031% (pos 66.78%, gap fechado 14.0%)",
-        "h4_signed": "+0.025% (pos 56.81%)",
-        "h8_signed": "+0.014% (pos 54.49%; CI 95% [-0.009%, +0.037%])",
-        "h16_signed": "+0.012% (pos 48.17%)",
-        "without_top5_h8": "+0.014% (robusto)",
-        "leave_one_year_out_h8": "0.009% a 0.019% (nunca desaparece)",
-        "cost_check": "h1 bruto ~3.1 pips < 3.7 pips round-trip"
-      },
-      "classification": "REFUTADA",
-      "justification": "Sinal estatistico real no h1 (66.8% pos, robusto), mas edge bruto (~3.1 pips) NAO cobre custo conservador (3.7 pips) e se dissipa (h16 pos 48%) — falha o criterio de custo pre-registrado"
-    }
-  ],
-  "summary": {
-    "total": 7,
-    "confirmed": 0,
-    "refuted": 7,
-    "inconclusive": 0,
-    "note": "Nenhuma hipotese confirmada; nenhuma pendente. Todas as 7 hipoteses executadas no estagio 1 com pre-registro imutavel."
+  {
+   "id": "H06",
+   "name": "Continuacao apos choque eficiente (DE alta + CLV)",
+   "priority": 2,
+   "acceptance_criteria": "DE adicionar poder explicativo vs controles; estavel entre subperiodos; sobreviver a custos",
+   "status_initial": "ACTIVE (prioridade 2, com H05)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "mesma matriz de H05; confirmacao CLV >= 0.90/<= 0.10",
+   "evidence": [
+    "docs/26 §12-§13",
+    "research/h05_h06_experiment.py",
+    "research/reports/h0506_experiment{,_p85,_p95}.json"
+   ],
+   "metrics": {
+    "events_H06": 3296,
+    "h8_signed": "-0.004% (NEGATIVO, pos 44-48%)",
+    "by_year": "negativo (2015-2020) e ~0 (2021+)"
+   },
+   "classification": "REFUTADA",
+   "justification": "Efeito NEGATIVO (oposto da hipotese); controles com DE alta tem o mesmo padrao"
+  },
+  {
+   "id": "H01",
+   "name": "Falso rompimento da faixa asiatica",
+   "priority": 3,
+   "acceptance_criteria": "Retorno assinado medio > 0; estavel entre subperiodos; sem ilha de parametro; sobreviver a custos",
+   "status_initial": "ACTIVE (prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "faixa Asia Europe/London [00:00,07:00) zoneinfo -> ATR(H1,14) causal -> rompimento buffer 0.10/0.15/0.20 -> confirmacao {N,N+1,N+2} -> 1 evento/lado/dia -> h1/2/4/8 -> por ano/lado",
+   "evidence": [
+    "docs/26 §14-§15",
+    "research/h01_experiment.py",
+    "research/reports/h01_experiment{,_b010,_b020}.json"
+   ],
+   "metrics": {
+    "events_b015": 3956,
+    "h8_signed": "+0.003% (levemente POSITIVO — continuacao, nao reversao)",
+    "buffers": "0.10: +0.004% / 0.20: +0.003%",
+    "by_year_sign_flips": 4,
+    "midpoint_touch_rate": "1.00 (nao discrimina)"
+   },
+   "classification": "REFUTADA",
+   "justification": "Signed ~0 e levemente positivo (direcao contraria); 4 inversoes de sinal por ano; magnitude ~0.4 pips vs custo 3.7 pips"
+  },
+  {
+   "id": "H02",
+   "name": "Handoff Asia-Londres condicionado ao formato da sessao",
+   "priority": 3,
+   "acceptance_criteria": "Direcao esperada estavel entre subperiodos/regimes/fronteiras; retorno assinado medio > 0 por grupo",
+   "status_initial": "ACTIVE (prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "percentil empirico range 60d + CLV -> 4 grupos (p30/p70 x CLV 0.2/0.8) -> fwd 1/2/4h -> sensibilidade p25-75 / CLV 0.15-0.85 -> por ano",
+   "evidence": [
+    "docs/26 §16-§17",
+    "research/h02_experiment.py",
+    "research/reports/h02_experiment.json + h02_exp_{p25_p35,p65_p75,clv_75_85,clv_15_25}.json"
+   ],
+   "metrics": {
+    "sessions": 3363,
+    "continuation_up_h4": "-0.035% (NEGATIVO em todas as variacoes e 10/12 anos)",
+    "reversal_down_h4": "+0.011% (mas h1/h2 negativos; 2016 +0.087% vs 2025 -0.045%)",
+    "continuation_down_h4": "-0.000%",
+    "reversal_up_h4": "+0.000%"
+   },
+   "classification": "REFUTADA",
+   "justification": "Unico grupo consistente (continuation_up) e negativo na direcao OPOSTA; demais instaveis; amostras 5-31/ano; padrao anti-H02 nao elevado (multiple testing)"
+  },
+  {
+   "id": "H04",
+   "name": "Compressao seguida por choque de preco e atividade",
+   "priority": 3,
+   "acceptance_criteria": "A4 superar controle de breakout simples; ablation incremental; sem efeito so de horario; sem dependencia de eventos extremos",
+   "status_initial": "ACTIVE (prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "realized_range_16 slot_percentile p25 + TR p90 + TV p80 + CLV -> ablation A1/A2/A3/A4 + CTRL breakout simples -> h1/2/4/8 -> por ano/hora",
+   "evidence": [
+    "docs/26 §18",
+    "research/h04_experiment.py",
+    "research/reports/h04_experiment.json"
+   ],
+   "metrics": {
+    "A1_h8": "-0.001% (n=75,629)",
+    "A2_h8": "-0.000% (n=1,825)",
+    "A3_h8": "+0.005% (n=694)",
+    "A4_h8": "+0.009% (n=439, pos 48.97%)",
+    "CTRL_h8": "-0.002% (n=32,174)",
+    "A4_by_year": "6 pos / 6 neg (2017 -0.036% vs 2023 +0.060%)",
+    "A4_hourly": "n 6-23/slot, sinais alternando"
+   },
+   "classification": "REFUTADA",
+   "justification": "A4 nao supera CTRL consistentemente (h1 -0.003% vs -0.002%); pos < 50% com media > 0 = cauda (eventos extremos); instavel por ano; ablation sem melhora monotona"
+  },
+  {
+   "id": "H07",
+   "name": "Reversao parcial do gap semanal",
+   "priority": 4,
+   "acceptance_criteria": "Retorno assinado medio > 0; robusto a leave-one-year-out e sem top-5; cobrir custos conservadores",
+   "status_initial": "PROPOSED / LOW SAMPLE PRIORITY",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "gap semanal = first_open - last_close (sem criar candles de fim de semana); normalized = |gap|/ATR(H1,14) causal >= 0.50 (sensibilidade 0.40/0.60); fwd 1/4/8/16h; bootstrap CI; leave-one-year-out; sem top-5",
+   "evidence": [
+    "docs/26 §19",
+    "research/h07_experiment.py",
+    "research/reports/h07_experiment.json"
+   ],
+   "metrics": {
+    "events": 301,
+    "h1_signed": "+0.031% (pos 66.78%, gap fechado 14.0%)",
+    "h4_signed": "+0.025% (pos 56.81%)",
+    "h8_signed": "+0.014% (pos 54.49%; CI 95% [-0.009%, +0.037%])",
+    "h16_signed": "+0.012% (pos 48.17%)",
+    "without_top5_h8": "+0.014% (robusto)",
+    "leave_one_year_out_h8": "0.009% a 0.019% (nunca desaparece)",
+    "cost_check": "h1 bruto ~3.1 pips < 3.7 pips round-trip"
+   },
+   "classification": "REFUTADA",
+   "justification": "Sinal estatistico real no h1 (66.8% pos, robusto), mas edge bruto (~3.1 pips) NAO cobre custo conservador (3.7 pips) e se dissipa (h16 pos 48%) — falha o criterio de custo pre-registrado"
+  },
+  {
+   "id": "H08",
+   "name": "Reversao do gap semanal com filtro de liquidez no open",
+   "priority": 1,
+   "cycle": 2,
+   "acceptance_criteria": "net medio > 0 com n >= 50, robusto a leave-one-year-out e sem top-5",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 1)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "eventos H07 (301) + filtro spread de entrada <= 1.2/1.0/0.8 pips + custo por evento",
+   "evidence": [
+    "docs/26 §27, §31",
+    "research/h08_experiment.py",
+    "research/reports/h08_experiment.json"
+   ],
+   "metrics": {
+    "n": "134-169 por limiar",
+    "net_mean": "+0.001% a +0.002% (CI contem zero)",
+    "gross": "0.025% a 0.027% (caiu de 0.031% sem filtro)",
+    "key_finding": "o filtro removeu sinal: reversao do gap concentra-se nos opens caros"
+   },
+   "classification": "REFUTADA",
+   "justification": "net ~0.2 pips com CI bootstrap contendo zero; filtro de liquidez removeu sinal (racional invertido)"
+  },
+  {
+   "id": "H09",
+   "name": "Reversao apos faixa asiatica comprimida + fechamento no extremo",
+   "priority": 2,
+   "cycle": 2,
+   "acceptance_criteria": "net > 0 estavel no leave-one-year-out, sem cauda, robusto as fronteiras",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 2)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "faixa < p30 (60d) + CLV 0.80/0.20; fwd 1/2/4h; net = signed - custo por evento; sensibilidade p25/p35, CLV 0.75/0.85",
+   "evidence": [
+    "docs/26 §28, §32",
+    "research/h09_experiment.py",
+    "research/reports/h09_experiment.json"
+   ],
+   "metrics": {
+    "group_high_h4_net": "+0.003% a +0.012% (todas as variacoes)",
+    "leave_one_year_out": "+0.002% a +0.014% (sempre > 0; sem 2015: +0.002%)",
+    "group_low_h4": "-0.026% a -0.036% (sem sinal)",
+    "timing": "so no h4 (h1/h2 negativos)"
+   },
+   "classification": "INCONCLUSIVA",
+   "justification": "primeiro sinal com net positivo em todas as fronteiras, mas marginal (~0.5-1 pip), concentrado em 2015 e assimetrico (grupo low sem sinal); estagio 2 focado condicionado ao operador"
+  },
+  {
+   "id": "H10",
+   "name": "Momentum da primeira hora de Londres",
+   "priority": 3,
+   "cycle": 2,
+   "acceptance_criteria": "signed medio > 0 estavel por ano",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "janela 07:00-08:00 London; fwd ate 22:00 London; signed; net com custo",
+   "evidence": [
+    "docs/26 §29, §33",
+    "research/h10_experiment.py",
+    "research/reports/h10_experiment.json"
+   ],
+   "metrics": {
+    "days": 2998,
+    "net_mean": "-0.023% (pos 47.0%)",
+    "by_year_negative": "9 de 12 anos"
+   },
+   "classification": "REFUTADA",
+   "justification": "retorno pos-janela indiferente ao sinal; net negativo"
+  },
+  {
+   "id": "H11",
+   "name": "Eficiencia direcional H1 com volume -> continuacao no proximo H1",
+   "priority": 4,
+   "cycle": 2,
+   "acceptance_criteria": "net > 0 e DE adicionar poder vs controle (candle simples)",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 4)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "H1 agregado; DE + TV p50; fwd proximo H1; net 1.9 pips; sensibilidade DE 0.60/0.80, TV p40/p60",
+   "evidence": [
+    "docs/26 §30, §34",
+    "research/h11_experiment.py",
+    "research/reports/h11_experiment.json"
+   ],
+   "metrics": {
+    "n": 7622,
+    "gross": "-0.002% (pos 46.6%)",
+    "control": "-0.001% (pos 48.1%)",
+    "all_variations": "filtro pior que o controle"
+   },
+   "classification": "REFUTADA",
+   "justification": "DE/TV nao adiciona poder vs controle; continuacao H1-a-H1 inexistente"
   }
+ ],
+ "summary": {
+  "total": 11,
+  "confirmed": 0,
+  "refuted": 10,
+  "inconclusive": 1,
+  "note": "ciclo 1 (H01-H07) fechado 7/7 refutadas; ciclo 2 (H08-H11) 3 refutadas + 1 inconclusiva"
+ },
+ "cycle2": {
+  "opened": "2026-08-12 (docs/26 §26)",
+  "results": "3 REFUTADAS (H08/H10/H11) + 1 INCONCLUSIVA (H09)",
+  "note": "H09 candidata a estagio 2 focado, condicionado ao operador"
+ }
 }
