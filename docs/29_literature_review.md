@@ -146,3 +146,119 @@ com custos calibrados + WRC → classificação nos critérios fixados.
    inconclusiva; nenhum critério redefinido após ver resultados;
    pré-registro sempre imutável antes de rodar; OOS 2024-2027
    contaminado tratado como informativo apenas.
+
+
+---
+
+# Literatura 2 — "Winning Algorithmic Trading Strategies" (Thomas West)
+
+**Status: ANALISADA (2026-08-12).** Fonte: EPUB fornecido pelo
+operador. Extração: `.openclaw/tmp/west/` (40 capítulos).
+
+## 2.1 O que é o livro
+
+Guia prático de TradingView/PineScript: construção de sistemas
+(Filtro -> Trigger -> Saídas -> Risk Management), 15 estrategias
+concretas (5 de bands/envelopes, 5 de osciladores de momentum,
+5 de trend-following) e automatização em plataformas crypto
+(Pionex, 3Commas, Capitalize.ai). Exemplos com profit factors
+altos reportados do Strategy Tester (ex: Bollinger+RSI PF > 4.0;
+BT-SAR EMA Squeeze PF 2.98, 91% win, BTC/USD 1H).
+
+## 2.2 Conclusoes
+
+1. **Representa o "outro lado" que o Aronson critica**: backtests do
+   TradingView sem custos realistas, sem correcao de data-mining,
+   sem OOS, sem registro de trials. Profit factors 2-4 em backtests
+   de plataforma sao exatamente o tipo de claim que nosso funil
+   refuta (18/18 execucoes: edge bruto < custo calibrado). O proprio
+   livro admite PF > 3.0 "e raro em estrategias honestas e nao
+   overfit" — sem dizer quantos backtests rodou para achar esses.
+2. **Ideias concretas ja cobertas pelo nosso funil**: squeeze ->
+   breakout (testado como H04 range compression e H09 compressed
+   range, ambos refutados); multi-timeframe filter (engine MTF do
+   runner, 21/21 negativos); osciladores com threshold (H13 RSI14,
+   refutado).
+3. **Variaveis NAO testadas (anotadas para revisao futura)**:
+   - *Oscillator re-entry*: entrar quando o oscilador cruza DE VOLTA
+     para fora da zona extrema (RSI sobe acima de 30 apos tocar
+     <30), nao ao entrar na zona — refinamento de timing do mean
+     reversion.
+   - *Momentum divergence* (regular/hidden com pivots) — dificil de
+     automatizar, mas definivel com pivots de 2 barras.
+   - *Squeeze + EMA200 filter + SAR flip* (estilo BT-SAR) em FX.
+4. **Vies de universo**: o livro e majoritariamente crypto/BTC;
+   nossos dados sao FX majors (mais liquidos, mais eficientes).
+   Nada no livro sugere edge que sobreviva a custos calibrados no
+   varejo FX; as 3 variacoes acima entram apenas como candidatas
+   menores ao ciclo 4, com pre-registro.
+
+---
+
+# Literatura 3 — "Advances in Financial Machine Learning" (Marcos López de Prado, 2018)
+
+**Status: ANALISADA (2026-08-12).** Fonte: EPUB fornecido pelo
+operador. Extração: `.openclaw/tmp/afml/` (7 arquivos, cap. 1-22).
+
+## 3.1 Conclusoes metodologicas (como o AFML confirma e estende nosso funil)
+
+1. **"Backtest nao e ferramenta de pesquisa"** (cap. 11): o backtest
+   serve para DESCARTAR modelos ruins, nunca para melhora-los.
+   "Nunca backteste ate o modelo estar totalmente especificado. Se o
+   backtest falhar, comece de novo." — nosso pre-registro imutavel e
+   a operacionalizacao exata disso (18/18 sem redefinicao pos-hoc).
+2. **Sete pecados (Luo et al. 2014)**: survivorship, look-ahead,
+   storytelling, data mining/snooping, transaction costs, outliers,
+   shorting. Nosso funil os evita: OOS lockbox (look-ahead),
+   custos calibrados medidos (transaction costs), WRC + registro de
+   trials (data mining), LOYO/blocos (outliers), sem shorting de
+   cash em pares nao cobertos.
+3. **"Mesmo um backtest impecavel provavelmente esta errado"**
+   (cap. 11.3): especialista = milhares de backtests = selecao.
+   "A cada teste novo no mesmo dataset, a probabilidade de falso
+   positivo muda" — por isso o hypotheses_log registra TODAS as
+   execucoes (Terceira Lei do Backtesting, cap. 14.7.3).
+4. **Deflated Sharpe Ratio (DSR)** (cap. 14.7.3): SR* = expectativa
+   do maximo de N trials sob H0:SR=0 — cresce com N e com a variancia
+   entre trials. Aplicacao ao funil: se reportarmos Sharpe (runner,
+   futuros resultados), o DSR deflaciona pelo numero de trials — o
+   equivalente em Sharpe ao WRC que ja usamos em net mean.
+5. **Combinatorial Purged Cross-Validation (CPCV)** (cap. 12.4):
+   o walk-forward testa UM caminho historico (facil de overfit; o
+   proprio livro mostra que walk-backward inconsistente indica
+   overfit). CPCV deriva a distribuicao de Sharpe de MUITOS caminhos
+   com purging/embargo. Upgrade natural do funil SE migrarmos para
+   modelos com parametros aprendidos (ML).
+6. **Meta-labeling / triple-barrier** (cap. 3): rotular com
+   barreiras TP/SL + treinar classificador para decidir TAMANHO da
+   aposta em sinais ja existentes — aplicavel se um dia tivermos um
+   sinal com edge bruto real (H07-MP/H09 tinham; nenhum sobreviveu
+   ao custo no stage-2).
+
+## 3.2 O que isso muda no nosso funil (decisao)
+
+- **Nada muda nas 18 execucoes ja registradas** — todas passam nos
+  criterios do AFML (pre-especificacao, custos, trials registrados).
+- **Incorporacoes a partir de agora** (DECISIONS.md):
+  a) PSR/DSR como metrica complementar quando Sharpe for reportado;
+  b) CPCV (com purging) para qualquer backtest com otimizacao de
+     parametros aprendidos — proibido walk-forward com re-ajuste
+     repetido;
+  c) manter a regra: "backtest descarta, nao melhora" — reforco do
+     pre-registro.
+- **Roteiro condicional**: AFML so se aplica plenamente se o projeto
+  avancar para ML (ex.: meta-labeling sobre um sinal com edge bruto
+  real via custos institucionais). Sem sinal com edge, ML e
+  premature.
+
+## 3.3 Conclusao transversal das 3 literaturas
+
+Aronson (metodo) + West (contra-exemplo popular) + Lopez de Prado
+(rigor estatistico) convergem no mesmo ponto: **em mercados
+liquidos, backtests sem custos calibrados e sem correcao de
+multiples testes produzem fool's gold**; edge real exige (a) racional
+economico, (b) pre-registro, (c) custos reais, (d) correcao de
+selecao. Nosso funil ja implementa (a)-(d). As proximas literaturas
+da fila (Harris: microestrutura — por que o custo come o edge;
+Lien: sessoes/intermercado) seguem o mesmo pipeline.
+
