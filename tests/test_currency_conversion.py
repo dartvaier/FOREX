@@ -255,10 +255,12 @@ BASELINE_COSTS = {
 
 
 def test_round_trip_pips_invariant_usd_quote():
+    # USD-quote pairs only (USD is the quote leg): EURUSD, GBPUSD,
+    # AUDUSD, NZDUSD. docs/25 MC-04: USDCHF/USDCAD are USD-BASE.
     pips: set[float] = set()
 
-    for symbol in ("EURUSD", "GBPUSD", "USDCHF",
-                   "AUDUSD", "USDCAD", "NZDUSD"):
+    for symbol in ("EURUSD", "GBPUSD", "AUDUSD",
+                   "NZDUSD"):
         spec = make_instrument(symbol)
 
         money = round_trip_cost_money(
@@ -277,6 +279,49 @@ def test_round_trip_pips_invariant_usd_quote():
 
     assert len(pips) == 1
     assert round(pips.pop(), 2) == 3.7
+
+
+def test_round_trip_pips_expected_per_usd_base_pair():
+    # USD-base pairs (USDJPY, USDCHF, USDCAD): the spread+slippage
+    # leg converts with the pair rate; the fixed-USD commission
+    # yields a different pip count per pair price (docs/25 MC-04).
+    prices = {
+        "USDJPY": (150.0, 4.05),
+        "USDCHF": (0.90, 3.63),
+        "USDCAD": (1.35, 3.945),
+    }
+
+    for symbol, (price, expected_pips) in prices.items():
+        spec = make_instrument(symbol)
+        rate = 1.0 / price
+
+        money = round_trip_cost_money(
+            spec,
+            0.01,
+            BASELINE_COSTS,
+            quote_to_account_rate=rate,
+        )
+
+        pips = money_to_pips(
+            money,
+            spec,
+            0.01,
+            quote_to_account_rate=rate,
+        )
+
+        assert pips == pytest.approx(expected_pips, rel=1e-9)
+
+
+def test_usdchf_usdcad_classified_as_usd_base():
+    # docs/25 MC-04: USDCHF/USDCAD are USD-BASE (quote CHF/CAD).
+    assert make_instrument("USDCHF").quote_currency == "CHF"
+    assert make_instrument("USDCAD").quote_currency == "CAD"
+    assert make_instrument("USDCHF").quote_to_account_rate(0.90) == (
+        pytest.approx(1.0 / 0.90)
+    )
+    assert make_instrument("USDCAD").quote_to_account_rate(1.35) == (
+        pytest.approx(1.0 / 1.35)
+    )
 
 
 def test_round_trip_usdjpy_with_rate():

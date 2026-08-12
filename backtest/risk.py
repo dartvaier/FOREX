@@ -537,16 +537,30 @@ class StopBasedRiskGate:
             - stop_loss
         )
 
-        risk_per_lot = (
+        # Hardening MC-01 (docs/25): risk_per_lot is expressed in
+        # the QUOTE currency (stop_distance * contract_size); the
+        # risk budget is in ACCOUNT currency. Convert with the
+        # causal rate available at the decision instant (entry
+        # price) so both sides share the same currency.
+        risk_per_lot_quote = (
             stop_distance
             * self._instrument.contract_size
         )
 
-        if risk_per_lot <= 0:
+        if risk_per_lot_quote <= 0:
             return self._reject(
                 signal,
                 "stop distance produced zero risk",
             )
+
+        rate = self._instrument.quote_to_account_rate(
+            entry_price
+        )
+
+        risk_per_lot = (
+            risk_per_lot_quote
+            * rate
+        )
 
         risk_amount = (
             self._account_equity
@@ -645,6 +659,11 @@ class ExposureLimitRiskGate:
 
     therefore max_notional checks require entry_price metadata
     on entry Signals.
+
+    Hardening MC-02 (docs/25): `max_notional` is expressed in
+    ACCOUNT currency (USD). The raw notional is computed in the
+    quote currency and converted with the causal rate at the
+    entry price before the comparison.
     """
 
     def __init__(
@@ -789,16 +808,24 @@ class ExposureLimitRiskGate:
                     "max_notional exposure limit",
                 )
 
-            notional = (
+            notional_quote = (
                 entry_price
                 * self.instrument.contract_size
                 * decision.quantity
             )
 
+            notional = (
+                notional_quote
+                * self.instrument.quote_to_account_rate(
+                    entry_price
+                )
+            )
+
             if notional > self._max_notional:
                 return self._reject(
                     decision,
-                    "notional exposure exceeds max_notional",
+                    "notional exposure exceeds max_notional "
+                    "(account currency)",
                 )
 
         return RiskDecision(

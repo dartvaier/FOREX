@@ -74,3 +74,19 @@ custos) permanece, agora com a matriz monetária íntegra.
   "crosses").
 - Moeda de conta ≠ USD: o fator fixo é 1.0 para quote USD; conta em
   outra moeda exigiria parametrização (fora de escopo).
+
+## 6. Extensão — hardening MC-01..05 (docs/25, 2026-08-12)
+
+A conversão quote→USD foi estendida a todos os pontos monetários do
+pipeline:
+
+- `StopBasedRiskGate`: `risk_per_lot` convertido com a taxa causal no
+  entry price (MC-01) — sizing correto em pares USD-base.
+- `ExposureLimitRiskGate`: `max_notional` com semântica explícita em
+  account currency, convertido no entry price (MC-02).
+- `TradeFactory`: custos de spread/slippage convertidos com taxas
+  causais de entrada/saída (MC-03); PnL não é duplamente taxado.
+- Testes: USDCHF/USDCAD reclassificados como USD-base (MC-04).
+- Matriz dev reexecutada (MC-05): 19/19 negativos; trades idênticos;
+  valores monetários de USDCHF/USDCAD agora em USD (antes em
+  CHF/CAD). Nenhuma conclusão invertida.

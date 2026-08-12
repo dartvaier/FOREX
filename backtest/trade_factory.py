@@ -12,11 +12,17 @@ class TradeFactory:
 
     Spread and slippage stored by Fill / Portfolio are price
     distances. Here they are converted into monetary audit
-    values:
+    values in ACCOUNT currency (USD):
 
         price_distance
         * contract_size
         * quantity
+        * quote_to_account_rate(price)
+
+    Entry-side costs use the causal rate at the entry price;
+    exit-side costs use the causal rate at the exit price
+    (docs/25 MC-03). For USD-quote pairs the rate is 1.0, so
+    historical behavior is preserved.
 
     They are NOT subtracted again from net_pnl because their
     effect is already embedded in execution prices.
@@ -87,24 +93,32 @@ class TradeFactory:
 
         quantity = position.quantity
 
-        spread_distance = (
-            close_result.entry_spread_impact
-            + close_result.exit_spread_impact
+        entry_rate = self._instrument.quote_to_account_rate(
+            position.entry_price
         )
 
-        slippage_distance = (
-            close_result.entry_slippage
-            + close_result.exit_slippage
+        exit_rate = self._instrument.quote_to_account_rate(
+            close_result.exit_price
         )
 
         spread_cost = self._price_distance_to_money(
-            spread_distance,
+            close_result.entry_spread_impact,
             quantity=quantity,
+            rate=entry_rate,
+        ) + self._price_distance_to_money(
+            close_result.exit_spread_impact,
+            quantity=quantity,
+            rate=exit_rate,
         )
 
         slippage_cost = self._price_distance_to_money(
-            slippage_distance,
+            close_result.entry_slippage,
             quantity=quantity,
+            rate=entry_rate,
+        ) + self._price_distance_to_money(
+            close_result.exit_slippage,
+            quantity=quantity,
+            rate=exit_rate,
         )
 
         return Trade(
@@ -174,9 +188,11 @@ class TradeFactory:
         distance: float,
         *,
         quantity: float,
+        rate: float = 1.0,
     ) -> float:
         return (
             distance
             * self._instrument.contract_size
             * quantity
+            * rate
         )

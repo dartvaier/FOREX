@@ -1848,3 +1848,167 @@ def test_kill_switch_deprecated_block_exits_still_works():
     )
 
     assert exit_decision.approved is False
+
+
+# ---------------------------------------------------------------------------
+# Hardening MC-01: StopBasedRiskGate in account currency
+# ---------------------------------------------------------------------------
+
+
+def make_jpy_instrument() -> InstrumentSpecification:
+    return InstrumentSpecification(
+        symbol="USDJPY",
+        digits=3,
+        point=0.001,
+        pip_size=0.01,
+        contract_size=100000,
+        volume_min=0.01,
+        volume_max=500.0,
+        volume_step=0.01,
+        tick_size=0.001,
+        base_currency="USD",
+        quote_currency="JPY",
+    )
+
+
+def make_jpy_signal(
+    action: SignalAction,
+    *,
+    entry_price: float,
+    stop_loss: float,
+) -> Signal:
+    return Signal(
+        signal_id="SIG-JPY",
+        strategy_id="TEST",
+        symbol="USDJPY",
+        timestamp=timestamp(),
+        action=action,
+        metadata={
+            "entry_price": entry_price,
+            "stop_loss": stop_loss,
+        },
+    )
+
+
+def test_stop_based_sizing_converts_quote_to_account_currency():
+    """MC-01: risk_per_lot is converted from JPY to USD with the
+    causal rate at the entry price, so risk_amount and risk_per_lot
+    share the same currency."""
+    gate = StopBasedRiskGate(
+        instrument=make_jpy_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    # 100 pips = 1.0 JPY stop distance; risk_per_lot_quote =
+    # 1.0 * 100000 = 100000 JPY; rate 1/150 -> 666.67 USD.
+    # risk_amount = 100 USD -> raw quantity 0.15.
+    decision = gate.evaluate(
+        make_jpy_signal(
+            SignalAction.ENTER_LONG,
+            entry_price=150.00,
+            stop_loss=149.00,
+        )
+    )
+
+    assert decision.approved is True
+    assert decision.quantity == pytest.approx(0.15, rel=1e-6)
+
+
+def test_stop_based_usd_quote_regression():
+    """Regression: USD-quote pairs keep rate 1.0 (10 pips stop on
+    EURUSD -> risk_per_lot 100 USD -> 100/100 = 1.0 lots)."""
+    gate = StopBasedRiskGate(
+        instrument=make_instrument(),
+        account_equity=10000.0,
+        risk_fraction=0.01,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={
+                "entry_price": 1.1000,
+                "stop_loss": 1.0900,  # 100 pips
+            },
+        )
+    )
+
+    # risk_per_lot = 0.01 * 100000 = 1000 USD; risk_amount =
+    # 100 USD -> 0.1 lots.
+    assert decision.approved is True
+    assert decision.quantity == pytest.approx(0.1, rel=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# Hardening MC-02: ExposureLimitRiskGate max_notional in account currency
+# ---------------------------------------------------------------------------
+
+
+def test_exposure_limit_max_notional_converts_quote_to_account():
+    """MC-02: max_notional is ACCOUNT currency (USD). The notional
+    is computed in quote currency (JPY) and converted causally."""
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_jpy_instrument(),
+            fixed_quantity=1.0,
+        ),
+        max_notional=20000.0,  # USD
+    )
+
+    decision = gate.evaluate(
+        make_jpy_signal(
+            SignalAction.ENTER_LONG,
+            entry_price=150.00,
+            stop_loss=149.00,
+        )
+    )
+
+    # notional_quote = 150 * 100000 * 1.0 = 15,000,000 JPY
+    # -> 100,000 USD at rate 1/150 -> exceeds 20,000 USD.
+    assert decision.approved is False
+    assert "max_notional" in decision.reason
+
+
+def test_exposure_limit_max_notional_accepts_small_quantity():
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_jpy_instrument(),
+            fixed_quantity=0.1,
+        ),
+        max_notional=20000.0,  # USD
+    )
+
+    decision = gate.evaluate(
+        make_jpy_signal(
+            SignalAction.ENTER_LONG,
+            entry_price=150.00,
+            stop_loss=149.00,
+        )
+    )
+
+    # 0.1 lot -> 10,000 USD notional -> within 20,000 USD.
+    assert decision.approved is True
+    assert decision.quantity == pytest.approx(0.1)
+
+
+def test_exposure_limit_usd_quote_regression():
+    """Regression: USD-quote notional unchanged (1.0 lot EURUSD @
+    1.10 -> 110,000 USD)."""
+    gate = ExposureLimitRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=1.0,
+        ),
+        max_notional=100000.0,
+    )
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={"entry_price": 1.1000},
+        )
+    )
+
+    assert decision.approved is False
+    assert "max_notional" in decision.reason

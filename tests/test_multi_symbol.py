@@ -62,18 +62,14 @@ def test_five_digit_pairs_use_pip_0001():
 
 def test_round_trip_cost_pips_identical_across_usd_quote_pairs():
     # The cost invariant is expressed in pips: every USD-quote
-    # pair must have the same round-trip cost in pips for the
-    # same inputs. USDJPY is excluded: its quote currency is
-    # JPY and the commission (USD) needs a currency conversion
-    # that is declared future work (docs/20).
+    # pair (USD is the QUOTE leg) must have the same round-trip
+    # cost in pips for the same inputs.
     pips: set[float] = set()
 
     for symbol in (
         "EURUSD",
         "GBPUSD",
-        "USDCHF",
         "AUDUSD",
-        "USDCAD",
         "NZDUSD",
     ):
         spec = InstrumentSpecification(
@@ -96,6 +92,70 @@ def test_round_trip_cost_pips_identical_across_usd_quote_pairs():
 
     assert len(pips) == 1
     assert round(pips.pop(), 2) == 3.7
+
+
+def test_round_trip_cost_pips_expected_per_usd_base_pair():
+    # USD-base pairs (USDJPY, USDCHF, USDCAD: USD is the BASE
+    # leg, quote is JPY/CHF/CAD). docs/25 MC-04: these are
+    # USD-BASE, not USD-quote. The 3.0-pip spread+slippage leg
+    # converts with the pair rate; the commission is fixed USD
+    # and therefore represents a different pip count per price.
+    prices = {
+        "USDJPY": (150.0, 4.05),
+        "USDCHF": (0.90, 3.63),
+        "USDCAD": (1.35, 3.945),
+    }
+
+    for symbol, (price, expected_pips) in prices.items():
+        spec = InstrumentSpecification(
+            **INSTRUMENT_REGISTRY[symbol]
+        )
+        rate = 1.0 / price
+
+        money = round_trip_cost_money(
+            spec,
+            0.01,
+            BASELINE_COSTS,
+            quote_to_account_rate=rate,
+        )
+
+        pips = money_to_pips(
+            money,
+            spec,
+            0.01,
+            quote_to_account_rate=rate,
+        )
+
+        assert pips == pytest.approx(expected_pips, rel=1e-9)
+
+
+def test_usd_base_pairs_quote_currency_not_usd():
+    # Classification contract (docs/25 MC-04): USDCHF and USDCAD
+    # are USD-BASE pairs, their quote leg is CHF/CAD.
+    assert (
+        InstrumentSpecification(
+            **INSTRUMENT_REGISTRY["USDJPY"]
+        ).quote_currency
+        == "JPY"
+    )
+    assert (
+        InstrumentSpecification(
+            **INSTRUMENT_REGISTRY["USDCHF"]
+        ).quote_currency
+        == "CHF"
+    )
+    assert (
+        InstrumentSpecification(
+            **INSTRUMENT_REGISTRY["USDCAD"]
+        ).quote_currency
+        == "CAD"
+    )
+    assert (
+        InstrumentSpecification(
+            **INSTRUMENT_REGISTRY["EURUSD"]
+        ).quote_currency
+        == "USD"
+    )
 
 
 def test_round_trip_cost_usdjpy_spread_slippage_in_jpy():

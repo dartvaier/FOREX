@@ -593,7 +593,7 @@ Gate:
 ## Status
 
 ```text
-PLANNED
+DONE (2026-08-12)
 ```
 
 ## Objetivo
@@ -644,7 +644,7 @@ volume step depois da conversão
 ### Critério de aceite
 
 ```text
-[ ] risk_amount e risk_per_lot usam a mesma moeda
+[x] risk_amount e risk_per_lot usam a mesma moeda
 ```
 
 ### Commit sugerido
@@ -724,7 +724,7 @@ net_pnl não sofre double count
 ### Critério de aceite
 
 ```text
-[ ] todo campo monetário do Trade é account-currency consistente
+[x] todo campo monetário do Trade é account-currency consistente
 ```
 
 ---
@@ -753,7 +753,7 @@ USDCAD
 ### Critério de aceite
 
 ```text
-[ ] testes usam estrutura monetária correta do instrumento
+[x] testes usam estrutura monetária correta do instrumento
 ```
 
 ---
@@ -781,10 +781,10 @@ DEV regression
 ### Critério de aceite
 
 ```text
-[ ] resultados rerodados
-[ ] diferenças explicadas
-[ ] docs/21 e docs/22 atualizados
-[ ] nenhuma conclusão antiga mantida sem reconferência
+[x] resultados rerodados
+[x] diferenças explicadas
+[x] docs/21 e docs/22 atualizados
+[x] nenhuma conclusão antiga mantida sem reconferência
 ```
 
 ### Commit sugerido

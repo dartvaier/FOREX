@@ -295,3 +295,112 @@ def test_trade_factory_counts_intrabar_exit_bar():
     # bar 10
     # bar 11 until its close
     assert trade.bars_held == 2
+
+
+# ---------------------------------------------------------------------------
+# Hardening MC-03: TradeFactory costs in account currency
+# ---------------------------------------------------------------------------
+
+
+def make_jpy_instrument() -> InstrumentSpecification:
+    return InstrumentSpecification(
+        symbol="USDJPY",
+        digits=3,
+        point=0.001,
+        pip_size=0.01,
+        contract_size=100000,
+        volume_min=0.01,
+        volume_max=500.0,
+        volume_step=0.01,
+        tick_size=0.001,
+        base_currency="USD",
+        quote_currency="JPY",
+    )
+
+
+def make_jpy_close_result() -> PositionCloseResult:
+    position = Position(
+        position_id="POS-JPY",
+        entry_fill_id="FILL-ENTRY",
+        symbol="USDJPY",
+        side=PositionSide.LONG,
+        quantity=1.0,
+        entry_time=utc_time(10, 15),
+        entry_price=150.00,
+        stop_loss=149.00,
+        take_profit=151.00,
+        unrealized_pnl=0.0,
+        metadata={
+            "entry_order_id": "ORD-ENTRY",
+            "entry_commission": 3.50,
+            "entry_spread_impact": 0.01,
+            "entry_slippage": 0.005,
+            "strategy_id": "TEST-STRATEGY",
+        },
+    )
+
+    return PositionCloseResult(
+        position=position,
+        exit_order_id="ORD-EXIT",
+        exit_fill_id="FILL-EXIT",
+        exit_time=utc_time(11, 0),
+        exit_price=150.10,
+        gross_pnl=66.62,
+        net_pnl=50.0,
+        commission=7.0,
+        entry_spread_impact=0.01,
+        entry_slippage=0.005,
+        exit_spread_impact=0.01,
+        exit_slippage=0.005,
+        exit_reason=ExitReason.TAKE_PROFIT,
+    )
+
+
+def test_trade_factory_converts_costs_to_account_currency():
+    """MC-03: spread/slippage audit costs are converted from JPY to
+    USD with the causal entry/exit rates.
+
+    entry leg: 0.015 price distance * 100k = 1500 JPY @ 1/150.00
+    exit leg : 0.015 price distance * 100k = 1500 JPY @ 1/150.10
+    -> ~19.99 USD total (vs 3000 JPY unconverted).
+    """
+    trade = TradeFactory(
+        make_jpy_instrument()
+    ).create(
+        make_jpy_close_result(),
+        bars_held=3,
+    )
+
+    # spread leg: 0.01 + 0.01 = 0.02 * 100k = 2000 JPY
+    # slippage leg: 0.005 + 0.005 = 0.01 * 100k = 1000 JPY
+    spread_entry = 1000.0 / 150.00
+    spread_exit = 1000.0 / 150.10
+    slip_entry = 500.0 / 150.00
+    slip_exit = 500.0 / 150.10
+
+    assert trade.spread_cost == pytest.approx(
+        spread_entry + spread_exit,
+        rel=1e-9,
+    )
+    assert trade.slippage_cost == pytest.approx(
+        slip_entry + slip_exit,
+        rel=1e-9,
+    )
+    assert trade.spread_cost > 0
+    assert trade.spread_cost < 3000.0  # converted, not raw JPY
+
+
+def test_trade_factory_usd_quote_regression():
+    """Regression: USD-quote pairs keep rate 1.0 (spread cost =
+    distance * contract * quantity)."""
+    trade = TradeFactory(
+        make_instrument()
+    ).create(
+        make_close_result(),
+        bars_held=3,
+    )
+
+    # entry 0.00010 + exit 0.00010 = 0.00020 * 100k * 0.01 = 0.20
+    assert trade.spread_cost == pytest.approx(0.20)
+    # entry 0.00005 + exit 0.00005 = 0.00010 * 100k * 0.01 = 0.10
+    assert trade.slippage_cost == pytest.approx(0.10)
