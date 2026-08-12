@@ -1,5 +1,21 @@
 # Architecture & Engineering Decisions
 
+## H01 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H01 (falso rompimento da faixa asiatica) REJEITADA no
+  estagio 1 (previsao condicional, sem trade), conforme criterios
+  pre-registrados (docs/26 §14/§15).
+- **Evidencia**: retorno assinado ~0 em h1-8 e buffers 0.10/0.15/0.20
+  (h8 +0.003% a +0.004%, levemente positivo = continuacao, nao
+  reversao); por ano inverte sinal 4x; por lado upper/lower ambos
+  positivos; midpoint touch rate 1.00 (nao discrimina).
+- **Consequencia**: experimento `research/h01_experiment.py` mantido
+  como ferramenta (sessao Asia London via zoneinfo, ATR H1 causal);
+  proxima hipotese ativa = H02 (handoff Asia-Londres), pre-registro
+  antes de backtest.
+
+# Architecture & Engineering Decisions
+
 ## H05/H06 ESTAGIO 1 REJECTED (2026-08-12)
 
 - **Decisao**: H05 (reversao apos choque ineficiente) e H06

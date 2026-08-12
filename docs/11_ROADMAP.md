@@ -2779,7 +2779,11 @@ H03 (volatility surprise) — ESTAGIO 1 REJECTED (docs/26 §11):
 H05/H06 (choques eficientes/ineficientes) — ESTAGIO 1 REJECTED
    (docs/26 §13): DE nao adiciona poder vs controles; H05 ~0 com 3
    inversoes de sinal por ano; H06 negativo (oposto da hipotese)
-Proxima hipotese ativa: H01 (falso rompimento da faixa asiatica,
+H01 (falso rompimento da faixa asiatica) — ESTAGIO 1 REJECTED
+   (docs/26 §15): signed ~0 em h1-8 e buffers 0.10/0.15/0.20; h8
+   levemente positivo (continuacao, nao reversao); sinal inverte 4x
+   por ano; midpoint sempre tocado em 8 barras (nao discrimina)
+Proxima hipotese ativa: H02 (continuacao apos handoff Asia-Londres,
    docs/26 §4 prioridade 3) — pre-registro obrigatorio antes de
    qualquer backtest
 Decisao de capital real (§92) permanece separada, sob o operador.

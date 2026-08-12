@@ -921,3 +921,127 @@ Features mantidas no codigo como ferramentas reutilizaveis
 
 H01 (prioridade 3, docs/26 §4): falso rompimento da faixa asiatica.
 Pre-registro obrigatorio antes de qualquer backtest (protocolo §5).
+
+
+---
+
+# 14. Registro Imutavel - H01 (primeira versao, pre-backtest)
+
+```text
+hypothesis_id:            H01
+version:                  1.0
+status:                   SPECIFIED (pre-registrado antes de qualquer backtest)
+date:                     2026-08-12
+rationale:                rompimento da faixa asiatica que nao permanece
+                          fora (fecha dentro em ate 2 candles) indica
+                          rejeicao/absorcao -> reversao em direcao ao
+                          midpoint da faixa
+expected_direction:       falso rompimento superior -> retorno negativo
+                          falso rompimento inferior -> retorno positivo
+dataset_version:          EURUSD M15 parquet 2015-01-02..2026-08-10
+                          + H1 processado (ATR)
+timeframe:                M15 (evento) + H1 (ATR)
+session_definition:       faixa asiatica = candles M15 com hora em
+                          Europe/London [00:00, 07:00) (zoneinfo, DST
+                          correto; nunca offset fixo)
+features:                 asian_range_high/low/mid do dia
+                          atr_h1_14 = media TR dos 14 H1 fechados antes
+                          das 07:00 London (causal)
+                          rompimento: high > range_high + buffer*ATR
+                          (superior) ou low < range_low - buffer*ATR
+                          (inferior), apos 07:00 London
+                          confirmacao: primeiro candle em {N, N+1, N+2}
+                          que feche DENTRO da faixa
+primary_parameters:       buffer = 0.15 x ATR(H1,14)
+                          max 2 candles apos o rompimento para confirmar
+                          direcao: superior -> SHORT; inferior -> LONG
+                          saida inicial (estagio 2): alvo midpoint,
+                          stop extremo do rompimento + buffer
+allowed_sensitivity:      buffer 0.10 / 0.15 / 0.20 (declarado ANTES;
+                          variar um parametro por vez)
+entry_rule:               ESTAGIO 1 = previsao condicional: retorno
+                          assinado (direcao esperada) em 1/2/4/8 candles
+                          apos o fechamento da confirmacao + taxa de
+                          alcance do midpoint em 8 candles + retorno ate
+                          a borda oposta; SEM trade
+exit_rule:                estagio 2 (so se efeito existir): alvo
+                          midpoint, stop extremo + buffer, custos
+cost_model:               base (2.0/0.5/3.5) + estresse 1.5x / 2.0x (estagio 2)
+risk_model:               FixedSizeRiskGate 0.01 (estagio 2)
+development_period:       2015-01-01 .. 2021-01-01
+validation_period:        2021-01-01 .. 2024-01-01
+oos_period:               2024-01-01 .. 2027-01-01 (contaminado -
+                          confirmacao final com --allow-oos + evento)
+rejection_criteria:       rejeitar se: efeito depender de um unico
+                          subperiodo; funcionar somente em buffer muito
+                          especifico (ilha de parametro); nao sobreviver
+                          a custos conservadores (estagio 2); retorno
+                          assinado medio <= 0 no estagio 1
+git_commit:               commit do pre-registro (docs/26 §14)
+```
+
+## Subgrupos pre-registrados (estagio 1)
+
+```text
+tamanho da faixa:   percentil < 30 (comprimida) vs > 70 (larga)
+duracao fora:       confirmacao no proprio candle de rompimento (0)
+                    vs 1-2 candles depois
+lado:               superior vs inferior
+```
+
+
+---
+
+# 15. Resultado H01 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Experimento `research/h01_experiment.py`: faixa asiatica = M15
+  com hora Europe/London [00:00, 07:00) (zoneinfo, DST correto);
+  ATR(H1,14) dos 14 H1 fechados antes das 07:00 London (Wilder TR,
+  causal); rompimento = high > range_high + buffer*ATR (superior)
+  ou low < range_low - buffer*ATR (inferior); confirmacao = primeiro
+  candle em {N, N+1, N+2} fechando DENTRO da faixa; um evento por
+  lado por dia (sem dupla contagem de episodios).
+- Dataset: EURUSD M15 2015-01-02..2026-08-10 + H1 processado.
+- Estagio 1: retorno assinado h1/2/4/8 apos o fechamento da
+  confirmacao (superior -> espera reversao negativa), por ano, por
+  lado; taxa de alcance do midpoint em 8 barras.
+
+## Resultados (signed mean %, buffer 0.15, n=3,956 eventos)
+
+| h | signed% | pos% |
+|---|---|---|
+| 1 | -0.001% | 49.29% |
+| 2 | +0.000% | 50.03% |
+| 4 | +0.001% | 50.76% |
+| 8 | +0.003% | 51.11% |
+
+- Midpoint touch rate (8 barras): 1.00 — o midpoint e SEMPRE tocado
+  em 2 horas; metrica nao discrimina.
+- Sensibilidade: buffer 0.10 (n=4,074, h8 +0.004%) e 0.20
+  (n=3,828, h8 +0.003%) — mesmo padrao, sem ilha de parametro.
+- Por ano (h8): oscila entre -0.009% e +0.015% com quatro
+  inversoes de sinal (2015 neg; 2017/2019/2020/2024 pos;
+  2021-2023 neg) — sem direcao estavel.
+- Por lado (h8): upper +0.002%, lower +0.004% — ambos levemente
+  POSITIVOS, i.e., o rompimento continua na direcao (oposto da
+  reversao esperada pela hipotese).
+
+## Decisao
+
+**H01 REJEITADA (estagio 1)**, conforme criterios pre-registrados
+(docs/26 §14):
+
+- retorno assinado medio ~0 em todos os horizontes e buffers, e
+  ligeiramente POSITIVO no h8 (continuacao, nao reversao);
+- efeito instavel entre subperiodos (4 inversoes de sinal por ano);
+- magnitude <= 0.015% por ano (global ~0.004% ~ 0.4 pips) — muito
+  abaixo do custo round-trip (3.7 pips); estagio 2 nao aberto por
+  ausencia de efeito no estagio 1.
+
+## Proxima hipotese ativa
+
+H02 (prioridade 3, docs/26 §4): continuacao apos handoff
+Asia-Londres. Pre-registro obrigatorio antes de qualquer backtest
+(protocolo §5).
