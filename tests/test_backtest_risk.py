@@ -1684,7 +1684,7 @@ def test_kill_switch_validates_configuration():
 
     with pytest.raises(
         TypeError,
-        match="block_exits",
+        match="freeze_all_orders",
     ):
         KillSwitchRiskGate(
             inner=FixedSizeRiskGate(
@@ -1707,3 +1707,144 @@ def test_kill_switch_delegates_instrument():
 
     assert gate.instrument is inner.instrument
     assert gate.inner is inner
+
+
+# ---------------------------------------------------------------------------
+# Hardening RC-01: wrappers propagate equity observations
+# ---------------------------------------------------------------------------
+
+
+def test_kill_switch_propagates_equity_to_inner_daily_loss():
+    """RC-01: equity observations reach a stateful inner gate even
+    when composed behind a wrapper."""
+    inner = DailyLossRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_daily_loss=100.0,
+    )
+
+    gate = KillSwitchRiskGate(
+        inner=inner,
+    )
+
+    gate.observe_equity(make_equity_point(equity=10000.0))
+    gate.observe_equity(make_equity_point(equity=9850.0))
+
+    decision = gate.evaluate(
+        make_signal(SignalAction.ENTER_LONG)
+    )
+
+    assert decision.approved is False
+    assert "daily loss" in decision.reason
+
+
+def test_exposure_limit_propagates_equity_to_inner_drawdown():
+    """RC-01: exposure wrapper propagates to a drawdown inner gate."""
+    inner = DrawdownRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        max_drawdown_pct=5.0,
+    )
+
+    gate = ExposureLimitRiskGate(
+        inner=inner,
+        max_quantity=1.0,
+    )
+
+    gate.observe_equity(make_equity_point(equity=10000.0))
+    gate.observe_equity(make_equity_point(equity=9200.0))
+
+    decision = gate.evaluate(
+        make_signal(
+            SignalAction.ENTER_LONG,
+            metadata={"entry_price": 1.1000},
+        )
+    )
+
+    assert decision.approved is False
+    assert "drawdown" in decision.reason
+
+
+def test_kill_switch_observe_equity_validates_point_type():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.01,
+        ),
+    )
+
+    with pytest.raises(TypeError, match="EquityPoint"):
+        gate.observe_equity(object())  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# Hardening RC-02: freeze_all_orders policy (HARD) is explicit
+# ---------------------------------------------------------------------------
+
+
+def test_freeze_all_orders_blocks_exits_when_active():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        freeze_all_orders=True,
+    )
+
+    assert gate.freeze_all_orders is True
+    assert gate.block_exits is True  # deprecated alias still readable
+
+    gate.kill()
+
+    exit_decision = gate.evaluate(
+        make_signal(SignalAction.EXIT)
+    )
+
+    assert exit_decision.approved is False
+    assert "hard mode" in exit_decision.reason
+
+
+def test_hard_mode_never_activated_implicitly():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+    )
+
+    assert gate.freeze_all_orders is False
+    assert gate.block_exits is False
+
+
+def test_freeze_all_orders_and_block_exits_conflict():
+    with pytest.raises(ValueError, match="not both"):
+        KillSwitchRiskGate(
+            inner=FixedSizeRiskGate(
+                instrument=make_instrument(),
+                fixed_quantity=0.01,
+            ),
+            freeze_all_orders=True,
+            block_exits=True,
+        )
+
+
+def test_kill_switch_deprecated_block_exits_still_works():
+    gate = KillSwitchRiskGate(
+        inner=FixedSizeRiskGate(
+            instrument=make_instrument(),
+            fixed_quantity=0.03,
+        ),
+        block_exits=True,
+    )
+
+    gate.kill()
+
+    exit_decision = gate.evaluate(
+        make_signal(SignalAction.EXIT)
+    )
+
+    assert exit_decision.approved is False

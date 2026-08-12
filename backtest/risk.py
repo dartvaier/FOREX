@@ -712,6 +712,32 @@ class ExposureLimitRiskGate:
     def max_notional(self) -> float | None:
         return self._max_notional
 
+    def observe_equity(
+        self,
+        point: EquityPoint,
+    ) -> None:
+        """
+        Propagate the equity observation to the inner gate
+        (docs/25 RC-01): wrappers must receive equity
+        independently of the composition chain.
+        """
+        if not isinstance(
+            point,
+            EquityPoint,
+        ):
+            raise TypeError(
+                "point must be an EquityPoint"
+            )
+
+        inner_observer = getattr(
+            self._inner,
+            "observe_equity",
+            None,
+        )
+
+        if callable(inner_observer):
+            inner_observer(point)
+
     def evaluate(
         self,
         signal: Signal,
@@ -1338,10 +1364,15 @@ class KillSwitchRiskGate:
         HOLD and EXIT pass through, so existing exposure can
         still be reduced or closed.
 
-    - HARD (block_exits=True):
+    - HARD (freeze_all_orders=True):
         ENTER_LONG / ENTER_SHORT and EXIT are rejected while
         active (full freeze). HOLD always passes because it
         produces no Order.
+
+    Hardening RC-02 (docs/25): HARD is an EXCEPTIONAL operational
+    freeze. It may only be enabled explicitly (default is SOFT /
+    exposure-reducing), requires operator justification and must
+    never be activated implicitly.
 
     While inactive, the gate delegates to the inner RiskGate
     without altering its decisions.
@@ -1355,7 +1386,8 @@ class KillSwitchRiskGate:
         self,
         *,
         inner: RiskGate,
-        block_exits: bool = False,
+        freeze_all_orders: bool | None = None,
+        block_exits: bool | None = None,
     ) -> None:
         if not isinstance(
             inner,
@@ -1365,16 +1397,34 @@ class KillSwitchRiskGate:
                 "inner must satisfy the RiskGate protocol"
             )
 
+        if (
+            freeze_all_orders is not None
+            and block_exits is not None
+        ):
+            raise ValueError(
+                "pass either freeze_all_orders or the deprecated "
+                "block_exits, not both"
+            )
+
+        effective = (
+            freeze_all_orders
+            if freeze_all_orders is not None
+            else block_exits
+        )
+
+        if effective is None:
+            effective = False
+
         if not isinstance(
-            block_exits,
+            effective,
             bool,
         ):
             raise TypeError(
-                "block_exits must be a bool"
+                "freeze_all_orders must be a bool"
             )
 
         self._inner = inner
-        self._block_exits = block_exits
+        self._freeze_all_orders = effective
         self._active = False
 
     @property
@@ -1388,12 +1438,43 @@ class KillSwitchRiskGate:
         return self._inner.instrument
 
     @property
+    def freeze_all_orders(self) -> bool:
+        return self._freeze_all_orders
+
+    @property
     def block_exits(self) -> bool:
-        return self._block_exits
+        """Deprecated alias of freeze_all_orders (docs/25 RC-02)."""
+        return self._freeze_all_orders
 
     @property
     def is_active(self) -> bool:
         return self._active
+
+    def observe_equity(
+        self,
+        point: EquityPoint,
+    ) -> None:
+        """
+        Propagate the equity observation to the inner gate
+        (docs/25 RC-01): wrappers must receive equity
+        independently of the composition chain.
+        """
+        if not isinstance(
+            point,
+            EquityPoint,
+        ):
+            raise TypeError(
+                "point must be an EquityPoint"
+            )
+
+        inner_observer = getattr(
+            self._inner,
+            "observe_equity",
+            None,
+        )
+
+        if callable(inner_observer):
+            inner_observer(point)
 
     def kill(self) -> None:
         """
@@ -1455,7 +1536,7 @@ class KillSwitchRiskGate:
                 "kill switch active",
             )
 
-        if self._block_exits:
+        if self._freeze_all_orders:
             return self._reject(
                 decision,
                 "kill switch active (hard mode blocks exits)",

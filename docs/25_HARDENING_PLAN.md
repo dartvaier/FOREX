@@ -429,7 +429,7 @@ Gate:
 ## Status
 
 ```text
-PLANNED
+DONE (2026-08-12)
 ```
 
 ## Objetivo
@@ -508,8 +508,8 @@ inner rejection é preservada
 ### Critério de aceite
 
 ```text
-[ ] wrappers stateful recebem equity independentemente da composição
-[ ] testes usam cadeia real, não apenas gates isolados
+[x] wrappers stateful recebem equity independentemente da composição
+[x] testes usam cadeia real, não apenas gates isolados
 ```
 
 ### Commit sugerido
@@ -561,9 +561,9 @@ reset é manual
 ### Critério de aceite
 
 ```text
-[ ] default permanece exposure-reducing
-[ ] hard mode não pode ser ativado implicitamente
-[ ] docs explicam quando ele pode ser usado
+[x] default permanece exposure-reducing
+[x] hard mode não pode ser ativado implicitamente
+[x] docs explicam quando ele pode ser usado
 ```
 
 ---
