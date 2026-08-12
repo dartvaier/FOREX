@@ -2798,6 +2798,11 @@ H07 (gap semanal) — ESTAGIO 1 REJECTED (docs/26 §21): sinal real
 PROGRAMA DE HIPOTESES FECHADO (docs/26 §22): 7/7 REFUTADAS,
    0 confirmadas — base de registros research/hypotheses_log.json,
    relatorio docs/27
+H07 reavaliado com custos REAIS (docs/26 §23): spread EURUSD geral
+   ~0.2-0.4 pips, open semanal mediana 1.20/p90 3.25 pips -> custo
+   real round-trip 3.30-5.75 pips vs edge h1 3.11 pips -> H07
+   MANTIDA REFUTADA; ferramenta research/cost_measurement.py
+   incorporada para calibrar futuras hipoteses
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 

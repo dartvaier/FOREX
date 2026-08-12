@@ -1393,3 +1393,62 @@ pre-registro imutavel. Classificacao final: 7 REFUTADAS / 0
 CONFIRMADAS / 0 INCONCLUSIVAS. Base de registros:
 `research/hypotheses_log.json`. Relatorio consolidado:
 `docs/27_HYPOTHESES_TEST_REPORT.md`.
+
+
+---
+
+# 23. Reavaliacao H07 com Custos Reais de Execucao (2026-08-12)
+
+## Motivo (docs/27 §5 recomendacao 1-2)
+
+O estagio 1 do H07 foi rejeitado pelo criterio de custo usando o
+baseline de 3.7 pips round-trip (docs/21). Esta secao reavalia o
+h1 (unico sinal estatistico robusto do programa) com o custo REAL
+medido no proprio dataset, e decide se o caso justifica abrir o
+estagio 2.
+
+## Metodo (declarado antes da execucao, sem mining)
+
+- `research/cost_measurement.py`: mede a coluna `spread` (pontos MT5;
+  EURUSD 5 digitos: 1 ponto = 0.1 pip) do M15, por ano e por hora,
+  e especificamente na PRIMEIRA barra de cada semana ISO (ponto de
+  entrada do H07).
+- Custo round-trip real = spread_entrada + spread_saida +
+  2 x slippage (0.5/fill) + comissao (0.7 pips/lote round-trip,
+  3.50/lado).
+- Aplicado ao retorno assinado h1 ja registrado (docs/26 §21):
+  +0.031% ~ 3.11 pips brutos (EURUSD ~1.10).
+
+## Resultados da medicao (EURUSD M15, 288,223 candles)
+
+- Spread geral: media 0.36 pips, mediana 0.20, p90 0.80 — o baseline
+  de 2.0 pips e MUITO conservador para o mercado normal.
+- Spread no OPEN SEMANAL (primeira barra da semana, n=606): media
+  1.48 pips, mediana 1.20, p90 3.25 — ~6x o spread normal.
+- Spread na hora 1 UTC (saida +1h): mediana 0.40.
+
+## Custo round-trip real (entrada open semanal + saida +1h)
+
+| cenario | entrada | saida | + slippage/comissao | total | vs edge 3.11 pips |
+|---|---|---|---|---|---|
+| mediana | 1.20 | 0.40 | +1.7 | 3.30 pips | -0.19 pips |
+| media | 1.48 | 0.47 | +1.7 | 3.65 pips | -0.54 pips |
+| p90 entrada | 3.25 | 0.80 | +1.7 | 5.75 pips | -2.64 pips |
+| baseline docs/21 | 2.00 | 2.00 | +1.7 | 3.70 pips | -0.59 pips |
+
+## Decisao
+
+**H07 permanece REFUTADA** — confirmado com custo REAL, nao apenas
+baseline:
+
+- na melhor estimativa (mediana), o edge liquido e -0.19 pips;
+- no p90 do spread de entrada, -2.64 pips — o open semanal tem
+  cauda de spread que inviabiliza a entrada consistente;
+- o fator decisivo e a dispersao do spread no open semanal (p90 =
+  3.25 pips), nao o baseline de 2.0.
+
+A recomendacao docs/27 §5 rec. 1-2 esta RESOLVIDA: nao ha caso para
+estagio 2. A ferramenta de medicao de custos fica no projeto
+(`research/cost_measurement.py` + `research/reports/cost_measurement.json`)
+para calibrar futuras hipoteses: o mercado normal EURUSD e barato
+(~0.2-0.4 pips), o open semanal e a excecao cara.

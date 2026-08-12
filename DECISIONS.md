@@ -1,5 +1,20 @@
 # Architecture & Engineering Decisions
 
+## H07 REAVALIADO COM CUSTOS REAIS — MANTIDA REFUTADA (2026-08-12)
+
+- **Decisao**: a recomendacao docs/27 §5 (reavaliar H07-h1 sob custos
+  reais) foi executada via medicao direta do spread no dataset
+  (`research/cost_measurement.py`). H07 permanece REFUTADA.
+- **Evidencia**: spread geral EURUSD ~0.2-0.4 pips (baseline 2.0 e
+  conservador), mas open semanal mediana 1.20 / p90 3.25 pips; custo
+  round-trip real 3.30 (mediana) / 3.65 (media) / 5.75 (p90) pips vs
+  edge h1 de ~3.11 pips — liquido -0.19 a -2.64 pips.
+- **Consequencia**: ferramenta de medicao de custos incorporada ao
+  projeto (reutilizavel para calibrar futuras hipoteses); nenhuma
+  hipotese avanca para estagio 2; OOS permanece intocado.
+
+# Architecture & Engineering Decisions
+
 ## H04 ESTAGIO 1 REJECTED (2026-08-12)
 
 - **Decisao**: H04 (compressao + choque de preco/atividade) REJEITADA
