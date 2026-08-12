@@ -42,7 +42,17 @@ python -m research.runner --strategy ema_trend --timeframe H1
 # Gravando também a curva de equity completa
 python -m research.runner --strategy mean_reversion --equity-csv
 
-# Cost stress (F8): baseline, 1.5x e 2.0x dos custos explícitos
+# Custos calibrados por instrumento (docs/26 §25):
+
+    python -m research.cost_measurement            # mede os 7 pares
+    python -m research.runner --strategy ema_trend --calibrated-spread
+
+O flag `--calibrated-spread` usa o spread mediano MEDIDO do simbolo
+(`research/reports/cost_measurement_all.json`) em vez do baseline de
+2.0 pips. Regras: mutuamente exclusivo com `--spread-pips`; ignorado
+no modo zero-cost; o baseline continua sendo o default (2.0 pips).
+
+Cost stress (F8): baseline, 1.5x e 2.0x dos custos explícitos
 python -m research.runner --strategy time_series_momentum --cost explicit --cost-multiplier 1.5 --tag cost1x5
 python -m research.runner --strategy time_series_momentum --cost explicit --cost-multiplier 2.0 --tag cost2x
 ```

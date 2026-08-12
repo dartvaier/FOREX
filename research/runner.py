@@ -1003,7 +1003,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--spread-pips",
         type=float,
-        default=DEFAULT_EXPLICIT_COSTS["spread_pips"],
+        default=None,
+        help=(
+            "override spread in pips; default: baseline 2.0, or the "
+            "measured median for the symbol with --calibrated-spread "
+            "(docs/26 §25)"
+        ),
+    )
+
+    parser.add_argument(
+        "--calibrated-spread",
+        action="store_true",
+        help=(
+            "use the measured median spread for the symbol from "
+            "research/reports/cost_measurement_all.json (run "
+            "python -m research.cost_measurement first)"
+        ),
     )
 
     parser.add_argument(
@@ -1062,6 +1077,61 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def load_calibrated_spread(
+    symbol: str,
+    calibration_path: Path | None = None,
+) -> float:
+    """
+    Measured median spread (pips) for a symbol (docs/26 §25).
+
+    Reads research/reports/cost_measurement_all.json, produced by
+    ``python -m research.cost_measurement``. Raises ValueError when
+    the calibration file is missing or the symbol was not measured.
+    """
+    path = calibration_path or Path(
+        "research/reports/cost_measurement_all.json"
+    )
+    if not path.exists():
+        raise ValueError(
+            f"--calibrated-spread requires {path} "
+            "(run: python -m research.cost_measurement)"
+        )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    symbols = payload.get("symbols", {})
+    if symbol not in symbols:
+        raise ValueError(
+            f"--calibrated-spread: symbol {symbol} not found in "
+            f"{path} (measured: {sorted(symbols)})"
+        )
+    return float(symbols[symbol]["spread_pips_median"])
+
+
+def resolve_spread_pips(
+    *,
+    symbol: str,
+    spread_pips: float | None,
+    calibrated: bool,
+    cost_mode: str,
+    calibration_path: Path | None = None,
+) -> float:
+    """
+    Effective spread (pips) for a run (docs/26 §25).
+
+    Rules: --calibrated-spread + explicit --spread-pips is ambiguous
+    (ValueError); calibrated loads the measured median for the symbol
+    (ignored under zero costs); otherwise the baseline spread applies.
+    """
+    if calibrated and spread_pips is not None:
+        raise ValueError(
+            "use either --spread-pips or --calibrated-spread, not both"
+        )
+    if calibrated and cost_mode != "zero":
+        return load_calibrated_spread(symbol, calibration_path)
+    if spread_pips is None:
+        return DEFAULT_EXPLICIT_COSTS["spread_pips"]
+    return spread_pips
+
+
 def main() -> None:
     args = build_parser().parse_args()
 
@@ -1078,6 +1148,13 @@ def main() -> None:
     strategy_params = coerce_strategy_params(
         strategy_class,
         parse_params(args.param),
+    )
+
+    args.spread_pips = resolve_spread_pips(
+        symbol=args.symbol,
+        spread_pips=args.spread_pips,
+        calibrated=args.calibrated_spread,
+        cost_mode=args.cost,
     )
 
     cost_params = {
