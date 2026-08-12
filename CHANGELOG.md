@@ -205,7 +205,7 @@ Strategy Research
   research/demo. ML/HMM frontier is a separate project, not an
   incremental continuation.
 - Documentation state sync: README, roadmap and F10 readiness docs
-  aligned to the real current gate (`1065 passed`) and to the
+  aligned to the real current gate (`1161 passed, 9 deselected`) and to the
   infra-ready/operator-decision status.
 
 ---

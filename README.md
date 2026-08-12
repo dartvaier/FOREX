@@ -421,13 +421,13 @@ Esse baseline validou a infraestrutura multi-timeframe sem look-ahead, mas a reg
 Suíte atual:
 
 ```text
-1065 passed
+1161 passed, 9 deselected
 ```
 
 Comando:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q --basetemp .pytest-tmp
+.\.venv\Scripts\python.exe -m pytest -m "not integration" -q --tb=short --basetemp .pytest-tmp
 ```
 
 Áreas cobertas:

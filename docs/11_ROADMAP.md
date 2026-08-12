@@ -2536,9 +2536,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-1065 tests
+1170 tests collected
 
-1065 passed
+1161 passed, 9 deselected
 
 0 failed
 ```
