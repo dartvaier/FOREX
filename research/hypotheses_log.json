@@ -292,14 +292,58 @@
    },
    "classification": "REFUTADA",
    "justification": "DE/TV nao adiciona poder vs controle; continuacao H1-a-H1 inexistente"
+  },
+  {
+   "id": "H07-MP",
+   "name": "Reversao do gap semanal multi-par (6 pares, custos calibrados)",
+   "priority": 5,
+   "cycle": "2-multipar",
+   "acceptance_criteria": "net h1 > 0 em >= 3 pares e LOYO > 0 em >= 2",
+   "status_initial": "ACTIVE (pre-registro docs/26 §38)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1 multi-par",
+   "steps": "detect_gaps 0.50 ATR; net = signed - (spread open semanal medido + 0.40 + 1.0 + 0.7); auditoria bootstrap CI e anos",
+   "evidence": [
+    "docs/26 §38-§39",
+    "research/reports/h07h09_multipair_consolidated.json"
+   ],
+   "metrics": {
+    "pairs_net_positive": "5/6 (GBPUSD +0.05, USDJPY +0.43, USDCHF +0.29, AUDUSD +1.82, NZDUSD +3.23; USDCAD -2.17 pips)",
+    "pairs_ci_excluding_zero": "2/6 (AUDUSD [+0.2,+3.5], NZDUSD [+1.4,+5.0])",
+    "years_positive": "AUDUSD 10/12, NZDUSD 11/12",
+    "h09_multipair": "0/6 pares positivos (refutada fora do EURUSD)"
+   },
+   "classification": "PROMISSORA (estagio 1 multi-par)",
+   "justification": "criterio pre-registrado atingido (5/6 pares net>0, LOYO 5); auditoria: apenas AUDUSD/NZDUSD com CI excluindo zero e robustez anual; proximo passo estagio 2 AUDUSD/NZDUSD pre-registrado"
+  },
+  {
+   "id": "H09-MP",
+   "name": "Reversao comprimida+extremo multi-par (6 pares)",
+   "priority": 6,
+   "cycle": "2-multipar",
+   "acceptance_criteria": "net h4 > 0 em >= 3 pares e LOYO > 0 em >= 2",
+   "status_initial": "ACTIVE (pre-registro docs/26 §38)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1 multi-par",
+   "steps": "mesmo modelo do estagio 1 EURUSD, 6 pares, custo por evento",
+   "evidence": [
+    "docs/26 §38-§39",
+    "research/reports/h09_multipair_*.json"
+   ],
+   "metrics": {
+    "pairs_net_positive": "0/6 (GBPUSD -0.010%, USDJPY -0.053%, USDCHF -0.031%, AUDUSD -0.032%, USDCAD -0.012%, NZDUSD -0.011%)"
+   },
+   "classification": "REFUTADA",
+   "justification": "0/6 pares com net > 0; sinal do EURUSD nao generaliza; H09 encerrada (estagio 2 EURUSD ja refutado)"
   }
  ],
  "summary": {
-  "total": 12,
-  "confirmed": 0,
-  "refuted": 12,
+  "total": 14,
+  "confirmed_stage2": 0,
+  "promising_stage1": 1,
+  "refuted": 13,
   "inconclusive": 0,
-  "note": "ciclo 1 (H01-H07) 7/7 refutadas; ciclo 2 (H08-H11) 3 refutadas + H09 inconclusiva no estagio 1, resolvida no estagio 2 como REFUTADA; programa fechado: 0 confirmadas / 12 refutadas sob custos calibrados"
+  "note": "H01-H11 + estagio 2 H09 (12) + H07-MP/H09-MP (2). H07-MP PROMISSORA (AUDUSD +1.82 / NZDUSD +3.23 pips net h1, CI exclui zero, 10-11/12 anos); proximo passo estagio 2 AUDUSD/NZDUSD pre-registrado"
  },
  "cycle2": {
   "opened": "2026-08-12 (docs/26 §26)",

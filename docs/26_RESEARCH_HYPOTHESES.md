@@ -2050,3 +2050,100 @@ Nenhuma hipotese do programa produziu valor esperado liquido
 positivo sob custos calibrados. O padrao repetido: edge bruto
 marginal (0.1-1.7 pips) sistematicamente menor que o custo
 round-trip calibrado (1.9-3.7 pips).
+
+
+---
+
+# 38. Pre-registro Multi-Par H07 + H09 (2026-08-12)
+
+Imutavel. Nenhum backtest multi-par foi executado antes deste
+registro. Origem: H07-h1 e H09-h4 foram os unicos sinais com
+evidencia real no EURUSD (secoes 19/21 e 28/32); o programa fechou
+0/12 no EURUSD. Este registro testa se o sinal e especifico do
+EURUSD ou generaliza para outros pares, com custos calibrados por
+par desde o estagio 1.
+
+## Escopo
+
+- **Simbolos** (6): GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD.
+  EURUSD ja executado (referencia).
+- **H07** (gap semanal): threshold 0.50 de ATR(H1,14); signed =
+  -sign(gap) * fwd nos horizontes h1/h4/h8/h16; **net** = signed -
+  custo por evento = spread medido da primeira barra da semana +
+  0.40 (saida) + 1.0 (slippage) + 0.7 (comissao); PIP_SIZE 0.0001.
+- **H09** (comprimida + extremo): mesmos parametros do estagio 1
+  EURUSD (range_pct < p30 60d causal; CLV 0.80/0.20; fwd h1/h2/h4);
+  net com spread medido da ultima barra asiatica + 0.40 + 1.0 + 0.7.
+- Mesmas janelas temporais por par: London 00:00-07:00 (H09),
+  semana ISO (H07). Sem look-ahead (features causais, barras
+  fechadas).
+
+## Criterios de decisao (fixados antes de rodar)
+
+n minimo para reportar: H07 >= 30 eventos / H09 >= 20 sessoes por par.
+
+- **H07 multi-par CONFIRMADA**: net h1 > 0 em >= 3 dos 6 pares E
+  leave-one-year-out h1 > 0 em >= 2 desses pares.
+- **H09 multi-par CONFIRMADA**: net h4 (grupo high) > 0 em >= 3 dos
+  6 pares E leave-one-year-out h4 > 0 em >= 2 desses pares.
+- **0 pares com net > 0**: hipotese refutada fora do EURUSD
+  (confirma escopo EURUSD-only; custos maiores dos outros pares
+  reforcam a barra).
+- **1-2 pares**: inconclusiva multi-par (sinal especifico de par;
+  exigiria estagio 2 por par, condicionado ao operador).
+
+Controle de multiplos testes declarado: 2 hipoteses x 6 pares = 12
+execucoes; exige >= 3 pares consistentes para confirmar (nao 1 par
+isolado).
+
+
+---
+
+# 39. Resultado Multi-Par H07 + H09 (2026-08-12)
+
+## Execucao
+
+- Pre-registro na secao 38; `run_multipair.py` (H07: net por evento
+  com spread medido da primeira barra da semana; H09: mesmo modelo
+  do estagio 1) + auditoria bootstrap CI/anos (`audit_multipair.py`).
+- 6 pares: GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD.
+
+## H07 — gap semanal (net h1, pips liquidos)
+
+| par | net h1 | n | CI95 (pips) | anos pos. | LOYO>0 |
+|---|---|---|---|---|---|
+| GBPUSD | +0.05 | 333 | contem zero | 6/12 | sim |
+| USDJPY | +0.43 | 346 | contem zero | 7/12 | sim |
+| USDCHF | +0.29 | 366 | contem zero | 6/12 | sim |
+| AUDUSD | +1.82 | 353 | [+0.2, +3.5] | 10/12 | sim |
+| USDCAD | -2.17 | 314 | [-3.4, -0.9] | 2/12 | nao |
+| NZDUSD | +3.23 | 404 | [+1.4, +5.0] | 11/12 | sim |
+
+Custo medio do open semanal (pips): GBPUSD 3.80, USDJPY 2.30,
+USDCHF 5.77, AUDUSD 2.41, USDCAD 4.55, NZDUSD 4.08 -> custo total
+medio 4.4 a 7.9 pips por trade.
+
+## H09 — comprimida + extremo (net h4, grupo high)
+
+Todos os 6 pares com net NEGATIVO: GBPUSD -0.010%, USDJPY -0.053%,
+USDCHF -0.031%, AUDUSD -0.032%, USDCAD -0.012%, NZDUSD -0.011%.
+**H09 REFUTADA fora do EURUSD** (o sinal do EURUSD nao generaliza;
+com o estagio 2 do EURUSD ja refutado, H09 esta encerrada).
+
+## Decisao
+
+**H07 multi-par: formalmente CONFIRMADA no estagio 1** (criterio
+pre-registrado: net h1 > 0 em >= 3 pares e LOYO > 0 em >= 2 -> 5/6
+pares, LOYO em 5). **Auditoria obrigatoria (AGENTS.md §12)**: apenas
+**AUDUSD (+1.82 pips, CI exclui zero, 10/12 anos) e NZDUSD (+3.23
+pips, CI exclui zero, 11/12 anos)** sao estatisticamente solidos;
+GBPUSD/USDJPY/USDCHF tem CI contendo zero (~50% dos anos) e USDCAD e
+consistentemente negativo. Interpretacao economica: o sinal e um
+fenomeno dos pares do Pacifico (AUDUSD/NZDUSD), os unicos com custo
+de open semanal compativel com o edge.
+
+**Classificacao: H07-MP PROMISSORA** (estagio 1 multi-par) — primeiro
+resultado do programa com net liquido positivo e estatisticamente
+significativo em pares individuais. Proximo passo: **estagio 2
+AUDUSD/NZDUSD** (trade completo com TP/SL, pre-registrado), seguido
+de walk-forward, antes de qualquer conclusao de exploracao.

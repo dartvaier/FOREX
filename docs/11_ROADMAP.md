@@ -2812,16 +2812,15 @@ Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
    bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
    runner corrigido (bug RA-04) e agora aceita --spread-pips
    calibrado por instrumento
-PROGRAMA DE HIPOTESES FECHADO (docs/26 §26-§37): H08 REJECTED,
-   H09 REJECTED no estagio 2 (trade completo net -0.81 pips; edge
-   bruto +1.73 pips < custo), H10 REJECTED, H11 REJECTED — 12
-   execucoes registradas (research/hypotheses_log.json),
-   0 CONFIRMADAS / 12 REFUTADAS; nenhum sinal elegivel para demo
+PROGRAMA DE HIPOTESES: 14 execucoes (research/hypotheses_log.json):
+   13 refutadas + **H07-MP PROMISSORA** (docs/26 §38-§39) — gap
+   semanal net h1 AUDUSD +1.82 / NZDUSD +3.23 pips (CI exclui zero,
+   10-11/12 anos); H09 encerrada (estagio 2 EURUSD + multi-par
+   refutados)
+PROXIMO PASSO: estagio 2 AUDUSD/NZDUSD (trade completo TP/SL,
+   pre-registro imutavel, custo do open semanal medido) + walk-
+   forward; so entao candidata a demo sob decisao do operador
 Decisao de capital real (§92) permanece separada, sob o operador.
-Proximas opcoes: (a) nova rodada de hipoteses com custos calibrados
-   como padrao; (b) reavaliacao das estrategias do runner sob custos
-   calibrados (docs/21: 21/21 negativas); (c) encerrar a linha de
-   pesquisa de edge e focar em infraestrutura/risco.
 ---
 
 # 132. Regra Final

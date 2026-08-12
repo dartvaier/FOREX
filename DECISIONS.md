@@ -1,3 +1,17 @@
+## H07 MULTI-PAR PROMISSORA (2026-08-12)
+
+- **H07-MP estagio 1**: 5/6 pares com net h1 > 0 (LOYO > 0 em 5) —
+  criterio pre-registrado atingido. **Auditoria**: apenas AUDUSD
+  (+1.82 pips, CI [+0.2,+3.5], 10/12 anos) e NZDUSD (+3.23 pips, CI
+  [+1.4,+5.0], 11/12 anos) excluem zero; GBPUSD/USDJPY/USDCHF =
+  ruido, USDCAD = negativo. Fenomeno dos pares do Pacifico.
+- **H09-MP**: 0/6 pares positivos — refutada fora do EURUSD; H09
+  encerrada.
+- **Proximo passo**: estagio 2 AUDUSD/NZDUSD (trade completo,
+  pre-registro imutavel antes de rodar), depois walk-forward. So
+  entao qualquer conclusao de exploracao — nao ha edge liquido
+  comprovado em trade completo ainda (0 confirmadas no estagio 2).
+
 ## H09 ESTAGIO 2 REJECTED — PROGRAMA DE HIPOTESES FECHADO (2026-08-12)
 
 - **H09 estagio 2**: REFUTADA — trade completo (TP midpoint, SL
