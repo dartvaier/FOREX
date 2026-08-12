@@ -2412,3 +2412,72 @@ LONGO; semanal/mensal tem custo proporcionalmente menor.
 regras internas). OOS 2024-2027 permanece contaminado (informativo
 apenas). Resultados avaliados pelos criterios acima SEM redefinicao
 pos-hoc.
+
+
+---
+
+# 44. Resultado do Ciclo 3: H12/H13/H14 (2026-08-12)
+
+## Execucao
+
+- Pre-registro na secao 43; `run_cycle3.py` (reusa detect_gaps do
+  h07 e helpers do h09; vetorizado). EURUSD M15, custo por evento:
+  spread medido + 2.1 pips.
+
+## Resultados
+
+### H12 — Liquidity premium (analogia Cooper)
+
+- Sinal: retorno 10 sessoes <= -1.0% + tick_volume declinante
+  (media 10d < media 20d anterior); long no open seguinte, saida
+  no close da 5a sessao.
+- n = 315 | net medio **+0.1035%** | CI95 [-0.0112, +0.2159]
+  (contem zero) | LOYO +0.00103 > 0 | anos positivos n/d.
+- **INCONCLUSIVA** (criterio pre-registrado: net > 0 mas CI
+  contem zero). Sinal fraco e nao estatisticamente robusto; nao
+  elevado a estagio 2 (edge ~0.1%/evento semanal, ~29 eventos/ano;
+  mesmo perfil do H09 stage-1, que foi refutado no stage-2).
+
+### H13 — Regras complexas (voting Hsu-Kuan)
+
+- 8 regras simples binarias (EMA 10/50, EMA 20/100, TSM 192,
+  channel 20x60, RSI 14 30/70, Bollinger 20x2, gap reversion,
+  range compression); voting majoritario por barra M15; custo de
+  flip por mudanca de lado.
+- n = 279.146 barras ativas | net medio **-0.00005%** por barra |
+  CI95 [-0.00031, +0.00022].
+- **REFUTADA** (net <= 0). Combinar regras individualmente
+  refutadas nao cria edge no M15 EURUSD — consistente com o
+  Hsu-Kuan: regras complexas ajudaram em indices de acoes menos
+  eficientes (NASDAQ/Russell), nao no S&P 500; o EURUSD spot
+  comporta-se como o S&P 500 aqui.
+
+### H14 — Trend following semanal (MLM)
+
+- W1: preco > MA12s -> long; < -> short; revisao semanal; entrada
+  no open da semana seguinte; custo do open semanal + 2.1 pips.
+- n = 593 | net medio **-0.0845%** | CI95 [-0.1694, -0.0026]
+  (NEGATIVO significativo) | LOYO -0.00085 < 0.
+- **REFUTADA** (net < 0 com CI excluindo zero). O hedge risk
+  premium documentado em COMMODITIES futures (MLM) nao existe no
+  EURUSD spot no varejo — o custo do open semanal + ausencia do
+  mecanismo de transferencia de risco de hedgers de commodity
+  destroem a analogia. Consistente com docs/21 (TSM 21/21
+  negativos em todos os horizontes testados).
+
+## Estado do programa apos ciclo 3
+
+18 execucoes registradas (research/hypotheses_log.json):
+**0 CONFIRMADAS / 17 REFUTADAS / 1 INCONCLUSIVA (H12)**.
+Padrao inalterado: edge bruto marginal < custo calibrado. O ciclo 3
+confirmou que as teorias de nonrandom motion do Aronson (liquidity
+premium, complex rules, hedge risk premium) nao se materializam em
+edge liquido no EURUSD spot com dados M15-D1-W1 e custos de varejo.
+
+## Lição metodologica consolidada (Aronson)
+
+O case study do livro (6.402 regras, S&P 500) previu exatamente este
+desfecho: em mercados liquidos e eficientes, regras simples e mesmo
+combinacoes nao produzem retornos estatisticamente significativos
+apos correcao de data-mining. Nosso funil (pre-registro + custos
+calibrados + WRC + estagio 2) e a operacionalizacao disso no FX.

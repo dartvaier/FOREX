@@ -1,3 +1,20 @@
+## CICLO 3 EXECUTADO — H12 INCONCLUSIVA, H13/H14 REFUTADAS (2026-08-12)
+
+- **H12** (liquidity premium Cooper): net +0.1035% (n=315), CI
+  contem zero, LOYO>0 → INCONCLUSIVA; nao elevado a stage-2 (edge
+  marginal, perfil H09).
+- **H13** (voting 8 regras): net -0.00005%/barra (n=279k) →
+  REFUTADA; combinar regras refutadas nao cria edge no M15 EURUSD.
+- **H14** (MLM semanal): net -0.0845%/semana, CI NEGATIVO
+  significativo → REFUTADA; hedge risk premium de commodities nao
+  existe no EURUSD spot varejo.
+- **Programa: 18 execucoes, 0 confirmadas / 17 refutadas / 1
+  inconclusiva.** Padrao inalterado apos 3 ciclos e 4 horizontes
+  (M15/H1/W1): edge bruto marginal < custo calibrado. Aronson
+  (6.402 regras S&P 500) previu o desfecho.
+- Sem candidato a demo/capital real. Decisao de capital (§92)
+  permanece sob o operador.
+
 ## WRC INCORPORADO + RE-AUDITORIA H07-MP (2026-08-12)
 
 - **White's Reality Check / Monte Carlo Permutation implementados**

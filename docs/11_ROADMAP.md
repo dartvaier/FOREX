@@ -2812,19 +2812,24 @@ Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
    bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
    runner corrigido (bug RA-04) e agora aceita --spread-pips
    calibrado por instrumento
-PROGRAMA DE HIPOTESES: 15 execucoes, 0 CONFIRMADAS / 15 REFUTADAS
-   (docs/26 §38-§41); H07-MP stage-1 validado retroativamente por
-   White's Reality Check (p=0.0004, docs/26 §42) mas refutado no
-   stage-2 pelo custo — padrao consolidado: edge bruto < custo
-WRC/MCP INCORPORADOS ao funil (research/data_mining_tests.py):
-   qualquer resultado com selecao (pares/parametros/variacoes) sera
-   corrigido por data-mining bias
-CICLO 3 (candidatas de Aronson cap. 7, pre-registro imutavel):
-   (a) liquidity premium tipo Cooper (oversold + volume declinante);
-   (b) regras complexas tipo Hsu-Kuan (voting de sinais ja testados);
-   (c) trend following semanal/mensal (risk premium)
+PROGRAMA DE HIPOTESES: **18 execucoes, 0 CONFIRMADAS / 17 REFUTADAS
+   / 1 INCONCLUSIVA** (docs/26 §38-§44): ciclos 1-3 + runner 21/21;
+   H12 (liquidity premium) INCONCLUSIVA — net +0.104%, CI contem
+   zero; H13 (voting) e H14 (MLM semanal) REFUTADAS; H07-MP stage-1
+   robusto ao WRC (p=0.0004) mas refutado no stage-2 pelo custo
+PADRAO CONSOLIDADO (3 ciclos, 4 horizontes M15/H1/D1/W1): edge bruto
+   marginal < custo calibrado; Aronson (6.402 regras S&P 500) previu
+   o desfecho — mercados liquidos nao pagam edge a regras simples ou
+   combinadas apos correcao de data-mining
+WRC/MCP INCORPORADOS ao funil (research/data_mining_tests.py)
 NENHUM SINAL ELEGIVEL PARA DEMO/CAPITAL REAL. Decisao de capital
    (§92) permanece sob o operador, sem candidato do programa.
+Proximas opcoes: (a) aceitar o veredito e encerrar a busca de edge
+   no varejo FX (recomendado pela evidencia); (b) buscar dados de
+   custo institucional (spread liquido real via ECN/API) onde o
+   custo de 2-8 pips cai para fracoes — o unico caminho que a
+   evidencia nao refutou; (c) redirecionar para
+   infraestrutura/risco/demo da operacao.
 ---
 
 # 132. Regra Final
