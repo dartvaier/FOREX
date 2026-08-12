@@ -2812,17 +2812,19 @@ Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
    bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
    runner corrigido (bug RA-04) e agora aceita --spread-pips
    calibrado por instrumento
-PROGRAMA DE HIPOTESES ENCERRADO (docs/26 §38-§41): 15 execucoes
-   (research/hypotheses_log.json), **0 CONFIRMADAS / 15 REFUTADAS**
-   sob custos calibrados; H07-MP promissora no estagio 1 (AUDUSD
-   +1.82 / NZDUSD +3.23 pips) refutada no estagio 2 (net -2.26/
-   -2.49 pips; custo do open semanal + timeouts consomem o edge)
+PROGRAMA DE HIPOTESES: 15 execucoes, 0 CONFIRMADAS / 15 REFUTADAS
+   (docs/26 §38-§41); H07-MP stage-1 validado retroativamente por
+   White's Reality Check (p=0.0004, docs/26 §42) mas refutado no
+   stage-2 pelo custo — padrao consolidado: edge bruto < custo
+WRC/MCP INCORPORADOS ao funil (research/data_mining_tests.py):
+   qualquer resultado com selecao (pares/parametros/variacoes) sera
+   corrigido por data-mining bias
+CICLO 3 (candidatas de Aronson cap. 7, pre-registro imutavel):
+   (a) liquidity premium tipo Cooper (oversold + volume declinante);
+   (b) regras complexas tipo Hsu-Kuan (voting de sinais ja testados);
+   (c) trend following semanal/mensal (risk premium)
 NENHUM SINAL ELEGIVEL PARA DEMO/CAPITAL REAL. Decisao de capital
    (§92) permanece sob o operador, sem candidato do programa.
-Proximas opcoes: (a) nova rodada de hipoteses (custos calibrados
-   como padrao); (b) reavaliacao das estrategias do runner sob
-   custos calibrados (docs/21: 21/21 negativas); (c) encerrar a
-   linha de edge e focar em infraestrutura/risco/demo da operacao.
 ---
 
 # 132. Regra Final

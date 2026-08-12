@@ -1,3 +1,22 @@
+## WRC INCORPORADO + RE-AUDITORIA H07-MP (2026-08-12)
+
+- **White's Reality Check / Monte Carlo Permutation implementados**
+  (research/data_mining_tests.py, 9 testes): correcao de
+  data-mining bias para "melhor de N regras" — padrao obrigatorio
+  para avaliar qualquer resultado selecionado entre variacoes/pares
+  (Aronson cap. 6; case study: 6.402 regras S&P, nenhuma
+  significativa apos correcao).
+- **Re-auditoria H07-MP**: WRC sobre as series exatas do stage-1
+  (7 pares): melhor = NZDUSD +0.0323%, p = 0.0002 (7 pares) /
+  0.0004 (6 pares) — o stage-1 nao era artefato de selecao do
+  melhor de N. Refutacao do stage-2 permanece valida (custo).
+- **Funil atualizado**: a partir de agora, resultados que envolvam
+  qualquer selecao (pares, parametros, variacoes) sao avaliados com
+  WRC/MCP alem dos criterios pre-registrados.
+- **Ciclo 3**: candidatas derivadas de Aronson cap. 7 (liquidity
+  premium tipo Cooper, regras complexas tipo Hsu-Kuan, horizonte
+  semanal/mensal) — pre-registro imutavel antes de rodar.
+
 ## H07 ESTAGIO 2 REJECTED — PROGRAMA ENCERRADO SEM CANDIDATO (2026-08-12)
 
 - **H07 estagio 2 (AUDUSD/NZDUSD)**: REFUTADA — trade completo

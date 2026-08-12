@@ -308,7 +308,8 @@
     "research/reports/h07h09_multipair_consolidated.json",
     "docs/26 §40-§41",
     "research/h07_stage2.py",
-    "research/reports/h07_stage2_{AUDUSD,NZDUSD}.json"
+    "research/reports/h07_stage2_{AUDUSD,NZDUSD}.json",
+    "WRC re-audit (docs/26 §42): p=0.0002 (7 pares) / 0.0004 (6 pares) — stage-1 signal was NOT a selection artifact; stage-2 refutation stands"
    ],
    "metrics": {
     "pairs_net_positive": "5/6 (GBPUSD +0.05, USDJPY +0.43, USDCHF +0.29, AUDUSD +1.82, NZDUSD +3.23; USDCAD -2.17 pips)",
@@ -350,7 +351,7 @@
   "confirmed": 0,
   "refuted": 15,
   "inconclusive": 0,
-  "note": "H01-H11 (12) + H07-MP/H09-MP (2) + estagio 2 H07-MP (1). Todos refutados sob custos calibrados. Programa fechado sem candidato a demo/capital real. Padrao: edge bruto marginal < custo round-trip calibrado em todos os 15 registros"
+  "note": "H01-H11 (12) + H07-MP/H09-MP (2) + estagio 2 H07-MP (1). Todos refutados sob custos calibrados. WRC re-audit (docs/26 §42): H07-MP stage-1 robusto a correcao de data-mining (p=0.0004) mas refutado no stage-2 (custo). Programa fechado sem candidato. Ciclo 3: candidatas de Aronson cap. 7 (liquidity premium, regras complexas, horizonte semanal)"
  },
  "cycle2": {
   "opened": "2026-08-12 (docs/26 §26)",

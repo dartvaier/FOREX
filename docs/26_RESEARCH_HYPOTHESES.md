@@ -2250,3 +2250,83 @@ real. Padrao consolidado: edge bruto real (0.1-3.7 pips por trade)
 sistematicamente menor que o custo round-trip calibrado (1.9-7.9
 pips), agravado por timeouts/parciais quando o trade e modelado
 completamente.
+
+
+---
+
+# 42. Fonte de Material: Aronson EBTA + White's Reality Check (2026-08-12)
+
+## Material
+
+"Evidence-Based Technical Analysis" (Aronson, 2007) — fornecido pelo
+operador (PDF em .openclaw-attachments). Extraido para
+.openclaw/tmp/aronson/. Duas contribuicoes: (1) metodologia de
+correcao de data-mining bias; (2) teorias de movimento nao-aleatorio
+com hipoteses testaveis.
+
+## Metodologia incorporada (research/data_mining_tests.py + 9 testes)
+
+- **White's Reality Check (WRC)**: bootstrap da distribuicao do
+  "maximo de N regras inuteis" (H0: todas com retorno esperado zero;
+  retornos centrados antes de reamostrar). p = fracao da
+  distribuicao >= media observada da melhor regra. Corrige o vies de
+  selecionar o melhor de N. (Aronson cap. 6; White patenteado,
+  Quantmetrics).
+- **Monte Carlo Permutation (MCP, Masters)**: embaralha o pareamento
+  outputs x retornos de mercado com o MESMO embaralhamento para
+  todas as regras (preserva correlacao entre regras). H0: outputs
+  aleatoriamente correlacionados com o futuro.
+- Case study do livro: 6.402 regras no S&P 500 — nenhuma significativa
+  apos WRC/MCP (p=0.8164 para a melhor; com teste ingenuo ~320
+  regras, 5%, pareceriam significativas). Lição aplicada ao H07-MP.
+
+## Re-auditoria do H07-MP com WRC (audit_h07mp_wrc.py)
+
+Series por evento re-derivadas com a formula EXATA do run_multipair
+(net = sign*fwd - custo, custo = spread medido + 2.1 pips):
+
+| par | n | net h1 (%) |
+|---|---|---|
+| EURUSD | 301 | -0.00380 |
+| GBPUSD | 333 | +0.00049 |
+| USDJPY | 346 | +0.00425 |
+| USDCHF | 366 | +0.00290 |
+| AUDUSD | 353 | +0.01824 |
+| USDCAD | 314 | -0.02170 |
+| NZDUSD | 404 | +0.03232 |
+
+- **WRC 7 pares** (inclui EURUSD, teste ex-post mais severo):
+  melhor = NZDUSD +0.0323%; distribuicao nula do max-de-7: media
+  +0.0103%, p95 +0.0189%, p99 +0.0234%; **p = 0.0002** —
+  significativo a 5%.
+- **WRC 6 pares** (como pre-registrado na secao 38): **p = 0.0004**.
+- Conclusao: o estagio 1 do H07-MP NAO era artefato da selecao do
+  melhor de 6/7 pares — o sinal bruto era real. A refutacao veio do
+  estagio 2 (custo do open semanal + timeouts consumiram o edge),
+  resultado que permanece valido. O WRC valida retroativamente a
+  leitura "PROMISSORA no estagio 1" e a disciplina do funil.
+
+## Teorias de movimento nao-aleatorio (Aronson cap. 7) — candidatas ao ciclo 3
+
+1. **Liquidity premium (Cooper)**: comprar oversold de ~2 semanas
+   com volume DECLINANTE -> retorno acima da media na semana
+   seguinte (44.95% vs 17.91% benchmark em acoes; walk-forward).
+   Analogia FX testavel: retorno 10 sessoes <= -X% + tick_volume
+   declinante -> fwd 1 semana.
+2. **Regras complexas (Hsu-Kuan)**: 82% das regras significativas em
+   39.832 eram combinacoes (voting/fractional position) de regras
+   simples; nenhuma regra simples significativa no S&P 500. Analogia
+   FX: diffusion indicator combinando os sinais ja testados (trend,
+   mean-reversion, gap).
+3. **Hedge risk premium**: trend following em futuros e compensacao
+   por transferencia de risco (MLM Sharpe 0.60 vs 0.05 em acoes).
+   Em FX spot o custo do varejo ja refutou TSM intraday (docs/21);
+   horizonte semanal/mensal com custo proporcionalmente menor e a
+   variante nao testada.
+4. **Underreaction/overreaction (BSV/DHS/HS)**: momentum pos-surpresa
+   e reversao pos-streak — a base teorica do que ja testamos
+   (H05/H06/H11 refutadas); nova angulacao possivel: assimetria
+   entre reacao a streaks longos vs curtos.
+
+Registros: research/data_mining_tests.py, tests/test_data_mining_tests.py
+(9 testes), research/reports/h07mp_wrc_audit.json.
