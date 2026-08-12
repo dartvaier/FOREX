@@ -222,21 +222,29 @@
    "acceptance_criteria": "net > 0 estavel no leave-one-year-out, sem cauda, robusto as fronteiras",
    "status_initial": "ACTIVE (ciclo 2, prioridade 2)",
    "execution_date": "2026-08-12",
-   "stage": "estagio 1",
+   "stage": "estagio 2 (completo)",
    "steps": "faixa < p30 (60d) + CLV 0.80/0.20; fwd 1/2/4h; net = signed - custo por evento; sensibilidade p25/p35, CLV 0.75/0.85",
    "evidence": [
     "docs/26 §28, §32",
     "research/h09_experiment.py",
-    "research/reports/h09_experiment.json"
+    "research/reports/h09_experiment.json",
+    "docs/26 §36-§37",
+    "research/h09_stage2.py",
+    "research/reports/h09_stage2.json"
    ],
    "metrics": {
     "group_high_h4_net": "+0.003% a +0.012% (todas as variacoes)",
     "leave_one_year_out": "+0.002% a +0.014% (sempre > 0; sem 2015: +0.002%)",
     "group_low_h4": "-0.026% a -0.036% (sem sinal)",
-    "timing": "so no h4 (h1/h2 negativos)"
+    "timing": "so no h4 (h1/h2 negativos)",
+    "stage2_n": 168,
+    "stage2_net_mean_pips": -0.81,
+    "stage2_gross_mean_pips": 1.73,
+    "stage2_hit_rate": 0.435,
+    "stage2_payoff": 1.03
    },
-   "classification": "INCONCLUSIVA",
-   "justification": "primeiro sinal com net positivo em todas as fronteiras, mas marginal (~0.5-1 pip), concentrado em 2015 e assimetrico (grupo low sem sinal); estagio 2 focado condicionado ao operador"
+   "classification": "REFUTADA",
+   "justification": "estagio 1 inconclusivo (net +0.003% a +0.012% em todas as fronteiras, marginal e concentrado em 2015); estagio 2 com trade completo (TP midpoint, SL high+0.10r, timeout 4h): net -0.81 pips — edge bruto real (+1.73 pips) menor que o custo calibrado (~2.5 pips)"
   },
   {
    "id": "H10",
@@ -287,11 +295,11 @@
   }
  ],
  "summary": {
-  "total": 11,
+  "total": 12,
   "confirmed": 0,
-  "refuted": 10,
-  "inconclusive": 1,
-  "note": "ciclo 1 (H01-H07) fechado 7/7 refutadas; ciclo 2 (H08-H11) 3 refutadas + 1 inconclusiva"
+  "refuted": 12,
+  "inconclusive": 0,
+  "note": "ciclo 1 (H01-H07) 7/7 refutadas; ciclo 2 (H08-H11) 3 refutadas + H09 inconclusiva no estagio 1, resolvida no estagio 2 como REFUTADA; programa fechado: 0 confirmadas / 12 refutadas sob custos calibrados"
  },
  "cycle2": {
   "opened": "2026-08-12 (docs/26 §26)",

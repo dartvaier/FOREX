@@ -1940,3 +1940,113 @@ existe (bruto ~0 e negativo).
 Ciclo 2: 3 refutadas, 1 inconclusiva (H09 — candidata a estagio 2
 condicionado ao operador). Base de registros atualizada em
 `research/hypotheses_log.json`.
+
+
+---
+
+# 36. Pre-registro do Estagio 2 do H09 (2026-08-12)
+
+Imutavel. Nenhum backtest do estagio 2 foi executado antes deste
+registro. Origem: H09 estagio 1 (secao 32) — grupo
+`compressed_close_high`, horizonte h4: unico sinal do programa com
+net positivo em todas as variacoes de fronteira.
+
+## Trade completo (fixado antes de rodar)
+
+- **Sinal**: sessao asiatica (London 00:00-07:00) com
+  `range_pct < 0.30` (percentil 60d causal) e `clv >= 0.80`
+  (fechamento no extremo superior da faixa).
+- **Direcao**: SHORT (reversao da compressao).
+- **Entrada**: close da ultima barra M15 asiatica (`last_ts`).
+- **Alvo (TP)**: midpoint da faixa asiatica = (high + low) / 2.
+  Nivel estrutural: retorno ao centro da compressao.
+- **Stop (SL)**: high da faixa asiatica + 0.10 x (high - low).
+  Buffer declarado contra ruido de mercado; romper o extremo
+  invalida a tese de reversao.
+- **Horizonte maximo**: 16 barras M15 (4h) — o efeito foi medido no
+  h4 no estagio 1. Timeout = saida market no close da 16a barra.
+- **Simulacao intrabarra (M15)**: barra de entrada nao participa;
+  barras seguintes avaliadas na ordem: (1) gap no open — se
+  open >= SL (short), stop no open; se open <= TP, alvo no open;
+  (2) SL-first: se high >= SL, saida no SL; senao se low <= TP,
+  saida no TP. SL e TP na mesma barra -> SL (pior caso).
+- **Custos por trade** (mesmo modelo do estagio 1):
+  custo_pips = spread_entrada_medido (ultima barra asiatica) + 0.40
+  (spread de saida) + 1.0 (slippage) + 0.7 (comissao).
+  net_pnl = (entry - exit) - custo_pips x PIP_SIZE (short).
+- **PIP_SIZE** = 0.0001. Dataset: EURUSD M15 completo
+  (mesmo do estagio 1; anos 2024-2026 sao OOS contaminado, relatorio
+  informativo).
+
+## Criterios de aceitacao (fixados antes de rodar)
+
+1. n >= 50 trades no grupo.
+2. net medio por trade > 0 (pips).
+3. leave-one-year-out do net medio > 0 (nao depender de 1 ano).
+4. mediana dos net anuais > 0 (sem cauda de poucos anos).
+5. walk-forward em blocos de 2 anos: >= 60% dos blocos com net > 0.
+6. hit rate do TP >= 15% (alvo atingivel).
+
+## Decisoes
+
+- net medio > 0 + mediana anual > 0 + LOYO > 0 + blocos >= 60%:
+  **CONFIRMADA no estagio 2** -> proximo passo: validacao OOS
+  (lockbox) e, se mantido, candidata a demo (decisao do operador).
+- net > 0 mas mediana anual <= 0 ou blocos < 60%: **INCONCLUSIVA**
+  (dependencia temporal).
+- net <= 0: **REFUTADA**.
+
+
+---
+
+# 37. Resultado do Estagio 2 do H09 (2026-08-12) — REFUTADA
+
+## Execucao
+
+- `research/h09_stage2.py` (pre-registro na secao 36; simulador com
+  7 testes unitarios sinteticos em `tests/test_h09_stage2.py`).
+- Trade completo: SHORT na ultima barra asiatica (comprimida p30 +
+  CLV 0.80); TP = midpoint da faixa; SL = high + 0.10 x range;
+  timeout 16 barras M15 (4h); SL-first intrabarra; custos:
+  spread de entrada medido + 0.40 + 1.0 + 0.7 pips.
+
+## Resultados (n = 168 trades)
+
+| metrica | valor |
+|---|---|
+| net medio | **-0.81 pips** |
+| bruto medio | +1.73 pips |
+| hit TP | 43.5% |
+| stop | 56.5% |
+| timeout | 0.0% |
+| payoff | 1.03 |
+| barras ate saida (media) | 3.8 (~1h) |
+| spread entrada medio | 0.335 pips |
+
+- Por ano: positivo em 4 de 12 (2015 +3.05, 2020 +1.10, 2021 +0.14,
+  2025 +1.34); negativo em 8 de 12 (2016 -3.84, 2017 -3.04,
+  2018 -2.34, 2019 -2.08, 2022 -3.31, 2023 -0.84, 2024 -3.50,
+  2026 -1.23).
+- Leave-one-year-out e blocos de 2 anos: ver JSON
+  `research/reports/h09_stage2.json` (net medio negativo).
+
+## Decisao
+
+**H09 REFUTADA no estagio 2.** O edge bruto REAL do trade completo
+(+1.73 pips, hit TP 43.5%, payoff ~1.0) e menor que o custo
+calibrado (~2.5 pips por trade). A saida pelo TP midpoint ocorre em
+media em ~1h, mas os stops (56.5%) consomem o edge. A concentracao
+em 2015 do estagio 1 nao se sustentou: 2015 (+3.05) foi compensado
+por anos negativos.
+
+## Programa de hipoteses — status final
+
+12 execucoes registradas (ciclo 1 H01-H07, ciclo 2 H08-H11,
+estagio 2 H09): **11 refutadas + 1 inconclusiva (H09 estagio 1,
+agora resolvida no estagio 2 como refutada)**.
+
+**Resultado consolidado: 0 CONFIRMADAS / 12 REFUTADAS.**
+Nenhuma hipotese do programa produziu valor esperado liquido
+positivo sob custos calibrados. O padrao repetido: edge bruto
+marginal (0.1-1.7 pips) sistematicamente menor que o custo
+round-trip calibrado (1.9-3.7 pips).

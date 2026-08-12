@@ -2812,12 +2812,16 @@ Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
    bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
    runner corrigido (bug RA-04) e agora aceita --spread-pips
    calibrado por instrumento
-CICLO 2 FECHADO (docs/26 §26-§35): H08 REJECTED, H09 INCONCLUSIVA
-   (comprimida+high h4: estagio 2 condicionado ao operador),
-   H10 REJECTED (sem momentum 1a hora Londres), H11 REJECTED (DE H1
-   sem poder vs controle) — 11 hipoteses na base de registros
-   (research/hypotheses_log.json), 10 refutadas + 1 inconclusiva
+PROGRAMA DE HIPOTESES FECHADO (docs/26 §26-§37): H08 REJECTED,
+   H09 REJECTED no estagio 2 (trade completo net -0.81 pips; edge
+   bruto +1.73 pips < custo), H10 REJECTED, H11 REJECTED — 12
+   execucoes registradas (research/hypotheses_log.json),
+   0 CONFIRMADAS / 12 REFUTADAS; nenhum sinal elegivel para demo
 Decisao de capital real (§92) permanece separada, sob o operador.
+Proximas opcoes: (a) nova rodada de hipoteses com custos calibrados
+   como padrao; (b) reavaliacao das estrategias do runner sob custos
+   calibrados (docs/21: 21/21 negativas); (c) encerrar a linha de
+   pesquisa de edge e focar em infraestrutura/risco.
 ---
 
 # 132. Regra Final

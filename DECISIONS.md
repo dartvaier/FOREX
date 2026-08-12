@@ -1,3 +1,18 @@
+## H09 ESTAGIO 2 REJECTED — PROGRAMA DE HIPOTESES FECHADO (2026-08-12)
+
+- **H09 estagio 2**: REFUTADA — trade completo (TP midpoint, SL
+  high+0.10r, timeout 4h, SL-first) com n=168: net -0.81 pips;
+  edge bruto real +1.73 pips < custo calibrado ~2.5 pips.
+  Hit TP 43.5%, payoff ~1.03, saida media ~1h; negativo em 8/12 anos.
+- **Programa fechado**: 12 execucoes registradas
+  (research/hypotheses_log.json), 0 confirmadas / 12 refutadas.
+- **Padrao consolidado**: edge bruto marginal (0.1-1.7 pips)
+  sistematicamente menor que o custo round-trip calibrado
+  (1.9-3.7 pips). Nenhuma hipotese produziu valor esperado liquido
+  positivo.
+- **Nenhum sinal elegivel para demo/capital real** — a decisao de
+  capital (§92) permanece sob o operador, sem candidato do programa.
+
 # Architecture & Engineering Decisions
 
 ## H10 E H11 ESTAGIO 1 REJECTED (2026-08-12, ciclo 2)
