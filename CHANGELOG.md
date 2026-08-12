@@ -1,3 +1,34 @@
+## [0.6.1] - 2026-08-12 - Hardening pós-auditoria (docs/25)
+
+### v0.6.1 Execution Safety
+- ES-01: cancel via `order_send(TRADE_ACTION_REMOVE)` (API real).
+- ES-02: enums de filling alinhados à API MT5 (mock corrigido).
+- ES-03: `allowed_trade_modes=("demo",)` + kill switch no caminho
+  obrigatório (submit/cancel/close).
+- ES-04: fill real preservado; `requires_reconciliation` em violação.
+- ES-05: pip size real por instrumento no fill validation.
+
+### v0.6.2 Risk Composition
+- RC-01: wrappers propagam `observe_equity` para o inner.
+- RC-02: KillSwitch HARD renomeado `freeze_all_orders`
+  (`block_exits` deprecado), explícito, nunca implícito.
+
+### v0.6.3 Multi-Currency Financial Integrity
+- MC-01..03: conversão quote→USD em StopBasedRiskGate,
+  ExposureLimitRiskGate e TradeFactory (account currency).
+- MC-04: USDCHF/USDCAD reclassificados como USD-base nos testes.
+- MC-05: matriz dev reexecutada — 19/19 negativos, trades
+  idênticos; docs/21-22 atualizados.
+
+### v0.6.4 Readiness & Audit
+- RA-01: `risk_per_trade_pct` realmente avaliado.
+- RA-02: exposure vs leverage com semântica (margin_used).
+- RA-03: unidades padronizadas em fração (0-1).
+- RA-04: zero-cost report com custos efetivos zero.
+- RA-05: OOS wording consistente (lockbox selado).
+- RA-06: roadmap/DECISIONS/README/docs sincronizados.
+- RA-07: CI GitHub Actions (pytest non-integration).
+
 # Changelog
 
 Todas as mudanças relevantes da plataforma:

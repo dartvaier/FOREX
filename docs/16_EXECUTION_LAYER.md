@@ -213,3 +213,21 @@ Demo activation          -> exige autorizacao explicita; TRADING_ENABLED so muda
 Periódo de validacao Demo -> rodar demo real, coletar metricas e comparar
   (comparison_summary) — ultimo item do DoD F9
 ```
+
+## Hardening v0.6.1 — Execution Safety (docs/25, 2026-08-12)
+
+- **ES-01**: cancelamento de pending order via
+  `order_send(TRADE_ACTION_REMOVE)` com o ticket do broker —
+  `mt5.order_delete()` não existe na API real.
+- **ES-02**: enums de filling alinhados à API real (FOK=0, IOC=1,
+  RETURN=2); seleção por bitmask de `symbol_info().filling_mode`;
+  regression do retcode 10030.
+- **ES-03**: caminho obrigatório de submit/cancel/close valida
+  política de conta (`allowed_trade_modes=("demo",)` — conta real
+  bloqueada por padrão) e kill switch antes de qualquer mutação.
+- **ES-04**: fill executado pelo broker nunca é rebaixado a
+  REJECTED por validação local — slippage fora da tolerância produz
+  `validation_status=OUTSIDE_TOLERANCE` e
+  `requires_reconciliation=True`.
+- **ES-05**: `validate_fill` exige o pip size real do instrumento
+  (EURUSD 0.0001, USDJPY 0.01); sem default implícito.

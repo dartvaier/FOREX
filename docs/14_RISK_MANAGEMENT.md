@@ -454,3 +454,14 @@ cost stress no research runner
 
 Portfolio-level risk e multi-symbol risk permanecem documentados como
 evolucao futura, dependentes de suporte multi-symbol (roadmap §104-105).
+
+## Kill Switch — política SOFT / HARD (docs/25 RC-02)
+
+- **SOFT (padrão)**: bloqueia novas entradas; HOLD/EXIT passam —
+  redução de risco é sempre possível. É o comportamento de
+  emergência padrão.
+- **HARD (`freeze_all_orders=True`)**: freeze operacional
+  excepcional — bloqueia entradas E exits. Uso justificado apenas
+  em situações operacionais específicas (ex.: suspeita de bug no
+  adapter), exige ação explícita do operador e nunca é ativado
+  implicitamente. `block_exits` é o alias deprecado.

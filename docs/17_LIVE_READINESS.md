@@ -249,3 +249,18 @@ Evidencia coletada em demo (2026-08-10): 10 ordens executadas,
 reconciliacao CONSISTENT em todos os ciclos, posicoes finais 0.
 A infraestrutura satisfaz as dez dimensoes; a revisao final com
 valores de capital real so se aplica se o operador decidir avancar.
+
+## Hardening v0.6.4 — Readiness & Audit (docs/25, 2026-08-12)
+
+- **RA-01**: `risk_per_trade_pct` é realmente avaliado via entrada
+  explícita `next_trade_risk_pct` — a review não afirma verificar o
+  que não verifica.
+- **RA-02**: exposure = notional/equity; leverage = notional/margin
+  (`margin_used`); fallback documentado sem `margin_used`.
+- **RA-03**: limites em fração (0-1) em todas as APIs internas
+  (DrawdownRiskGate inclusive); percentual 0-100 só na serialização.
+- **RA-04**: report `cost_mode=zero` com custos efetivos ZERO;
+  baseline registrado como referência separada.
+- **RA-05**: lockbox OOS "consultado UMA vez (2026-08-10), selado
+  novamente" — wording consistente em docs/15 e docs/18.
+- **RA-07**: CI GitHub Actions (pytest non-integration).

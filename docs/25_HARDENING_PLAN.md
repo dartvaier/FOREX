@@ -406,16 +406,16 @@ fix(execution): validate fill slippage with instrument pip size
 ## Definition of Done — v0.6.1
 
 ```text
-[ ] ES-01 cancel MT5 corrigido
-[ ] ES-02 filling mode corrigido
-[ ] ES-03 broker safety gate obrigatório
-[ ] ES-04 Fill real preservado em violations
-[ ] ES-05 pip size multi-symbol
-[ ] focused tests verdes
-[ ] execution tests verdes
-[ ] non-integration suite verde
-[ ] docs/16 e docs/17 atualizados
-[ ] CHANGELOG atualizado
+[x] ES-01 cancel MT5 corrigido
+[x] ES-02 filling mode corrigido
+[x] ES-03 broker safety gate obrigatório
+[x] ES-04 Fill real preservado em violations
+[x] ES-05 pip size multi-symbol
+[x] focused tests verdes
+[x] execution tests verdes
+[x] non-integration suite verde
+[x] docs/16 e docs/17 atualizados
+[x] CHANGELOG atualizado
 ```
 
 Gate:
@@ -571,15 +571,15 @@ reset é manual
 ## Definition of Done — v0.6.2
 
 ```text
-[ ] RC-01 observer propagation
-[ ] RC-02 kill switch policy documentada
-[ ] chain regression test
-[ ] risk tests verdes
-[ ] engine integration verde
-[ ] non-integration suite verde
-[ ] docs/14 atualizado
-[ ] DECISIONS atualizado se houver mudança arquitetural
-[ ] CHANGELOG atualizado
+[x] RC-01 observer propagation
+[x] RC-02 kill switch policy documentada
+[x] chain regression test
+[x] risk tests verdes
+[x] engine integration verde
+[x] non-integration suite verde
+[x] docs/14 atualizado
+[x] DECISIONS atualizado se houver mudança arquitetural
+[x] CHANGELOG atualizado
 ```
 
 Gate:
@@ -798,17 +798,17 @@ fix(backtest): make multi-currency accounting consistent end to end
 ## Definition of Done — v0.6.3
 
 ```text
-[ ] StopBased account-currency safe
-[ ] Exposure semantics explícita
-[ ] Trade costs em account currency
-[ ] testes de USD-base corrigidos
-[ ] USDJPY/USDCHF/USDCAD rerodados em DEV
-[ ] currency tests verdes
-[ ] risk tests verdes
-[ ] research regression verde
-[ ] non-integration suite verde
-[ ] docs/21-22 atualizados
-[ ] CHANGELOG atualizado
+[x] StopBased account-currency safe
+[x] Exposure semantics explícita
+[x] Trade costs em account currency
+[x] testes de USD-base corrigidos
+[x] USDJPY/USDCHF/USDCAD rerodados em DEV
+[x] currency tests verdes
+[x] risk tests verdes
+[x] research regression verde
+[x] non-integration suite verde
+[x] docs/21-22 atualizados
+[x] CHANGELOG atualizado
 ```
 
 Gate:
