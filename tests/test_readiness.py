@@ -278,3 +278,166 @@ def test_order_count_per_symbol():
     )
 
     assert counts == {"EURUSD": 2, "GBPUSD": 1}
+
+
+# ---------------------------------------------------------------------------
+# Hardening RA-01: risk per trade is really evaluated
+# ---------------------------------------------------------------------------
+
+
+def test_risk_per_trade_violation_reported():
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.0,
+        open_exposure_notional=0.0,
+        next_trade_risk_pct=0.02,  # 2% > 1% limit
+    )
+
+    assert not report.ok
+    assert any(
+        "risk per trade" in v
+        for v in report.violations
+    )
+
+
+def test_risk_per_trade_within_limit_ok():
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.0,
+        open_exposure_notional=0.0,
+        next_trade_risk_pct=0.005,  # 0.5% <= 1% limit
+    )
+
+    assert report.ok
+
+
+def test_risk_per_trade_not_claimed_without_data():
+    # No next_trade_risk_pct -> no risk-per-trade violation is
+    # fabricated (docs/25 RA-01).
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.0,
+        open_exposure_notional=0.0,
+    )
+
+    assert report.ok
+    assert not any(
+        "risk per trade" in v
+        for v in report.violations
+    )
+
+
+def test_risk_per_trade_rejects_out_of_range():
+    with pytest.raises(ValueError, match="next_trade_risk_pct"):
+        evaluate_risk_limits(
+            balance=10000.0,
+            equity=10000.0,
+            daily_loss=0.0,
+            current_drawdown_pct=0.0,
+            open_exposure_notional=0.0,
+            next_trade_risk_pct=1.5,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Hardening RA-02: exposure vs leverage semantics
+# ---------------------------------------------------------------------------
+
+
+def test_leverage_uses_margin_used_when_supplied():
+    # notional 100k, margin 5k -> leverage 20x (limit 20 -> ok at
+    # boundary). Exposure = 100k/10k equity = 10x = 1000% > 50% ->
+    # exposure violation only.
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.0,
+        open_exposure_notional=100000.0,
+        margin_used=5000.0,
+    )
+
+    assert any(
+        "exposure" in v
+        for v in report.violations
+    )
+    assert not any(
+        "leverage" in v
+        for v in report.violations
+    )
+
+
+def test_leverage_fallback_without_margin_used():
+    # Same numbers without margin_used: leverage falls back to
+    # notional/equity = 10x, still under 20x.
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.0,
+        open_exposure_notional=100000.0,
+    )
+
+    assert any(
+        "exposure" in v
+        for v in report.violations
+    )
+    assert not any(
+        "leverage" in v
+        for v in report.violations
+    )
+
+
+def test_leverage_violation_high_notional():
+    # 1M notional / 5k margin = 200x > 20x limit.
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.0,
+        open_exposure_notional=1000000.0,
+        margin_used=5000.0,
+    )
+
+    assert any(
+        "leverage" in v
+        for v in report.violations
+    )
+
+
+# ---------------------------------------------------------------------------
+# Hardening RA-03: fraction units (0.10 = 10%)
+# ---------------------------------------------------------------------------
+
+
+def test_drawdown_fraction_units():
+    # current_drawdown_pct is a fraction: 0.05 = 5% vs limit 0.10.
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.05,
+        open_exposure_notional=0.0,
+    )
+
+    assert report.ok
+
+    report = evaluate_risk_limits(
+        balance=10000.0,
+        equity=10000.0,
+        daily_loss=0.0,
+        current_drawdown_pct=0.12,
+        open_exposure_notional=0.0,
+    )
+
+    assert not report.ok
+    assert any(
+        "drawdown" in v
+        for v in report.violations
+    )

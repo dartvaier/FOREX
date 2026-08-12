@@ -485,6 +485,42 @@ def money_to_pips(
     return money / per_pip
 
 
+def effective_round_trip(
+    *,
+    cost_mode: str,
+    instrument: InstrumentSpecification,
+    fixed_quantity: float,
+    cost_params: dict[str, float],
+    quote_to_account_rate: float = 1.0,
+) -> tuple[float, float]:
+    """
+    Effective round-trip cost for the report (docs/25 RA-04).
+
+    With cost_mode == "zero" the effective costs are ZERO: the
+    report must not present baseline explicit costs as if they had
+    been paid. The baseline parameters are recorded separately as
+    reference only.
+    """
+    if cost_mode == "zero":
+        return 0.0, 0.0
+
+    money = round_trip_cost_money(
+        instrument,
+        fixed_quantity,
+        cost_params,
+        quote_to_account_rate=quote_to_account_rate,
+    )
+
+    pips = money_to_pips(
+        money,
+        instrument,
+        fixed_quantity,
+        quote_to_account_rate=quote_to_account_rate,
+    )
+
+    return money, pips
+
+
 # ---------------------------------------------------------------------------
 # Report serialization
 # ---------------------------------------------------------------------------
@@ -632,9 +668,12 @@ def build_report(
             "side_counts": side_counts,
         },
         "cost_analysis": {
+            "cost_mode": cost_mode,
             "round_trip_cost_money": round_trip_money,
             "round_trip_cost_pips": round_trip_pips,
             "cost_multiplier": cost_multiplier,
+            "baseline_cost_params": dict(cost_params),
+            "effective_cost_params": dict(effective_cost_params),
             "trades_count": trade_metrics.total_trades,
             "total_cost_paid": sum(
                 trade.spread_cost
@@ -787,17 +826,11 @@ def run_single(
     else:
         quote_to_account_rate = 1.0
 
-    round_trip_money = round_trip_cost_money(
-        instrument,
-        fixed_quantity,
-        effective_cost_params,
-        quote_to_account_rate=quote_to_account_rate,
-    )
-
-    round_trip_pips = money_to_pips(
-        round_trip_money,
-        instrument,
-        fixed_quantity,
+    round_trip_money, round_trip_pips = effective_round_trip(
+        cost_mode=cost_mode,
+        instrument=instrument,
+        fixed_quantity=fixed_quantity,
+        cost_params=effective_cost_params,
         quote_to_account_rate=quote_to_account_rate,
     )
 

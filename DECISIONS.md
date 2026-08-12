@@ -1,5 +1,53 @@
 # Architecture & Engineering Decisions
 
+## HARDENING v0.6.1..v0.6.4 (2026-08-12): plano pos-auditoria executado
+
+- **Decisao**: executar docs/25_HARDENING_PLAN.md em sequencia
+  (v0.6.1 Execution Safety -> v0.6.2 Risk Composition -> v0.6.3
+  Multi-Currency -> v0.6.4 Readiness & Audit), 14 itens.
+- **Racional**: fortalecer invariantes (execucao, composicao de
+  risco, integridade financeira multi-moeda, readiness/auditoria)
+  antes de qualquer novo programa de pesquisa ou decisao de live.
+- **Destaques**:
+  - ES-01: cancel via `order_send(TRADE_ACTION_REMOVE)`; a API
+    `mt5.order_delete()` nao existe (mock escondia a superficie
+    errada).
+  - ES-02: enums de filling do mock alinhados a API real
+    (FOK=0/IOC=1/RETURN=2); `type_filling` asserido contra o enum
+    — retcode 10030 nao retorna em submit real.
+  - ES-03: politica `allowed_trade_modes=("demo",)` + kill switch
+    no caminho obrigatorio de submit/cancel/close; conta real
+    bloqueada por padrao.
+  - ES-04: fill real nunca e rebaixado a REJECTED por validacao
+    local — `requires_reconciliation=True` (OUTSIDE_TOLERANCE).
+  - ES-05: pip size real por instrumento no fill validation.
+  - RC-01: wrappers propagam `observe_equity` para o inner.
+  - RC-02: KillSwitch HARD renomeado `freeze_all_orders`
+    (`block_exits` deprecated), explicito, nunca implicito.
+  - MC-01..03: conversao quote->USD em StopBasedRiskGate,
+    ExposureLimitRiskGate e TradeFactory (account currency).
+  - MC-04: USDCHF/USDCAD reclassificados como USD-base nos testes.
+  - MC-05: matriz dev reexecutada — 19/19 negativos, trades
+    identicos, valores de USDCHF/USDCAD agora em USD; nenhuma
+    conclusao invertida.
+  - RA-01: `risk_per_trade_pct` realmente avaliado (entrada
+    explicita `next_trade_risk_pct`).
+  - RA-02: exposure = notional/equity; leverage = notional/margin
+    (fallback documentado).
+  - RA-03: fracoes (0-1) padronizadas (DrawdownRiskGate inclusive);
+    percentual 0-100 so na serializacao de relatorio.
+  - RA-04: zero-cost report com custos efetivos ZERO (baseline so
+    como referencia).
+  - RA-05: OOS wording consistente (lockbox consultado UMA vez,
+    selado de novo).
+  - RA-06: roadmap/DECISIONS/README sincronizados.
+  - RA-07: CI GitHub Actions (pytest non-integration, py 3.12-3.14).
+- **Consequencia**: suíte 1100 testes verde; 4 commits auditaveis;
+  busca de edge permanece ENCERRADA (docs/24); plataforma segue
+  research/demo; proxima fase sob decisao do operador.
+
+# Architecture & Engineering Decisions
+
 ## TF-01 / Encerramento da busca de edge (2026-08-10)
 
 - **Decisao**: TF-01 REJEITADO (H1: exp -0.14 dev / -0.82 val;

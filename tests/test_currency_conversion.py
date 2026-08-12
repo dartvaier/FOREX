@@ -348,3 +348,36 @@ def test_round_trip_usdjpy_with_rate():
     )
 
     assert pips == pytest.approx(4.05, rel=1e-9)
+
+
+# ---------------------------------------------------------------------------
+# Hardening RA-04: zero-cost report shows zero effective costs
+# ---------------------------------------------------------------------------
+
+
+def test_effective_round_trip_zero_cost_is_zero():
+    from research.runner import effective_round_trip
+
+    money, pips = effective_round_trip(
+        cost_mode="zero",
+        instrument=make_instrument("EURUSD"),
+        fixed_quantity=0.01,
+        cost_params=dict(BASELINE_COSTS),
+    )
+
+    assert money == 0.0
+    assert pips == 0.0
+
+
+def test_effective_round_trip_explicit_cost_uses_params():
+    from research.runner import effective_round_trip
+
+    money, pips = effective_round_trip(
+        cost_mode="explicit",
+        instrument=make_instrument("EURUSD"),
+        fixed_quantity=0.01,
+        cost_params=dict(BASELINE_COSTS),
+    )
+
+    assert money > 0.0
+    assert pips == pytest.approx(3.7, rel=1e-9)

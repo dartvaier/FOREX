@@ -6,6 +6,20 @@ Pure checks on the dimensions the review must cover:
     risk per trade, daily risk, max drawdown, leverage, exposure.
 
 All functions are pure and broker-independent.
+
+Hardening RA-03 (docs/25): all percentage-based limits and inputs
+are FRACTIONS in (0, 1] (0.10 = 10%). Percentage display (0-100)
+is reserved for report serialization only.
+
+Hardening RA-02 (docs/25): `exposure` and `leverage` have distinct
+financial meanings here:
+
+    exposure_pct = gross open notional / equity          (fraction)
+    leverage     = gross open notional / margin_used     (multiple)
+
+When `margin_used` is not supplied, leverage falls back to
+notional / equity and is documented as a safety ceiling rather
+than a broker margin multiple.
 """
 
 from __future__ import annotations
@@ -100,14 +114,38 @@ def evaluate_risk_limits(
     current_drawdown_pct: float,
     open_exposure_notional: float,
     config: RiskLimitConfig | None = None,
+    next_trade_risk_pct: float | None = None,
+    margin_used: float | None = None,
 ) -> RiskLimitsReport:
     """
     Evaluate the §91 risk dimensions against configured limits.
 
     Violations are collected, not raised.
+
+    Hardening RA-01 (docs/25): `next_trade_risk_pct` is the risk
+    of the CURRENT order/trade as a fraction of equity (e.g. the
+    StopBasedRiskGate risk_fraction). It is only evaluated when
+    provided: the review never claims risk-per-trade was verified
+    without the data.
+
+    Hardening RA-02 (docs/25): leverage uses `margin_used` when
+    supplied (notional / margin_used); otherwise it falls back to
+    notional / equity (safety ceiling, documented).
     """
     limits = config or RiskLimitConfig()
     violations: list[str] = []
+
+    if next_trade_risk_pct is not None:
+        if not (0.0 < next_trade_risk_pct < 1.0):
+            raise ValueError(
+                "next_trade_risk_pct must be in (0, 1)"
+            )
+
+        if next_trade_risk_pct > limits.risk_per_trade_pct:
+            violations.append(
+                f"risk per trade {next_trade_risk_pct:.2%} "
+                f"exceeds limit {limits.risk_per_trade_pct:.2%}"
+            )
 
     if daily_loss > 0:
         daily_loss_pct = daily_loss / balance if balance > 0 else 1.0
@@ -133,7 +171,13 @@ def evaluate_risk_limits(
                 f"{limits.max_exposure_pct:.2%}"
             )
 
-        leverage = open_exposure_notional / equity
+        if (
+            margin_used is not None
+            and margin_used > 0
+        ):
+            leverage = open_exposure_notional / margin_used
+        else:
+            leverage = open_exposure_notional / equity
 
         if leverage > limits.max_leverage:
             violations.append(

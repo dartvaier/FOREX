@@ -1161,7 +1161,7 @@ def test_drawdown_gate_rejects_entry_after_pct_drawdown_limit():
             instrument=make_instrument(),
             fixed_quantity=0.03,
         ),
-        max_drawdown_pct=2.0,
+        max_drawdown_pct=0.02,
     )
 
     gate.observe_equity(
@@ -1185,7 +1185,7 @@ def test_drawdown_gate_rejects_entry_after_pct_drawdown_limit():
     assert decision.approved is False
     assert decision.quantity is None
     assert gate.is_locked is True
-    assert gate.current_drawdown_pct == pytest.approx(2.1)
+    assert gate.current_drawdown_pct == pytest.approx(0.021)
 
 
 def test_drawdown_gate_tracks_peak_and_updates_on_new_high():
@@ -1421,7 +1421,7 @@ def test_drawdown_gate_validates_configuration():
                 instrument=make_instrument(),
                 fixed_quantity=0.01,
             ),
-            max_drawdown_pct=150.0,
+            max_drawdown_pct=1.5,
         )
 
     gate = DrawdownRiskGate(
@@ -1747,7 +1747,7 @@ def test_exposure_limit_propagates_equity_to_inner_drawdown():
             instrument=make_instrument(),
             fixed_quantity=0.03,
         ),
-        max_drawdown_pct=5.0,
+        max_drawdown_pct=0.05,
     )
 
     gate = ExposureLimitRiskGate(

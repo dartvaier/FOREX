@@ -822,7 +822,7 @@ Gate:
 ## Status
 
 ```text
-PLANNED
+DONE (2026-08-12)
 ```
 
 ## Objetivo
@@ -844,7 +844,7 @@ Adicionar entrada explícita de risco atual da ordem/trade ou remover a afirmaç
 ### Critério de aceite
 
 ```text
-[ ] risk_per_trade_pct participa efetivamente da review
+[x] risk_per_trade_pct participa efetivamente da review
 ```
 
 ---
@@ -878,9 +878,9 @@ Se ambos permanecerem matematicamente iguais, manter apenas uma policy ou justif
 ### Critério de aceite
 
 ```text
-[ ] duas métricas diferentes têm semântica diferente
+[x] duas métricas diferentes têm semântica diferente
 OU
-[ ] uma delas é removida
+[x] uma delas é removida
 ```
 
 ---
@@ -957,7 +957,7 @@ Os custos baseline podem ser registrados separadamente apenas como referência, 
 ### Critério de aceite
 
 ```text
-[ ] zero-cost report não contém custo efetivo não-zero
+[x] zero-cost report não contém custo efetivo não-zero
 ```
 
 ---
@@ -988,8 +988,8 @@ NEW HOLDOUT (realmente não observado)
 ### Critério de aceite
 
 ```text
-[ ] docs não afirmam que um OOS já visto voltou a ser unseen
-[ ] futuras hipóteses distinguem legacy OOS de novo holdout
+[x] docs não afirmam que um OOS já visto voltou a ser unseen
+[x] futuras hipóteses distinguem legacy OOS de novo holdout
 ```
 
 ---
@@ -1030,10 +1030,10 @@ Live capital execution      NOT AUTHORIZED
 ### Critério de aceite
 
 ```text
-[ ] documentação não contradiz testes/código
-[ ] DECISIONS deixa de marcar features implementadas como FUTURE
-[ ] README reflete estado real
-[ ] AGENTS mantém guardrails atuais
+[x] documentação não contradiz testes/código
+[x] DECISIONS deixa de marcar features implementadas como FUTURE
+[x] README reflete estado real
+[x] AGENTS mantém guardrails atuais
 ```
 
 ---
@@ -1059,7 +1059,7 @@ Testes que exigem MT5 continuam fora do CI padrão.
 ### Critério de aceite
 
 ```text
-[ ] commit/PR exibe check remoto da suíte non-integration
+[x] commit/PR exibe check remoto da suíte non-integration
 ```
 
 ---
@@ -1067,15 +1067,15 @@ Testes que exigem MT5 continuam fora do CI padrão.
 ## Definition of Done — v0.6.4
 
 ```text
-[ ] risk per trade verificado
-[ ] exposure/leverage semanticamente corretos
-[ ] unidades percentuais padronizadas
-[ ] zero-cost report coerente
-[ ] legacy OOS documentado corretamente
-[ ] documentação sincronizada
-[ ] CI non-integration disponível
-[ ] readiness tests verdes
-[ ] full non-integration suite verde
+[x] risk per trade verificado
+[x] exposure/leverage semanticamente corretos
+[x] unidades percentuais padronizadas
+[x] zero-cost report coerente
+[x] legacy OOS documentado corretamente
+[x] documentação sincronizada
+[x] CI non-integration disponível
+[x] readiness tests verdes
+[x] full non-integration suite verde
 ```
 
 ---

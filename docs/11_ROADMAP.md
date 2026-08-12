@@ -2763,6 +2763,16 @@ Banco de Dados (110) | Experiment Tracking (112)
 Dataset Versioning (113) | CI/CD (114)
 ```
 
+Conversao de moeda quote->USD —
+   DONE (docs/22 + hardening MC-01..05, docs/25)
+Hardening pos-auditoria (docs/25) — DONE 2026-08-12:
+   v0.6.1 Execution Safety (ES-01..05)
+   v0.6.2 Risk Composition (RC-01..02)
+   v0.6.3 Multi-Currency Financial Integrity (MC-01..05)
+   v0.6.4 Readiness & Audit (RA-01..07)
+CI (RA-07) — GitHub Actions pytest non-integration
+Proxima fase: novo programa de pesquisa (ML/HMM §108-109) ou
+decisao de capital real (§92), sob o operador.
 ---
 
 # 132. Regra Final

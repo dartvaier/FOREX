@@ -1134,6 +1134,11 @@ class DrawdownRiskGate:
     - max_drawdown
     - max_drawdown_pct
 
+    Hardening RA-03 (docs/25): `max_drawdown_pct` is a FRACTION
+    in (0, 1] (0.10 = 10%), matching the readiness review and the
+    other risk gates. Percentage display (0-100) is reserved for
+    report serialization only.
+
     The drawdown is dynamic: entries are unlocked when equity
     recovers and the drawdown falls below the configured limit.
 
@@ -1180,10 +1185,10 @@ class DrawdownRiskGate:
                 max_drawdown_pct,
             )
 
-            if max_drawdown_pct > 100.0:
+            if max_drawdown_pct > 1.0:
                 raise ValueError(
                     "max_drawdown_pct cannot be greater than "
-                    "100.0"
+                    "1.0 (fraction, docs/25 RA-03)"
                 )
 
         self._inner = inner
@@ -1243,6 +1248,10 @@ class DrawdownRiskGate:
 
     @property
     def current_drawdown_pct(self) -> float:
+        """
+        Current drawdown as a FRACTION of the peak equity
+        (0-1; docs/25 RA-03).
+        """
         if (
             self._peak_equity is None
             or self._peak_equity <= 0
@@ -1252,7 +1261,6 @@ class DrawdownRiskGate:
         return (
             self.current_drawdown
             / self._peak_equity
-            * 100.0
         )
 
     @property
