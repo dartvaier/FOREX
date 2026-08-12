@@ -2803,6 +2803,10 @@ H07 reavaliado com custos REAIS (docs/26 §23): spread EURUSD geral
    real round-trip 3.30-5.75 pips vs edge h1 3.11 pips -> H07
    MANTIDA REFUTADA; ferramenta research/cost_measurement.py
    incorporada para calibrar futuras hipoteses
+Infra de eventos raros generalizada (docs/26 §24):
+   research/rare_events.py (bootstrap CI, leave-one-year-out,
+   sem top-N) com 12 testes; h07 refatorado com resultados
+   identicos; modulo obrigatorio para hipoteses de baixa frequencia
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 

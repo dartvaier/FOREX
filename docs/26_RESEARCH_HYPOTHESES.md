@@ -1452,3 +1452,41 @@ estagio 2. A ferramenta de medicao de custos fica no projeto
 (`research/cost_measurement.py` + `research/reports/cost_measurement.json`)
 para calibrar futuras hipoteses: o mercado normal EURUSD e barato
 (~0.2-0.4 pips), o open semanal e a excecao cara.
+
+
+---
+
+# 24. Infraestrutura de Eventos Raros (docs/27 §5 recomendacao 3) — 2026-08-12
+
+## Motivo
+
+O H07 validou um framework de estatistica para amostras pequenas
+(bootstrap CI, leave-one-year-out, remocao de top-N), mas embutido
+no experimento. Esta secao generaliza a infra em modulo reutilizavel
+e testado para futuras hipoteses de baixa frequencia.
+
+## Implementacao (TDD, 12 testes novos — suite 1131 passed)
+
+- `research/rare_events.py`:
+  - `summarize(samples)` — n exato, media, positive rate, mediana;
+  - `bootstrap_ci(samples, n_resamples=10000, seed=42, ci=0.95)` —
+    IC percentil bootstrap da media, reprodutivel (seed fixa);
+    None se amostra < 10;
+  - `leave_one_year_out(by_year, metric=media)` — media do pool apos
+    remover cada ano; metric customizavel;
+  - `without_largest_n(samples, magnitudes, n=5)` — remove os n
+    maiores por |magnitude|, alinhado por indice.
+- `research/h07_experiment.py` refatorado para usar o modulo.
+
+## Verificacao de regressao
+
+- Resultados do H07 re-gerados com o modulo: bootstrap CI
+  [-0.009%, +0.037%] IDENTICO byte-a-byte; eventos/horizontes
+  identicos; by_year e without_top5 com os mesmos valores numericos
+  (formato agora via `summarize`: chave `mean` + campo `median`).
+
+## Uso em futuras hipoteses
+
+Hipoteses de baixa frequencia (gaps, sessoes raras, eventos
+exogenos) devem reportar: n EXATO, bootstrap CI, leave-one-year-out
+e teste sem os maiores eventos — via `research/rare_events.py`.

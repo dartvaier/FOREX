@@ -1,5 +1,17 @@
 # Architecture & Engineering Decisions
 
+## INFRA DE EVENTOS RAROS GENERALIZADA (2026-08-12)
+
+- **Decisao**: framework de estatistica para amostras pequenas
+  (bootstrap CI, leave-one-year-out, sem top-N) extraido do H07 para
+  `research/rare_events.py`, com 12 testes (TDD) e h07 refatorado.
+- **Verificacao**: resultados H07 re-gerados identicos (CI bootstrap
+  byte-a-byte; valores numericos iguais).
+- **Consequencia**: futuras hipoteses de baixa frequencia usam o
+  modulo; suite 1131 passed.
+
+# Architecture & Engineering Decisions
+
 ## H07 REAVALIADO COM CUSTOS REAIS — MANTIDA REFUTADA (2026-08-12)
 
 - **Decisao**: a recomendacao docs/27 §5 (reavaliar H07-h1 sob custos

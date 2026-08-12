@@ -20,11 +20,17 @@ from __future__ import annotations
 import argparse
 import io
 import json
-import random
 import sys
 from pathlib import Path
 
 import pandas as pd
+
+from research.rare_events import (
+    bootstrap_ci,
+    leave_one_year_out,
+    summarize,
+    without_largest_n,
+)
 
 HOURS = (1, 4, 8, 16)
 CANDLES_PER_HOUR = 4
@@ -164,31 +170,19 @@ def run(m15_path: Path, h1_path: Path, *, out_path: Path, threshold: float) -> d
     for k, v in enumerate(h8):
         by_year.setdefault(year_map[k], []).append(v)
     for y, vals in sorted(by_year.items()):
-        report["by_year"][y] = _stats(vals)
+        report["by_year"][y] = summarize(vals)
 
     # leave-one-year-out (h8)
-    for y, vals in sorted(by_year.items()):
-        rest = [v for yy, vv in by_year.items() if yy != y for v in vv]
-        report["leave_one_year_out"][f"without_{y}"] = _stats(rest)
+    report["leave_one_year_out"] = leave_one_year_out(by_year)
 
     # without the 5 largest |gap| (h8)
-    big = sorted(events, key=lambda e: -abs(e["gap"]))[:5]
-    big_idx = {id(e) for e in big}
-    rest = [v for k, v in enumerate(h8) if id(events[k]) not in big_idx]
-    report["without_top5"] = _stats(rest)
+    magnitudes = [abs(e["gap"]) for e in events]
+    report["without_top5"] = summarize(
+        without_largest_n(h8, magnitudes, n=5)
+    )
 
-    # bootstrap 95% CI for h8 (10k resamples)
-    if len(h8) >= 10:
-        random.seed(42)
-        means = []
-        for _ in range(10_000):
-            sample = [random.choice(h8) for _ in range(len(h8))]
-            means.append(sum(sample) / len(sample))
-        means.sort()
-        report["h8_bootstrap_ci_95"] = {
-            "lo": means[250],
-            "hi": means[9750],
-        }
+    # bootstrap 95% CI for h8 (reproducible seed)
+    report["h8_bootstrap_ci_95"] = bootstrap_ci(h8)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with io.open(out_path, "w", encoding="utf-8") as handle:
@@ -235,7 +229,7 @@ def main() -> int:
     wt = report["without_top5"]
     if wt["n"]:
         out.write(
-            f"without top-5 gaps h8: signed={wt['mean_signed_return']*100:.3f}% "
+            f"without top-5 gaps h8: signed={wt['mean']*100:.3f}% "
             f"pos={wt['positive_rate']*100:.1f}% (n={wt['n']})\n"
         )
     out.write(f"report: {args.out}\n")
