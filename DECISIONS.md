@@ -1,5 +1,24 @@
 # Architecture & Engineering Decisions
 
+## PROGRAMA DE PESQUISA ABERTO — H01..H07 (2026-08-12)
+
+- **Decisao**: abrir novo programa de pesquisa com as hipoteses
+  H01-H07 (branch `agent/document-research-hypotheses`, merge
+  `2a94589`; documento renumerado para docs/26).
+- **Hipotese ativa inicial**: H03 (prioridade 1 do docs/26 §4) —
+  pre-registrada (registro imutavel, docs/26 §10) ANTES de qualquer
+  backtest, conforme protocolo §5.
+- **Periodos**: mantidos os formais pre-registrados (DEV 2015-2021,
+  VAL 2021-2024, OOS 2024-2027).
+- **OOS contaminado**: 2024-2027 ja consultado 1x (2026-08-10).
+  NAO e "OOS intocado" para este programa; validacao primaria =
+  walk-forward; OOS so como confirmacao final com `--allow-oos`.
+- **Direcao estrutural**: features reutilizaveis (volatility
+  surprise, directional efficiency) antes de qualquer trade;
+  ablations obrigatorias (H04/H05/H06); rejeicao honesta permitida.
+
+# Architecture & Engineering Decisions
+
 ## HARDENING v0.6.1..v0.6.4 (2026-08-12): plano pos-auditoria executado
 
 - **Decisao**: executar docs/25_HARDENING_PLAN.md em sequencia

@@ -636,3 +636,106 @@ As referências motivam a investigação, mas não provam que as hipóteses ser�
 > Estas hipóteses são perguntas a serem testadas, não resultados a serem defendidos.
 
 Uma hipótese somente poderá avançar quando especificação prévia, implementação causal, custos, robustez e validação forem suficientes para distinguir um possível edge de ruído, data snooping ou erro de backtest.
+
+
+---
+
+# 9. Registro do Programa (2026-08-12)
+
+## Abertura
+
+- **Decisao**: abrir novo programa de pesquisa (docs/25 §11 cumprido:
+  v0.6.1..v0.6.4 DONE; busca de edge baseline ENCERRADA, docs/24).
+- **Hipotese ativa inicial**: H03 (prioridade 1 do §4 deste documento).
+- **Commit do programa**: integracao da branch
+  `agent/document-research-hypotheses` (merge `2a94589`) + renumeracao
+  do documento para docs/26 (docs/12 ja era STRATEGY_RESEARCH).
+
+## Periodos (decisao registrada)
+
+O §5 deste documento propoe "Divisao Temporal Candidata"
+(DEV 2015-2020 / VAL 2021-2023 / OOS 2024-2026). DECISAO: os
+periodos FORMAIS pre-registrados da plataforma (research/periods.py)
+sao mantidos, por serem a infraestrutura ja validada e pre-registrada
+antes de qualquer resultado:
+
+```text
+DEVELOPMENT  2015-01-01 .. 2021-01-01
+VALIDATION   2021-01-01 .. 2024-01-01
+OOS          2024-01-01 .. 2027-01-01   (CONTAMINADO - ver abaixo)
+```
+
+## Politica OOS (contaminacao metodologica registrada)
+
+O periodo 2024-2027 foi consultado UMA vez (2026-08-10, fechamento do
+baseline, com `--allow-oos` e evento logado - docs/15 e docs/18).
+Portanto:
+
+- **NAO sera declarado "OOS intocado"** para este programa;
+- validacao primaria = **walk-forward** (harness existente,
+  research/walkforward.py) + validacao temporal DEV/VAL;
+- o periodo 2024-2027 so pode ser usado como CONFIRMACAO final, com
+  `--allow-oos` + evento logado, nunca para selecao de regras;
+- dados futuros (apos 2026-08) serao reservados como validacao limpa
+  quando existirem.
+
+## Custos e robustez
+
+- Testes minimos: custo base, 1.5x, 2.0x (harness cost stress).
+- Robustez minima do §5: sensibilidade local, por ano/subperiodo,
+  long/short separados, concentracao, comparacao com baseline.
+
+---
+
+# 10. Registro Imutavel - H03 (primeira versao)
+
+```text
+hypothesis_id:            H03
+version:                  1.0
+status:                   SPECIFIED (pre-registrado antes de qualquer backtest)
+date:                     2026-08-12
+rationale:                a volatilidade Forex tem sazonalidade intradiaria;
+                          um candle "grande" vs os vizinhos pode ser normal para
+                          o horario; o ajuste por slot M15 separa surpresa real
+                          de volatilidade esperada da sessao
+expected_direction:       retorno futuro condicional positivo apos
+                          volatility_surprise >= 1.50 (a verificar por horario)
+dataset_version:          EURUSD M15 parquet 2015-01-01..2026-08-10
+                          (sha256 no report do runner)
+timeframe:                M15 (slots de 15min)
+session_definition:       slots M15 por horario UTC (sessoes calculadas com
+                          Europe/London e America/New_York, nunca offset fixo)
+features:                 volatility_surprise =
+                          true_range(candle) /
+                          mediana(true_range mesmo slot, ultimos 60 dias uteis,
+                          somente candles fechados anteriores)
+primary_parameters:       threshold >= 1.50
+                          janela 60 dias uteis
+allowed_sensitivity:      janelas 40, 60, 80 dias (declarado ANTES dos
+                          resultados; variar um parametro por vez)
+entry_rule:               ESTAGIO 1 = previsao condicional (retorno futuro
+                          1/2/4/8 candles), SEM trade
+                          ESTAGIO 2 (so se efeito existir) = trade completo
+exit_rule:                a definir no estagio 2, pre-registrada
+cost_model:               base (2.0/0.5/3.5) e estresse 1.5x / 2.0x
+risk_model:               FixedSizeRiskGate 0.01 (estagio 2)
+development_period:       2015-01-01 .. 2021-01-01
+validation_period:        2021-01-01 .. 2024-01-01
+oos_period:               2024-01-01 .. 2027-01-01 (contaminado - confirmacao
+                          final com --allow-oos + evento)
+rejection_criteria:       rejeitar se: efeito nao estavel entre subperiodos/
+                          horarios/anos; nao sobreviver a 1.5x custo; depender
+                          de parametro isolado; sem edge vs breakout simples
+git_commit:               merge 2a94589 + renumeracao docs/26
+```
+
+## Experimento primario (comparacao de 3 modelos)
+
+```text
+1. breakout sem filtro de volatilidade
+2. breakout filtrado por ATR rolling tradicional
+3. breakout filtrado por volatility_surprise (H03)
+```
+
+Metricas: retorno futuro condicional, hit rate, expectancy liquida,
+turnover, estabilidade por horario/ano, sensibilidade 40/60/80.
