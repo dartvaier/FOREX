@@ -2783,9 +2783,13 @@ H01 (falso rompimento da faixa asiatica) — ESTAGIO 1 REJECTED
    (docs/26 §15): signed ~0 em h1-8 e buffers 0.10/0.15/0.20; h8
    levemente positivo (continuacao, nao reversao); sinal inverte 4x
    por ano; midpoint sempre tocado em 8 barras (nao discrimina)
-Proxima hipotese ativa: H02 (continuacao apos handoff Asia-Londres,
-   docs/26 §4 prioridade 3) — pre-registro obrigatorio antes de
-   qualquer backtest
+H02 (handoff Asia-Londres condicionado ao formato) — ESTAGIO 1
+   REJECTED (docs/26 §17): continuation_up negativo em todos os
+   cenarios de fronteira e 10/12 anos (OPOSTO da hipotese); demais
+   grupos instaveis entre horizontes e anos; amostras 5-31/ano
+Proxima hipotese ativa: H04 (compressao + atividade, docs/26 §4
+   prioridade 3) — pre-registro obrigatorio antes de qualquer
+   backtest
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 

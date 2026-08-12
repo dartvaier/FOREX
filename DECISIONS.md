@@ -1,5 +1,23 @@
 # Architecture & Engineering Decisions
 
+## H02 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H02 (handoff Asia-Londres condicionado ao formato da
+  sessao) REJEITADA no estagio 1 (relacao estatistica, sem trade),
+  conforme criterios pre-registrados (docs/26 §16/§17).
+- **Evidencia**: continuation_up (comprimida + close high) negativo
+  em todos os cenarios de fronteira e 10/12 anos — OPOSTO da
+  continuacao compradora esperada; reversal_down so no h4 e
+  instavel (2016 +0.087% vs 2025 -0.045%); demais grupos ~0/mistos.
+- **Consequencia**: experimento `research/h02_experiment.py` mantido
+  (percentil empirico de range por dia + CLV + volume relativo);
+  proxima hipotese ativa = H04 (compressao + atividade), pre-registro
+  antes de backtest. Padrao anti-H02 (reversao apos comprimida+high)
+  NAO elevado a hipotese: sinal nao pre-registrado, risco de multiple
+  testing.
+
+# Architecture & Engineering Decisions
+
 ## H01 ESTAGIO 1 REJECTED (2026-08-12)
 
 - **Decisao**: H01 (falso rompimento da faixa asiatica) REJEITADA no

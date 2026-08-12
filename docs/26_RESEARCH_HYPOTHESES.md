@@ -1045,3 +1045,136 @@ lado:               superior vs inferior
 H02 (prioridade 3, docs/26 §4): continuacao apos handoff
 Asia-Londres. Pre-registro obrigatorio antes de qualquer backtest
 (protocolo §5).
+
+
+---
+
+# 16. Registro Imutavel - H02 (primeira versao, pre-backtest)
+
+```text
+hypothesis_id:            H02
+version:                  1.0
+status:                   SPECIFIED (pre-registrado antes de qualquer backtest)
+date:                     2026-08-12
+rationale:                o mesmo retorno asiatico pode representar
+                          deslocamento eficiente ainda nao saturado
+                          (faixa comprimida + fechamento no extremo ->
+                          continuacao em Londres) ou movimento ja
+                          excessivo (faixa larga -> reversao)
+expected_direction:       faixa < p30 e CLV >= 0.80 -> fwd positivo
+                          faixa < p30 e CLV <= 0.20 -> fwd negativo
+                          faixa > p70 e CLV >= 0.80 -> fwd negativo
+                          faixa > p70 e CLV <= 0.20 -> fwd positivo
+dataset_version:          EURUSD M15 parquet 2015-01-02..2026-08-10
+timeframe:                M15 (evento) — sessao asiatica + abertura Londres
+session_definition:       sessao asiatica = M15 com hora Europe/London
+                          [00:00, 07:00) (zoneinfo, DST correto);
+                          fechamento asiatico = close da ultima barra
+                          da sessao; abertura Londres = 07:00 London
+features:                 asian_return = close_fim / open_inicio - 1
+                          asian_range = high - low da sessao
+                          asian_range_percentile = percentil empirico
+                          do range vs os 60 dias uteis ANTERIORES
+                          (causal; janela movel)
+                          close_location_value (CLV) = (close - low) /
+                          (high - low) da ultima barra asiatica;
+                          high == low -> sem sinal
+                          distance_to_high/low = distancia normalizada
+                          ao extremo (analise)
+                          relative_tick_volume = soma tick_volume da
+                          sessao / mediana dos 60 dias anteriores
+primary_parameters:       fronteiras de percentil p30/p70 (janela 60)
+                          CLV 0.80/0.20
+                          fwd: 1/2/4 horas apos 07:00 London
+                          (4/8/16 candles M15)
+allowed_sensitivity:      fronteiras p25/p35 e p65/p75; CLV 0.75/0.85 e
+                          0.15/0.25 (declarado ANTES; variar um por vez)
+entry_rule:               ESTAGIO 1 = relacao estatistica: retorno
+                          assinado medio por grupo e horizonte (direcao
+                          esperada acima); SEM trade
+exit_rule:                estagio 2 (so se efeito consistente):
+                          regras de trade completas pre-registradas
+cost_model:               base (2.0/0.5/3.5) + estresse 1.5x / 2.0x (estagio 2)
+risk_model:               FixedSizeRiskGate 0.01 (estagio 2)
+development_period:       2015-01-01 .. 2021-01-01
+validation_period:        2021-01-01 .. 2024-01-01
+oos_period:               2024-01-01 .. 2027-01-01 (contaminado -
+                          confirmacao final com --allow-oos + evento)
+rejection_criteria:       rejeitar se a direcao esperada NAO permanecer
+                          estavel entre subperiodos (anos), regimes de
+                          volatilidade (ATR por ano), fronteiras de
+                          percentil e CLV; ou se o retorno assinado
+                          medio por grupo for <= 0 no estagio 1
+git_commit:               commit do pre-registro (docs/26 §16)
+```
+
+
+---
+
+# 17. Resultado H02 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Experimento `research/h02_experiment.py`: sessao asiatica =
+  M15 Europe/London [00:00, 07:00) (zoneinfo); asian_return/range;
+  percentil empirico do range vs 60 dias uteis anteriores (causal);
+  CLV da ultima barra asiatica; 4 grupos mutuamente exclusivos
+  (p30/p70 x CLV 0.20/0.80); retorno assinado 1/2/4 horas apos
+  07:00 London (a partir do close da ultima barra asiatica).
+- Dataset: EURUSD M15 2015-01-02..2026-08-10 (3,363 sessoes).
+- Sensibilidade pre-registrada: p25/p35, p65/p75, CLV 0.75/0.85,
+  CLV 0.15/0.25 (uma fronteira por vez).
+
+## Resultados (signed mean %, fronteiras base p30/p70 CLV 0.2/0.8)
+
+| grupo | h1 | h2 | h4 | n |
+|---|---|---|---|---|
+| continuation_up (comprimida + close high) | -0.013% | -0.016% | -0.035% | 168 |
+| continuation_down (comprimida + close low) | -0.006% | -0.011% | -0.000% | 185 |
+| reversal_down (larga + close high) | -0.007% | -0.003% | +0.011% | 302 |
+| reversal_up (larga + close low) | +0.001% | +0.003% | +0.000% | 198 |
+
+Sensibilidade: continuation_up NEGATIVO em todas as variacoes
+(-0.005% a -0.038%) — consistente na direcao OPOSTA da hipotese.
+reversal_down h4 positivo em todas (+0.007% a +0.023%) mas
+negativo em h1/h2. Demais grupos ~0.
+
+## Por ano (h4 signed)
+
+- continuation_up: negativo em 10 de 12 anos (2015 -0.112%,
+  2026 -0.115%; unicas excecoes 2016/2017 +0.019%) — consistente,
+  porem OPOSTO a hipotese (nao ha continuacao compradora; o
+  padrao real e reversao).
+- continuation_down: misto (-0.059% a +0.112%), instavel.
+- reversal_down: misto (2016 +0.087% vs 2025 -0.045%), instavel.
+- reversal_up: misto (-0.067% a +0.050%), instavel.
+- Amostras por grupo/ano: 5-31 eventos; magnitudes <= 0.12% —
+  na escala ou abaixo do custo.
+
+## Decisao
+
+**H02 REJEITADA (estagio 1)**, conforme criterios pre-registrados
+(docs/26 §16):
+
+- a direcao esperada NAO permanece estavel entre subperiodos: 3 de
+  4 grupos com sinais mistos por ano;
+- continuation_up falha o criterio de retorno assinado medio > 0
+  (e negativo em todos os cenarios de fronteira e 10/12 anos);
+- reversal_down, unico grupo com sinal esperado no h4, e instavel
+  entre horizontes (h1/h2 negativos) e entre anos;
+- amostras pequenas e magnitudes <= 0.12% (custo round-trip 3.7
+  pips ~ 0.034% com alavancagem; sem efeito economico) — estagio 2
+  nao aberto.
+
+## Nota de pesquisa (nao e hipotese nova)
+
+O padrao mais consistente encontrado foi o OPOSTO de H02 no grupo
+comprimida+high: reversao apos faixa comprimida com fechamento no
+extremo (continuation_up negativo em 10/12 anos). NAO sera elevado
+a hipotese: sinal nao pre-registrado, sujeito a multiple testing
+(4 grupos x 4 cenarios de fronteira x 3 horizontes).
+
+## Proxima hipotese ativa
+
+H04 (prioridade 3, docs/26 §4): compressao + atividade. Pre-registro
+obrigatorio antes de qualquer backtest (protocolo §5).
