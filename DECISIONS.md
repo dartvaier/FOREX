@@ -1,5 +1,41 @@
 # Architecture & Engineering Decisions
 
+## H04 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H04 (compressao + choque de preco/atividade) REJEITADA
+  no estagio 1, conforme docs/26 §18/§20.
+- **Evidencia**: A4 h8 +0.009% (n=439, pos 48.97%) vs CTRL breakout
+  simples -0.002%; A4 h1 -0.003% pior que CTRL; pos < 50% com media
+  positiva = cauda; por ano 6 pos/6 neg.
+- **Consequencia**: experimento `research/h04_experiment.py` mantido
+  (ablation framework reutilizavel).
+
+## H07 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H07 (reversao parcial do gap semanal) REJEITADA no
+  estagio 1 pelo criterio de custo pre-registrado (docs/26 §19/§21).
+- **Evidencia**: h1 signed +0.031% (66.78% pos, n=301), robusto a
+  leave-one-year-out (+0.009% a +0.019%) e sem top-5 (+0.014%); mas
+  ~3.1 pips brutos < 3.7 pips round-trip; efeito dissipa (h16 pos
+  48%). Sinal real, economicamente inviavel com o custo baseline.
+- **Consequencia**: candidato a reavaliacao se custos de execucao
+  menores; NAO elevado a estrategia (disciplina de custos, AGENTS.md).
+
+## PROGRAMA DE HIPOTESES FECHADO (2026-08-12)
+
+- **Decisao**: as 7 hipoteses (H01-H07) foram executadas no estagio 1
+  com pre-registro imutavel; classificacao final 7 REFUTADAS / 0
+  CONFIRMADAS / 0 INCONCLUSIVAS.
+- **Evidencia**: base de registros `research/hypotheses_log.json`;
+  relatorio consolidado `docs/27_HYPOTHESES_TEST_REPORT.md`; docs/26
+  §10-§22; commits `b615243`, `0b5fd6a`, `99971d0`, `4b8c3ec` e
+  commit do fechamento.
+- **Consequencia**: nenhuma hipotese avanca para estagio 2 /
+  walk-forward / OOS; proximos passos: reavaliar custos de execucao
+  (H07 h1), infra de eventos raros, ou novo ciclo de hipoteses.
+
+# Architecture & Engineering Decisions
+
 ## H02 ESTAGIO 1 REJECTED (2026-08-12)
 
 - **Decisao**: H02 (handoff Asia-Londres condicionado ao formato da

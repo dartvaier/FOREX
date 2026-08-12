@@ -2787,9 +2787,17 @@ H02 (handoff Asia-Londres condicionado ao formato) — ESTAGIO 1
    REJECTED (docs/26 §17): continuation_up negativo em todos os
    cenarios de fronteira e 10/12 anos (OPOSTO da hipotese); demais
    grupos instaveis entre horizontes e anos; amostras 5-31/ano
-Proxima hipotese ativa: H04 (compressao + atividade, docs/26 §4
-   prioridade 3) — pre-registro obrigatorio antes de qualquer
-   backtest
+H04 (compressao + choque + atividade) — ESTAGIO 1 REJECTED
+   (docs/26 §20): A4 nao supera controle de breakout simples; pos
+   < 50% com media positiva = cauda (eventos extremos); instavel
+   por ano (6 pos / 6 neg)
+H07 (gap semanal) — ESTAGIO 1 REJECTED (docs/26 §21): sinal real
+   no h1 (66.78% pos, robusto a leave-one-year-out e sem top-5),
+   mas ~3.1 pips brutos < 3.7 pips de custo; efeito se dissipa no
+   h16 — candidato a reavaliacao se custos menores
+PROGRAMA DE HIPOTESES FECHADO (docs/26 §22): 7/7 REFUTADAS,
+   0 confirmadas — base de registros research/hypotheses_log.json,
+   relatorio docs/27
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 

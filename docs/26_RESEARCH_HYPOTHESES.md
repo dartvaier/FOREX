@@ -1178,3 +1178,218 @@ a hipotese: sinal nao pre-registrado, sujeito a multiple testing
 
 H04 (prioridade 3, docs/26 §4): compressao + atividade. Pre-registro
 obrigatorio antes de qualquer backtest (protocolo §5).
+
+
+---
+
+# 18. Registro Imutavel - H04 (primeira versao, pre-backtest)
+
+```text
+hypothesis_id:            H04
+version:                  1.0
+status:                   SPECIFIED (pre-registrado antes de qualquer backtest)
+date:                     2026-08-12
+rationale:                expansao isolada pode ser ruido; compressao
+                          anterior + range anormal + aumento de atividade
+                          + fechamento direcionalmente eficiente = mudanca
+                          de estado mais relevante (continuidade)
+expected_direction:       LONG quando CLV >= 0.75 no candle de choque
+                          SHORT quando CLV <= 0.25
+                          continuacao na direcao do fechamento
+dataset_version:          EURUSD M15 parquet 2015-01-02..2026-08-10
+timeframe:                M15
+session_definition:       slots M15 por horario UTC (mesmo padrao H03)
+features:                 realized_range_16 = high(max) - low(min) das
+                          ultimas 16 barras M15 (4h), avaliado no
+                          fechamento da barra atual
+                          compression_pct = slot_percentile do
+                          realized_range_16 vs 60 slots anteriores do
+                          mesmo horario (causal)
+                          shock_range_pct = slot_percentile do true_range
+                          vs 60 slots anteriores
+                          activity_pct = slot_percentile do tick_volume
+                          vs 60 slots anteriores
+                          CLV = (close - low)/(high - low); high==low ->
+                          sem sinal
+primary_parameters:       compressao: realized_range_16 abaixo do
+                          percentil 25 (mesmo slot, janela 60)
+                          choque: true_range acima do percentil 90
+                          atividade: tick_volume acima do percentil 80
+                          confirmacao: CLV >= 0.75 (LONG) / <= 0.25 (SHORT)
+                          sinal no fechamento do candle de choque
+allowed_sensitivity:      percentis de compressao p20/p25/p30 e choque
+                          p85/p90/p95 (declarado ANTES; variar um por vez)
+entry_rule:               ESTAGIO 1 = previsao condicional: retorno
+                          assinado (direcao do sinal) em 1/2/4/8 candles
+                          a partir do CLOSE do candle de choque; SEM trade
+ablation:                 obrigatorio, 4 modelos:
+                          A1 = somente compressao
+                          A2 = compressao + choque de range
+                          A3 = compressao + range + tick volume
+                          A4 = completo (compressao + range + TV + CLV)
+                          controle: breakout simples (range alto sem
+                          compressao, sem TV, sem CLV)
+exit_rule:                estagio 2 (so se efeito consistente no A4 e
+                          ablation incremental): regras de trade
+                          pre-registradas
+cost_model:               base (2.0/0.5/3.5) + estresse 1.5x / 2.0x (estagio 2)
+risk_model:               FixedSizeRiskGate 0.01 (estagio 2)
+development_period:       2015-01-01 .. 2021-01-01
+validation_period:        2021-01-01 .. 2024-01-01
+oos_period:               2024-01-01 .. 2027-01-01 (contaminado -
+                          confirmacao final com --allow-oos + evento)
+rejection_criteria:       rejeitar se: o ganho vier apenas do filtro de
+                          horario (checar distribuicao por hora); A4 nao
+                          superar o controle de breakout simples; o efeito
+                          sumir sob 1.5x custo (estagio 2); depender de
+                          poucos eventos extremos (top 1% dos retornos);
+                          retorno assinado medio <= 0 no estagio 1
+git_commit:               commit do pre-registro (docs/26 §18)
+```
+
+
+---
+
+# 19. Registro Imutavel - H07 (primeira versao, pre-backtest)
+
+```text
+hypothesis_id:            H07
+version:                  1.0
+status:                   SPECIFIED (pre-registrado antes de qualquer backtest)
+date:                     2026-08-12
+rationale:                o fim de semana cria descontinuidade real; nem
+                          todo gap representa tendencia nova — parte pode
+                          ser corrigida na normalizacao da liquidez
+expected_direction:       gap positivo (abre acima) -> reversao parcial
+                          (retorno negativo); gap negativo -> retorno
+                          positivo
+dataset_version:          EURUSD M15 parquet 2015-01-02..2026-08-10
+                          + H1 processado (ATR)
+timeframe:                M15 (primeira barra da semana) + H1 (ATR)
+session_definition:       semana = ISO year-week das barras M15 UTC;
+                          NAO criar candles de fim de semana: primeira
+                          barra realmente disponivel da nova semana e
+                          ultima barra realmente disponivel da anterior
+features:                 weekly_gap = first_open_new_week -
+                          last_close_previous_week
+                          normalized_gap = abs(weekly_gap) / ATR(H1,14)
+                          (ATR dos 14 H1 fechados antes da primeira
+                          barra da nova semana — causal)
+primary_parameters:       normalized_gap >= 0.50
+                          fwd: 1/4/8/16 horas a partir do first_open
+                          reversao: signed = -sign(gap) * fwd
+allowed_sensitivity:      thresholds 0.40 / 0.50 / 0.60 (declarado
+                          ANTES; variar um por vez)
+entry_rule:               ESTAGIO 1 = previsao condicional: retorno
+                          assinado + fracao do gap fechado por horizonte;
+                          SEM trade. NUNCA assumir fill no fechamento de
+                          sexta; usar o primeiro preco disponivel.
+exit_rule:                estagio 2 (so se efeito consistente):
+                          regras de trade pre-registradas com custos
+                          conservadores (gaps atravessam stops)
+cost_model:               base (2.0/0.5/3.5) + estresse 1.5x / 2.0x
+                          (estagio 2) — spread/slippage conservadores
+risk_model:               FixedSizeRiskGate 0.01 (estagio 2)
+development_period:       2015-01-01 .. 2021-01-01
+validation_period:        2021-01-01 .. 2024-01-01
+oos_period:               2024-01-01 .. 2027-01-01 (contaminado -
+                          confirmacao final com --allow-oos + evento)
+statistical_limits:       amostra pequena (semanas ~ 500-600): reportar
+                          n EXATO por threshold, intervalo de confianca
+                          (bootstrap), leave-one-year-out, impacto dos
+                          maiores gaps e teste SEM os 5 maiores
+rejection_criteria:       rejeitar se: retorno assinado medio <= 0; o
+                          efeito desaparecer no leave-one-year-out ou sem
+                          os 5 maiores gaps; o retorno medio nao cobrir
+                          os custos conservadores (estagio 2)
+git_commit:               commit do pre-registro (docs/26 §19)
+```
+
+
+---
+
+# 20. Resultado H04 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Experimento `research/h04_experiment.py`: realized_range_16 =
+  high-low das ultimas 16 barras M15; percentis por slot (60 slots,
+  causais): compressao p25, choque de range p90, atividade p80;
+  CLV 0.75/0.25; ablation obrigatorio A1 (compressao), A2 (+range),
+  A3 (+TV), A4 (completo + CLV) + controle CTRL (breakout simples
+  sem compressao); retorno assinado (direcao do candle) h1/2/4/8.
+- Dataset: EURUSD M15 288,223 candles.
+
+## Resultados (signed mean %, h8)
+
+| modelo | h8 signed | n | pos% |
+|---|---|---|---|
+| A1 compressao | -0.001% | 75,629 | 47.8% |
+| A2 + range | -0.000% | 1,825 | 46.0% |
+| A3 + atividade | +0.005% | 694 | 47.6% |
+| A4 completo | +0.009% | 439 | 49.0% |
+| CTRL breakout simples | -0.002% | 32,174 | 47.9% |
+
+- A4 h1 = -0.003% (pior que CTRL h1 -0.002%); pos < 50% em todos
+  com media > 0 no A4 = cauda (poucos retornos grandes positivos).
+- Por ano (A4 h8): 6 positivos / 6 negativos (2017 -0.036% vs
+  2023 +0.060%) — instavel.
+- Por hora (A4 h8): n de 6 a 23 por slot, sinais alternando
+  (+0.085% 16:00 vs -0.067% 21:00) — ruido, nao efeito de horario.
+
+## Decisao
+
+**H04 REJEITADA (estagio 1)**: A4 nao supera o controle de breakout
+simples de forma consistente; efeito dependente de eventos extremos
+(pos < 50% com media positiva); ablation sem melhora monotona;
+instavel por ano.
+
+---
+
+# 21. Resultado H07 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Experimento `research/h07_experiment.py`: gap semanal =
+  first_open_new_week - last_close_previous_week (sem criar candles
+  de fim de semana); normalized = |gap|/ATR(H1,14) causal >= 0.50;
+  retorno a partir do primeiro open disponivel; h1/4/8/16; reversao:
+  signed = -sign(gap)*fwd; bootstrap CI 95% (10k); leave-one-year-out;
+  sem os 5 maiores gaps.
+- Dataset: EURUSD M15 + H1 processado; 301 eventos (threshold 0.50).
+
+## Resultados
+
+| h | signed | pos% | fração do gap fechada |
+|---|---|---|---|
+| 1 | +0.031% | 66.78% | +14.0% |
+| 4 | +0.025% | 56.81% | +10.4% |
+| 8 | +0.014% | 54.49% | +2.9% |
+| 16 | +0.012% | 48.17% | -6.6% |
+
+- h8 bootstrap CI 95%: [-0.009%, +0.037%] (contem zero).
+- Sem os 5 maiores gaps (h8): +0.014% — robusto.
+- Leave-one-year-out (h8): +0.009% a +0.019% — o efeito nunca
+  desaparece com a remocao de um ano.
+- Por ano (h8): positivo em 9 de 12; negativos 2016 (-0.028%),
+  2019 (-0.040%, pos 33%), 2025/2026 (-0.006%/-0.011%).
+
+## Decisao
+
+**H07 REJEITADA (estagio 1)**: existe sinal estatistico REAL no h1
+(66.78% pos, robusto a leave-one-year-out e sem top-5), mas o edge
+bruto (~3.1 pips) NAO cobre o custo round-trip conservador (3.7
+pips) e o efeito se dissipa ate o h16 (pos 48%). Falha o criterio
+de custo pre-registrado (docs/26 §19). Achado registrado como
+candidato a reavaliacao SE custos de execucao menores existirem
+(nao elevado: criterio pre-registrado e o custo do baseline).
+
+---
+
+# 22. Fechamento do Programa de Hipotese (2026-08-12)
+
+Todas as 7 hipoteses (H01-H07) executadas no estagio 1 com
+pre-registro imutavel. Classificacao final: 7 REFUTADAS / 0
+CONFIRMADAS / 0 INCONCLUSIVAS. Base de registros:
+`research/hypotheses_log.json`. Relatorio consolidado:
+`docs/27_HYPOTHESES_TEST_REPORT.md`.
