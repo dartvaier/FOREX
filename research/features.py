@@ -124,3 +124,73 @@ def volatility_surprise(
         previous_close = close
 
     return surprises
+
+
+def directional_efficiency(
+    open_price: float,
+    high: float,
+    low: float,
+    close: float,
+) -> float | None:
+    """
+    H05/H06 feature (docs/26): abs(close - open) / (high - low).
+
+    Returns None when high == low (no range): explicitly never
+    divides by zero and never fabricates a signal.
+    """
+    if high < low:
+        raise ValueError("high cannot be below low")
+
+    rng = high - low
+
+    if rng == 0:
+        return None
+
+    return abs(close - open_price) / rng
+
+
+def slot_percentile(
+    *,
+    values: Sequence[float],
+    timestamps: Sequence[datetime],
+    lookback_slots: int = 60,
+) -> list[float | None]:
+    """
+    Percentile (fraction 0-1) of each value within the historical
+    distribution of the SAME UTC slot (H05/H06: p90 by time-of-day).
+
+    percentile = count(prior values of the slot <= current) / count.
+    Causal: the current observation never contributes to its own
+    distribution. None on cold start (no prior history).
+    """
+    if len(values) != len(timestamps):
+        raise ValueError("values and timestamps must be aligned")
+
+    if not isinstance(lookback_slots, int) or lookback_slots <= 0:
+        raise ValueError("lookback_slots must be a positive integer")
+
+    slot_history: dict[str, deque[float]] = defaultdict(
+        lambda: deque(maxlen=lookback_slots)
+    )
+
+    percentiles: list[float | None] = []
+
+    for value, timestamp in zip(values, timestamps):
+        if not isinstance(timestamp, datetime) or timestamp.tzinfo is None:
+            raise ValueError(
+                "timestamps must be timezone-aware datetimes (UTC)"
+            )
+
+        slot = _slot_key(timestamp)
+        history = slot_history[slot]
+
+        if not history:
+            percentiles.append(None)
+        else:
+            below = sum(1 for prior in history if prior <= value)
+            percentiles.append(below / len(history))
+
+        history.append(value)
+
+    return percentiles
+

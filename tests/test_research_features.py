@@ -11,7 +11,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from research.features import true_range, volatility_surprise
+from research.features import (
+    directional_efficiency,
+    slot_percentile,
+    true_range,
+    volatility_surprise,
+)
 
 _BASE = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -155,3 +160,86 @@ def test_surprise_requires_aligned_inputs():
             closes=[1.05],
             timestamps=[t(8, 0), t(9, 0)],
         )
+
+
+# ---------------------------------------------------------------------------
+# H05/H06 features (docs/26): directional_efficiency + slot_percentile
+# ---------------------------------------------------------------------------
+
+
+def test_directional_efficiency_full_body():
+    # close far from open, tiny range -> efficiency near 1
+    de = directional_efficiency(1.1000, 1.1010, 1.0990, 1.1009)
+    assert de == pytest.approx(0.45)
+
+
+def test_directional_efficiency_zero_range_returns_none():
+    # high == low: never divide by zero, no signal (docs/26 H05)
+    assert directional_efficiency(1.1000, 1.1000, 1.1000, 1.1000) is None
+
+
+def test_directional_efficiency_doji_low_efficiency():
+    # open == close inside a wide range -> efficiency 0
+    de = directional_efficiency(1.1000, 1.1020, 1.0980, 1.1000)
+    assert de == pytest.approx(0.0)
+
+
+def test_directional_efficiency_validates_high_low():
+    with pytest.raises(ValueError):
+        directional_efficiency(1.1000, 1.0980, 1.1020, 1.1000)
+
+
+def test_slot_percentile_high_value_is_ninety():
+    # 9 small values then 1 large value in the same slot:
+    # large value percentile = 9/9 = 1.0 (p100 of prior history)
+    values = [1.0] * 9 + [10.0]
+    timestamps = [t(8, 0, day=d) for d in range(1, 11)]
+
+    percentiles = slot_percentile(
+        values=values,
+        timestamps=timestamps,
+    )
+
+    assert percentiles[0] is None  # cold start
+    assert percentiles[-1] == pytest.approx(1.0)
+
+
+def test_slot_percentile_median_value_is_half():
+    values = [1.0, 2.0, 3.0]
+    timestamps = [t(8, 0, day=d) for d in range(1, 4)]
+
+    percentiles = slot_percentile(
+        values=values,
+        timestamps=timestamps,
+    )
+
+    # last value 3.0: all 2 prior (1.0, 2.0) are <= 3.0 -> 1.0
+    assert percentiles[-1] == pytest.approx(1.0)
+
+
+def test_slot_percentile_slots_do_not_mix():
+    # outlier in slot 09:00 never affects slot 08:00 percentiles
+    values = [1.0] * 5 + [100.0]
+    timestamps = [t(8, 0, day=d) for d in range(1, 6)] + [t(9, 0, day=1)]
+
+    percentiles = slot_percentile(
+        values=values,
+        timestamps=timestamps,
+    )
+
+    assert percentiles[-1] is None  # 09:00 has no prior history
+
+
+def test_slot_percentile_causal():
+    # a huge first value does not produce a high percentile for itself
+    values = [100.0] + [1.0] * 5
+    timestamps = [t(8, 0, day=d) for d in range(1, 7)]
+
+    percentiles = slot_percentile(
+        values=values,
+        timestamps=timestamps,
+    )
+
+    assert percentiles[0] is None
+    # prior history = [100.0, 1.0, 1.0, 1.0, 1.0]; 4 of 5 <= 1.0
+    assert percentiles[-1] == pytest.approx(0.8)

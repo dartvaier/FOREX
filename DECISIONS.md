@@ -1,5 +1,22 @@
 # Architecture & Engineering Decisions
 
+## H05/H06 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H05 (reversao apos choque ineficiente) e H06
+  (continuacao apos choque eficiente) REJEITADAS no estagio 1
+  (previsao condicional, sem trade), conforme criterios
+  pre-registrados (docs/26 §12/§13).
+- **Evidencia**: retorno assinado ~0 (H05) e NEGATIVO (H06, pos
+  ~44%) na matriz 6 celulas; controles com DE alta tem o mesmo
+  padrao negativo (DE nao discrimina); p85/p95 idem; por ano H05
+  inverte sinal 3x e H06 e negativo/~0.
+- **Consequencia**: features `directional_efficiency` e
+  `slot_percentile` mantidas como ferramentas reutilizaveis
+  (H01/H02/H04); proxima hipotese ativa = H01 (faixa asiatica),
+  pre-registro antes de backtest.
+
+# Architecture & Engineering Decisions
+
 ## H03 ESTAGIO 1 REJECTED (2026-08-12)
 
 - **Decisao**: H03 (volatility surprise intradiaria) REJEITADA no

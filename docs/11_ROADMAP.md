@@ -2776,8 +2776,11 @@ Novo programa de pesquisa ABERTO (docs/26, 2026-08-12):
 H03 (volatility surprise) — ESTAGIO 1 REJECTED (docs/26 §11):
    retorno condicional nulo nas janelas 40/60/80; slot 00:00
    (~1.98 pips brutos) abaixo do custo round-trip 3.7 pips
-Proxima hipotese ativa: H05/H06 (choques eficientes/ineficientes,
-   docs/26 §4 prioridade 2) — pre-registro obrigatorio antes de
+H05/H06 (choques eficientes/ineficientes) — ESTAGIO 1 REJECTED
+   (docs/26 §13): DE nao adiciona poder vs controles; H05 ~0 com 3
+   inversoes de sinal por ano; H06 negativo (oposto da hipotese)
+Proxima hipotese ativa: H01 (falso rompimento da faixa asiatica,
+   docs/26 §4 prioridade 3) — pre-registro obrigatorio antes de
    qualquer backtest
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---

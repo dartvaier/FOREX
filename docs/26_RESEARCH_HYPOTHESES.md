@@ -788,3 +788,136 @@ Feature mantida no codigo como ferramenta reutilizavel
 H05/H06 (prioridade 2, docs/26 §4): choques eficientes e ineficientes
 (directional_efficiency). Requer pre-registro antes de qualquer
 backtest (protocolo §5).
+
+
+---
+
+# 12. Registro Imutavel - H05/H06 (primeira versao, pre-backtest)
+
+```text
+hypothesis_id:            H05/H06 (avaliadas no MESMO experimento,
+                          docs/26 H05/H06; decisoes conjuntas)
+version:                  1.0
+status:                   SPECIFIED (pre-registrado antes de qualquer backtest)
+date:                     2026-08-12
+rationale:                choque de preco+atividade com corpo pequeno e
+                          sombras grandes (DE baixa) = absorcao/exaustao ->
+                          reversao curto prazo (H05); corpo grande com
+                          fechamento no extremo (DE alta + CLV) = continuacao
+                          (H06). A eficiencia direcional e o discriminatorio.
+expected_direction:       H05: reversao vs deslocamento anterior
+                          H06: continuacao na direcao do candle eficiente
+dataset_version:          EURUSD M15 parquet 2015-01-02..2026-08-10
+timeframe:                M15
+session_definition:       slots M15 por horario UTC (sessoes com timezones
+                          reais, nunca offset fixo)
+features:                 directional_efficiency = abs(close-open)/(high-low);
+                          high == low -> sem sinal (nunca divisao por zero)
+                          true_range_percentile: percentil do TR no mesmo
+                          slot, janela 60 dias uteis, somente anteriores
+                          tick_volume_percentile: idem para tick_volume
+primary_parameters:       TR >= p90 do slot
+                          TV >= p90 do slot
+                          H05: DE <= 0.25 (candle ineficiente)
+                          H06: DE >= 0.70 E confirmacao
+                          (CLV >= 0.90 positivo / <= 0.10 negativo)
+                          deslocamento anterior = retorno acumulado das
+                          4 barras anteriores (H05)
+allowed_sensitivity:      percentis p85 / p90 / p95 (declarado ANTES;
+                          variar um parametro por vez)
+entry_rule:               ESTAGIO 1 = previsao condicional (fwd 1/2/4/8
+                          candles), SEM trade; metricas assinadas
+                          (H05: reversao vs deslocamento anterior;
+                          H06: continuacao vs direcao do candle)
+exit_rule:                a definir no estagio 2, pre-registrada
+cost_model:               base (2.0/0.5/3.5) + estresse 1.5x / 2.0x (estagio 2)
+risk_model:               FixedSizeRiskGate 0.01 (estagio 2)
+development_period:       2015-01-01 .. 2021-01-01
+validation_period:        2021-01-01 .. 2024-01-01
+oos_period:               2024-01-01 .. 2027-01-01 (contaminado -
+                          confirmacao final com --allow-oos + evento)
+rejection_criteria:       rejeitar H05/H06 se a eficiencia direcional NAO
+                          adicionar poder explicativo/economico vs tamanho
+                          do range + horario (celulas de controle); se nao
+                          estavel entre subperiodos; se nao sobreviver a
+                          1.5x custo (estagio 2); se depender de poucos
+                          eventos extremos
+git_commit:               commit do pre-registro (docs/26 §12)
+```
+
+## Matriz experimental (6 celulas, docs/26 H05/H06)
+
+```text
+| range | tick vol | eficiencia | rotulo     |
+|---|---|---|---|
+| alto  | alto     | baixa      | H05 (reversao)   |
+| alto  | alto     | alta       | H06 (continuacao)|
+| alto  | normal   | baixa      | controle         |
+| alto  | normal   | alta       | controle         |
+| normal| alto     | baixa      | controle         |
+| normal| alto     | alta       | controle         |
+```
+
+Metricas por celula e horizonte: retorno assinado medio, positive rate,
+eventos, decomposicao por ano. Comparacao H05/H06 vs controles.
+
+
+---
+
+# 13. Resultado H05/H06 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Features: `directional_efficiency` + `slot_percentile` em
+  `research/features.py` (puras, causais, 8 testes novos) e
+  experimento `research/h05_h06_experiment.py`.
+- Dataset: EURUSD M15 2015-01-02..2026-08-10 (288,223 candles),
+  p90 por slot (sensibilidade pre-registrada p85/p90/p95), janela
+  60 slots, DE <= 0.25 (H05) / DE >= 0.70 + CLV confirmacao (H06).
+- Etapa 1 (previsao condicional, SEM trade): retorno assinado
+  (H05: reversao vs deslocamento 4 barras; H06: continuacao vs
+  direcao do candle) em h1/2/4/8.
+
+## Resultados (signed mean %, p90)
+
+| celula | h1 | h4 | h8 | eventos | rotulo |
+|---|---|---|---|---|---|
+| H05_reversal | -0.002% | -0.000% | +0.003% | 2,999 | alvo |
+| H06_continuation | -0.005% | -0.005% | -0.004% | 3,296 | alvo |
+| ctrl range alto/tick normal/DE baixa | -0.003% | -0.000% | -0.001% | 1,426 | controle |
+| ctrl range alto/tick normal/DE alta | -0.004% | -0.006% | -0.007% | 7,461 | controle |
+| ctrl range normal/tick alto/DE baixa | +0.001% | +0.000% | -0.001% | 6,615 | controle |
+| ctrl range normal/tick alto/DE alta | -0.003% | -0.004% | -0.006% | 3,339 | controle |
+
+Sensibilidade: p85 (H05 ~0, H06 -0.005% a -0.006%) e p95
+(H05 ~0, H06 -0.003% a -0.006%) — mesmo padrao.
+
+## Por ano (h8 signed)
+
+- H05: oscila entre -0.037% e +0.024% com tres inversoes de sinal
+  (2015-16 neg, 2017-20 pos, 2021-22 neg, 2023-26 pos) — sem
+  direcao estavel.
+- H06: negativo ou ~0 em todos os anos (-0.020% em 2016;
+  2021+ aproximadamente zero) — o efeito de continuacao NAO existe;
+  quando muito, ligeiramente contrario a hipotese.
+
+## Decisao
+
+**H05/H06 REJEITADAS (estagio 1)**, conforme criterios
+pre-registrados (docs/26 §12):
+
+- a eficiencia direcional NAO adiciona poder explicativo/economico:
+  os controles com DE alta apresentam o mesmo padrao (negativo) da
+  celula H06, e a celula H05 e indistinguivel de zero;
+- sinais instaveis entre subperiodos (H05 inverte 3x; H06 negativo
+  -> ~0);
+- magnitudes <= 0.037%, na escala do custo round-trip (3.7 pips),
+  sem consistencia para sobreviver a 1.5x custo no estagio 2.
+
+Features mantidas no codigo como ferramentas reutilizaveis
+(directional_efficiency e slot_percentile servem H01/H02/H04).
+
+## Proxima hipotese ativa
+
+H01 (prioridade 3, docs/26 §4): falso rompimento da faixa asiatica.
+Pre-registro obrigatorio antes de qualquer backtest (protocolo §5).
