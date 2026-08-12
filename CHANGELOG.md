@@ -173,6 +173,9 @@ Strategy Research
   no baseline hypothesis survives explicit costs; platform stays
   research/demo. ML/HMM frontier is a separate project, not an
   incremental continuation.
+- Documentation state sync: README, roadmap and F10 readiness docs
+  aligned to the real current gate (`1065 passed`) and to the
+  infra-ready/operator-decision status.
 
 ---
 

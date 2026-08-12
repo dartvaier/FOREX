@@ -80,7 +80,7 @@ F8  Robustness & Validation     ✅ COMPLETE
 
 F9  Demo Execution              ✅ COMPLETE
 
-F10 Live Readiness              🟡 IN PROGRESS
+F10 Live Readiness              🟡 INFRA READY / OPERATOR DECISION
 
 ---
 
@@ -1879,7 +1879,8 @@ risk limits (readiness/risk_limits.py)
 safety helpers (readiness/safety.py)
 operational procedures documentadas (docs/17_LIVE_READINESS.md)
 
-pendente: demo validation + trading flag (decisao de ativacao)
+demo validation concluida; trading flag permanece decisao explicita
+do operador
 ```
 
 Essa fase não significa automaticamente:
@@ -2535,9 +2536,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-869 tests
+1065 tests
 
-869 passed
+1065 passed
 
 0 failed
 ```
@@ -2662,55 +2663,58 @@ Velocidade de execução não deve ser priorizada sobre correção.
             │
             ▼
        STRATEGIES
-           🟡
+           ✅
             │
             ▼
        RISK ENGINE
-           ⬜
+           ✅
             │
             ▼
  ROBUSTNESS / OOS
-           ⬜
+           ✅
             │
             ▼
       DEMO EXECUTION
-           ⬜
+           ✅
             │
             ▼
      LIVE READINESS
-           ⬜
+           🟡
 ```
 
 ---
 
 # 129. Próxima Ação Técnica
 
-Iniciar a próxima fase planejada:
+Estado tecnico atual:
 
 ```text
-F7 - Risk Management
+F0-F9 completos.
+F10 com infraestrutura pronta.
+Busca de edge encerrada nas hipoteses atuais.
 ```
 
-A tarefa técnica seguinte deverá ser:
+A proxima acao tecnica deve ser escolhida explicitamente entre:
 
 ```text
-separar decisao de mercado da exposicao financeira
-implementar limites basicos de risco
-evoluir position sizing alem de fixed size
-documentar invariantes de risco
-manter regression tests verdes
+CI/CD
+dataset versioning
+experiment tracking
+nova hipotese pre-registrada
+melhoria operacional de demo
+nenhuma acao, manter research/demo
 ```
 
 ---
 
 # 130. Próxima Ação de Documentação
 
-Cada nova hipótese da F6 deve atualizar:
+Qualquer nova hipotese ou evolucao estrutural deve atualizar:
 
 ```text
 README.md
 
-docs/12_STRATEGY_RESEARCH.md
+docs/12_STRATEGY_RESEARCH.md ou documento dedicado
 
 docs/11_ROADMAP.md
 
@@ -2734,14 +2738,14 @@ Status:
 ```text
 F0  ✅  F1  ✅  F2  ✅  F3  ✅
 F4  ✅  F5  ✅  F6  ✅  F7  ✅
-F8  ✅  F9  ✅  F10 🟡
+F8  ✅  F9  ✅  F10 🟡 INFRA READY
 ```
 
 Pendencias F10 (nao bloqueiam pesquisa; decisao de capital real e
 separada, secao 92):
 
 ```text
-Live Readiness Review formal (secao 91) — docs/17 secao 10
+Live Readiness Review formal (secao 91) — DONE, docs/17 secao 10
 Decisao de capital real — operador, nunca automatica
 ```
 

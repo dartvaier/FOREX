@@ -40,6 +40,7 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Ledgers de sinais, ordens, fills, trades e equity.
 - CostModel explícito com spread, slippage e comissão.
 - RiskGate com fixed size, validação de volume, sizing baseado em stop, limites de exposição e daily loss guard.
+- Risk Gates de drawdown e kill switch (F7).
 - Stop Loss, Take Profit, gap-through-stop e política worst-case intrabar.
 - Métricas básicas de performance.
 - Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
@@ -50,7 +51,6 @@ O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e 
 - Sexta hipótese simples: `SimpleCarryStrategy`.
 - Sétima hipótese simples: `SimpleRegimeDetectionStrategy`.
 - Oitava hipótese simples: `MultiTimeframeMomentumStrategy`.
-- Risk Gates: drawdown e kill switch (F7).
 - Harness de robustez: sweep local, subperiods, Dev/Val/OOS com
   lockbox, stability, walk-forward (F8).
 - Camada de execução: `execution/` (validação de ordem/fill,
@@ -421,13 +421,13 @@ Esse baseline validou a infraestrutura multi-timeframe sem look-ahead, mas a reg
 Suíte atual:
 
 ```text
-830 passed
+1065 passed
 ```
 
 Comando:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m pytest -q --basetemp .pytest-tmp
 ```
 
 Áreas cobertas:
@@ -445,9 +445,10 @@ Comando:
 - regression tests;
 - strategy research baselines;
 - multi-timeframe context availability;
-- risk gate and stop-based sizing.
-- exposure limit risk gate.
-- daily loss risk gate.
+- risk gates: stop-based sizing, exposure, daily loss, drawdown and kill switch;
+- F8 robustness helpers;
+- F9 execution, monitoring and demo comparison;
+- F10 readiness review.
 
 ---
 
@@ -513,6 +514,16 @@ Documentos principais:
 - `docs/12_STRATEGY_RESEARCH.md`
 - `docs/13_RESEARCH_RUNNER.md`
 - `docs/14_RISK_MANAGEMENT.md`
+- `docs/15_ROBUSTNESS.md`
+- `docs/16_EXECUTION_LAYER.md`
+- `docs/17_LIVE_READINESS.md`
+- `docs/18_walk_forward.md`
+- `docs/19_rf01_regime_filter.md`
+- `docs/20_multi_symbol_mtf.md`
+- `docs/21_multi_symbol_research.md`
+- `docs/22_currency_conversion.md`
+- `docs/23_so01_trailing_exit.md`
+- `docs/24_tf01_timeframe.md`
 - `DECISIONS.md`
 - `CHANGELOG.md`
 
@@ -520,7 +531,7 @@ Documentos principais:
 
 ## Próximos Passos
 
-1. Implementar drawdown guard.
-2. Definir kill switch do backtest/demo.
-3. Preparar portfolio-level risk.
-4. Manter todos os backtests reproduzíveis antes de qualquer Demo.
+1. Manter a plataforma como research/demo enquanto nenhuma hipótese tiver edge com custos explícitos.
+2. Tratar decisão de capital real como decisão manual do operador, nunca automática.
+3. Evoluir itens futuros somente quando houver necessidade clara: CI/CD, dataset versioning, experiment tracking, D1, Monte Carlo, DSR/PBO/CSCV ou nova hipótese pré-registrada.
+4. Manter todos os testes e documentos sincronizados antes de qualquer novo marco.

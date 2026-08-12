@@ -11,7 +11,7 @@ F10 - Live Readiness
 Status:
 
 ```text
-IN PROGRESS - review programatica implementada
+INFRA READY - capital real depende de decisao do operador
 ```
 
 F10 nao significa comecar a operar capital real (roadmap §89). Significa
@@ -38,11 +38,11 @@ cost_stress_done=True, risk_engine_done=True, ops_procedures_documented=True)); 
 print('READY:', r.ready); [print(i.category, i.item_id, i.satisfied) for i in r.items]"
 ```
 
-### Estado atual (2026-08-10)
+### Estado atual (2026-08-11)
 
 | Categoria | Item | Status | Evidencia |
 |---|---|---|---|
-| validation | backtest | OK | F5-F6, 995 testes |
+| validation | backtest | OK | F5-F9, 1065 testes |
 | validation | oos | OK | lockbox consultado (docs/15) |
 | validation | cost_stress | OK | 1.5x/2.0x (docs/15) |
 | risk | risk_engine | OK | F7 (sizing + limites) |
@@ -54,8 +54,8 @@ print('READY:', r.ready); [print(i.category, i.item_id, i.satisfied) for i in r.
 | execution | broker_validation | OK | module presente |
 | execution | monitoring | OK | module presente |
 | execution | audit_log | OK | module presente |
-| execution | demo_validation | PENDENTE | depende da ativacao demo |
-| operations | trading_flag | PENDENTE | TRADING_ENABLED=false (decisao do operador) |
+| execution | demo_validation | OK | 5/5 round-trips demo, docs/17 secao 9 |
+| operations | trading_flag | PENDENTE | TRADING_ENABLED=false; decisao do operador |
 | operations | ops_procedures | OK | este documento (§6) |
 
 ## 3. Risk Limits
@@ -126,13 +126,13 @@ KILL SWITCH
   15. so desarmar apos reconciliacao e revisao manual
 ```
 
-## 7. Conclusao da fase (parcial)
+## 7. Conclusao da fase
 
 A review programatica esta implementada e o estado atual e: **toda a
-engenharia presente; pendentes apenas os itens que dependem da decisao
-explicita de ativacao demo** (`demo_validation` e `trading_flag`). F10
-so sera COMPLETE apos o periodo de validacao demo (F9) concluido e a
-revisao final.
+engenharia presente; demo validation concluida; decisao de capital real
+permanece exclusivamente sob o operador**. O unico item que nao deve ser
+automatizado e `trading_flag`, porque `TRADING_ENABLED=false` continua
+sendo a trava operacional padrao.
 
 ## 8. CLI de readiness
 
@@ -149,10 +149,10 @@ Exit code: `0` quando READY, `1` caso contrario (scriptavel). Flags
 booleanas refletem as decisoes do operador; a disponibilidade dos modulos
 e sempre verificada ao vivo.
 
-## 9. Procedimento de ativacao demo (proxima etapa)
+## 9. Procedimento de ativacao demo (concluido)
 
-A ativacao demo e a decisao explicita que fecha F9 e desbloqueia os dois
-itens pendentes do F10. Sequencia prevista:
+A ativacao demo foi a decisao explicita que fechou F9 e validou a
+infraestrutura de execucao em conta demo. Sequencia usada:
 
 ```text
 1. [operador] MetaTrader 5 aberto com conta demo logada
