@@ -1490,3 +1490,73 @@ e testado para futuras hipoteses de baixa frequencia.
 Hipoteses de baixa frequencia (gaps, sessoes raras, eventos
 exogenos) devem reportar: n EXATO, bootstrap CI, leave-one-year-out
 e teste sem os maiores eventos — via `research/rare_events.py`.
+
+
+---
+
+# 25. Custos Calibrados Multi-Simbolo + Reavaliacao da Bateria docs/21 (2026-08-12)
+
+## Motivo (docs/27 §5 recomendacao 2, extendida ao multi-simbolo)
+
+O baseline de custos (spread 2.0 pips para todos os pares) foi
+medido como MUITO conservador no EURUSD (mediana real 0.20 pips).
+Esta secao calibra o spread real por instrumento e re-roda a bateria
+do docs/21 para verificar se alguma conclusao inverte sob custos
+medidos (nao assumidos).
+
+## Medicao (research/cost_measurement.py --out cost_measurement_all.json)
+
+| simbolo | spread mediana (pips) | p90 | round-trip real (mediana) |
+|---|---|---|---|
+| EURUSD | 0.20 | 0.80 | 1.90 |
+| USDJPY | 0.30 | 0.90 | 2.00 |
+| AUDUSD | 0.50 | 1.60 | 2.20 |
+| GBPUSD | 0.50 | 1.40 | 2.20 |
+| USDCAD | 0.50 | 1.80 | 2.20 |
+| USDCHF | 0.60 | 1.60 | 2.30 |
+| NZDUSD | 0.90 | 2.80 | 2.60 |
+
+Round-trip = spread mediana + 2 x slippage 0.5 + comissao 0.7
+(slippage/comissao mantidos no nivel do baseline — apenas o
+componente medido varia).
+
+## Bug fix no runner (regressao RA-04)
+
+- `--spread-pips` (override) quebrava com NameError:
+  `effective_cost_params` era usado em `build_report` mas nunca
+  recebido como argumento (introduzido em 7cf7c87; nenhum backtest
+  via runner rodou desde entao — as hipoteses usaram experimentos
+  proprios).
+- Corrigido: parametro adicionado e propagado; 2 testes de regressao
+  novos (`tests/test_runner_cost_regression.py`) exercitam o caminho
+  completo `run_single` com custos baseline e override.
+
+## Bateria docs/21 re-rodada com spread calibrado (dev 2015-2021)
+
+Todos os 21 backtests (7 pares x 3 estrategias) continuam NEGATIVOS:
+
+| par | TSM baseline -> realcost | EMA | MR |
+|---|---|---|---|
+| EURUSD | -325.20 -> **-73.74** | -223.15 | -606.77 |
+| GBPUSD | -334.17 -> **-113.52** | -262.66 | -833.61 |
+| AUDUSD | -657.40 -> **-411.40** | -396.97 | -755.00 |
+| NZDUSD | -615.68 -> **-431.87** | -391.73 | -1009.76 |
+| USDJPY | -401.21 -> **-187.02** | -226.82 | -769.15 |
+| USDCHF | -860.80 -> **-638.57** | -759.64 | -434.86 |
+| USDCAD | -534.24 -> **-361.61** | -309.18 | -322.76 |
+
+## Decisao
+
+- **Nenhuma conclusao do docs/21 inverte**: 21/21 negativos sob
+  custos reais calibrados. A ausencia de edge nao era artefato do
+  baseline conservador — e robusta a custos medidos.
+- Melhora media de PnL ~+200 a +500 USD por combo (custo menor),
+  insuficiente para tornar qualquer combinacao positiva.
+- Registros: `research/reports/realcost_battery.json`,
+  `research/reports/cost_measurement_all.json` (gitignored).
+
+## Nota de execucao
+
+O runner agora suporta custos calibrados por instrumento via
+`--spread-pips <medido>`; a medicao multi-simbolo fica disponivel
+via `python -m research.cost_measurement` (modo padrao = 7 pares).

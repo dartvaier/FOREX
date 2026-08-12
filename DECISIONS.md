@@ -1,5 +1,21 @@
 # Architecture & Engineering Decisions
 
+## BATERIA DOCS/21 REAVALIADA COM CUSTOS CALIBRADOS (2026-08-12)
+
+- **Decisao**: medidos os spreads reais dos 7 pares (EURUSD 0.20 a
+  NZDUSD 0.90 pips de mediana; round-trip real 1.9-2.6 pips vs
+  baseline 3.7) e re-rodada a bateria docs/21 com `--spread-pips`
+  calibrado. **21/21 backtests continuam negativos** — nenhuma
+  conclusao inverte.
+- **Bug fix**: runner quebrava com overrides de custo (NameError
+  `effective_cost_params`, regressao RA-04); corrigido com 2 testes
+  de regressao.
+- **Consequencia**: a ausencia de edge multi-simbolo e robusta a
+  custos medidos, nao apenas ao baseline; runner agora aceita
+  custos calibrados por instrumento (docs/26 §25).
+
+# Architecture & Engineering Decisions
+
 ## INFRA DE EVENTOS RAROS GENERALIZADA (2026-08-12)
 
 - **Decisao**: framework de estatistica para amostras pequenas

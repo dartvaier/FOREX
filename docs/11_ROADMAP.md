@@ -2807,6 +2807,11 @@ Infra de eventos raros generalizada (docs/26 §24):
    research/rare_events.py (bootstrap CI, leave-one-year-out,
    sem top-N) com 12 testes; h07 refatorado com resultados
    identicos; modulo obrigatorio para hipoteses de baixa frequencia
+Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
+   (EURUSD 0.20 a NZDUSD 0.90 pips; round-trip 1.9-2.6 vs 3.7);
+   bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
+   runner corrigido (bug RA-04) e agora aceita --spread-pips
+   calibrado por instrumento
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 
