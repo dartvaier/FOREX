@@ -81,6 +81,7 @@ F8  Robustness & Validation     ✅ COMPLETE
 F9  Demo Execution              ✅ COMPLETE
 
 F10 Live Readiness              🟡 INFRA READY / OPERATOR DECISION
+```
 
 ---
 
@@ -89,13 +90,13 @@ F10 Live Readiness              🟡 INFRA READY / OPERATOR DECISION
 O projeto encontra-se no marco lógico:
 
 ```text
-FOREX v0.5
+FOREX v0.6
 ```
 
 Descrição:
 
 ```text
-Robustness & Validation
+MT5Execution / Demo Trading / Monitoring / Reconciliation
 ```
 
 Esse marco representa:
@@ -119,29 +120,33 @@ testes automatizados
 
 documentação da base
 
-BacktestEngine baseline
+BacktestEngine deterministico
 
 performance metrics básicas
 
-strategy research baseline inicial
+strategy research baseline completo
 
-risk gate baseline
+Risk Engine completo
 
-stop-based sizing inicial
+robustez, cost stress e walk-forward
 
-regression tests F5
+Execution Layer demo validada
+
+monitoring, reconciliation e audit log
+
+Live Readiness com infraestrutura pronta
 ```
 
 Não representa:
 
 ```text
-trading bot completo
+capital real autorizado
 
-Strategy validada
+Strategy com edge liquido validado
 
-Risk Engine pronto
+operacao live automatica
 
-execução de ordens
+decisao de risco/capital do operador
 ```
 
 ---
@@ -863,6 +868,7 @@ Status:
 
 ```text
 COMPLETE
+```
 
 Fluxo:
 
@@ -1101,7 +1107,7 @@ final forced close
 Status:
 
 ```text
-IN PROGRESS
+COMPLETE BASELINE
 ```
 
 Iniciada após o fechamento da F5 baseline.
@@ -1868,7 +1874,7 @@ rejection
 Status:
 
 ```text
-IN PROGRESS
+INFRA READY / OPERATOR DECISION
 ```
 
 Blocos implementados:
@@ -2836,10 +2842,6 @@ Proximas opcoes: (a) aceitar o veredito e encerrar a busca de edge
 
 > O projeto só avança quando a fase anterior possui base suficiente para que os resultados da próxima sejam interpretáveis e reproduzíveis.
 
-O próximo arquivo é:
-
-```text
-DECISIONS.md
-```
+O próximo arquivo é `DECISIONS.md`.
 
 Nele serão registradas as decisões arquiteturais que devem sobreviver ao contexto de uma única sessão de desenvolvimento.

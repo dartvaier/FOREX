@@ -1246,15 +1246,15 @@ existir no código não constitui autorização para capital real.
 O ciclo será considerado concluído quando:
 
 ```text
-[ ] todos os P0 corrigidos
-[ ] todos os P1 corrigidos
-[ ] RiskGate composto validado por regression test
-[ ] monetary units consistentes para USD-base e USD-quote
-[ ] readiness representa checks reais
-[ ] documentação sincronizada
-[ ] non-integration suite verde
-[ ] CI remoto verde
-[ ] nenhuma execução real necessária para comprovar os itens
+[x] todos os P0 corrigidos
+[x] todos os P1 corrigidos
+[x] RiskGate composto validado por regression test
+[x] monetary units consistentes para USD-base e USD-quote
+[x] readiness representa checks reais
+[x] documentação sincronizada
+[x] non-integration suite verde
+[x] CI remoto verde
+[x] nenhuma execução real necessária para comprovar os itens
 ```
 
 Depois disso o projeto pode decidir entre:

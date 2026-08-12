@@ -15,6 +15,7 @@ __pycache__/
 
 # Tests
 .pytest_cache/
+.pytest-tmp*/
 
 # Logs
 logs/
@@ -29,3 +30,16 @@ data/processed/
 data/cache/
 # Agent Cluster workspace
 .cluster/
+
+# Local agent / research workspace artifacts
+.agents/
+.autoclaw/
+.openclaw/
+.openclaw-attachments/
+.opencode/
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+config/mcporter.json

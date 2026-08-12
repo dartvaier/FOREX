@@ -1,3 +1,22 @@
+## LITERATURA WEST + AFML INCORPORADA AO FUNIL (2026-08-12)
+
+- **Thomas West**: registrado como contraexemplo operacional do tipo
+  de backtest popular que Aronson critica (TradingView, PF alto,
+  custos/OOS/trials insuficientes). Ideias anotadas apenas como
+  candidatas menores futuras: oscillator re-entry, divergencia por
+  pivots, squeeze + EMA200 + SAR flip. Nenhuma vira Strategy sem
+  pre-registro.
+- **Lopez de Prado / AFML**: reforca a regra "backtest descarta, nao
+  melhora". A partir de agora, quando Sharpe for reportado, PSR/DSR
+  deve ser metrica complementar; se houver modelos com parametros
+  aprendidos/ML, usar CPCV com purging/embargo em vez de re-ajuste
+  repetido por walk-forward.
+- **Roteiro condicional**: meta-labeling/triple-barrier so faz sentido
+  se antes existir um sinal com edge bruto real e uma tese de custo
+  executavel. Sem edge liquido, ML permanece prematuro.
+- **Fila de literatura**: Harris (microestrutura/custos) e Lien
+  (sessoes/intermercado) seguem como proximas fontes candidatas.
+
 ## CICLO 3 EXECUTADO — H12 INCONCLUSIVA, H13/H14 REFUTADAS (2026-08-12)
 
 - **H12** (liquidity premium Cooper): net +0.1035% (n=315), CI
@@ -2854,29 +2873,29 @@ Data & Infrastructure Foundation
 | 003 | M15 como fonte intraday | ✅ Implementado |
 | 004 | Sem preenchimento artificial de gaps | ✅ Implementado |
 | 005 | Preservar candles incompletos | ✅ Implementado |
-| 006 | Strategy usa completos por padrão | 🟡 Código futuro |
+| 006 | Strategy usa completos por padrão | ✅ Implementado |
 | 007 | Parquet para séries históricas | ✅ Implementado |
 | 008 | Spread MT5 não é CostModel | ✅ Aceito |
-| 009 | CostModel independente | 🟡 Código futuro |
+| 009 | CostModel independente | ✅ Implementado |
 | 010 | Real Volume fora das features | ✅ Aceito |
 | 011 | Tick Volume = atividade relativa | ✅ Aceito |
 | 012 | Read-only atual | ✅ Implementado |
-| 013 | Strategy não envia ordens | 🟡 Código futuro |
-| 014 | Signal != Order | 🟡 Código futuro |
-| 015 | Order != Fill | 🟡 Código futuro |
-| 016 | Signal Close → Next Open | 🟡 Backtest futuro |
-| 017 | Gap → próxima barra disponível | 🟡 Backtest futuro |
-| 018 | Intrabar ambiguity = worst-case | 🟡 Backtest futuro |
-| 019 | Gap through stop usa preço pior | 🟡 Backtest futuro |
-| 020 | Uma posição por vez | 🟡 Baseline futuro |
-| 021 | Sem reversão automática | 🟡 Baseline futuro |
-| 022 | Engine controla simulation time | 🟡 Backtest futuro |
+| 013 | Strategy não envia ordens | ✅ Implementado |
+| 014 | Signal != Order | ✅ Implementado |
+| 015 | Order != Fill | ✅ Implementado |
+| 016 | Signal Close → Next Open | ✅ Implementado |
+| 017 | Gap → próxima barra disponível | ✅ Implementado |
+| 018 | Intrabar ambiguity = worst-case | ✅ Implementado |
+| 019 | Gap through stop usa preço pior | ✅ Implementado |
+| 020 | Uma posição por vez | ✅ Implementado |
+| 021 | Sem reversão automática | ✅ Implementado |
+| 022 | Engine controla simulation time | ✅ Implementado |
 | 023 | Timestamp = início da barra | ✅ Implementado |
-| 024 | Multi-TF por tempo/disponibilidade | 🟡 Futuro |
+| 024 | Multi-TF por tempo/disponibilidade | ✅ Implementado |
 | 025 | H4 alinhado em UTC | ✅ Implementado |
 | 026 | D1 adiado | ✅ Decisão aceita |
 | 027 | Raw sem features | ✅ Política atual |
-| 028 | Backtest não modifica Raw | 🟡 Futuro |
+| 028 | Backtest não modifica Raw | ✅ Implementado |
 | 029 | Fail Fast estrutural | ✅ Parcial |
 | 030 | Hard Fail != Warning | ✅ Política atual |
 | 031 | Reprodutibilidade obrigatória | 🟡 Parcial |
@@ -2884,17 +2903,17 @@ Data & Infrastructure Foundation
 | 033 | Parquet + SQLite futuro | 🟡 Parcial |
 | 034 | Estratégias simples primeiro | ✅ Aceito |
 | 035 | Pesquisa ≠ Engenharia | ✅ Aceito |
-| 036 | Zero-cost só para engenharia | 🟡 Futuro |
-| 037 | Custos auditáveis | 🟡 Futuro |
-| 038 | Não duplicar spread | 🟡 Futuro |
-| 039 | Backtester bar-by-bar | 🟡 Futuro |
+| 036 | Zero-cost só para engenharia | ✅ Implementado |
+| 037 | Custos auditáveis | ✅ Parcial |
+| 038 | Não duplicar spread | ✅ Implementado |
+| 039 | Backtester bar-by-bar | ✅ Implementado |
 | 040 | Correção antes de performance | ✅ Aceito |
 | 041 | Bug crítico → regression test | ✅ Aceito |
 | 042 | Backtest lucrativo não basta | ✅ Aceito |
-| 043 | OOS como lockbox | 🟡 Futuro |
+| 043 | OOS como lockbox | ✅ Implementado |
 | 044 | Demo antes de Live | ✅ Aceito |
 | 045 | Kill Switch obrigatório | ✅ Implementado |
-| 046 | Trading flag não basta | 🟡 Futuro |
+| 046 | Trading flag não basta | ✅ Implementado |
 | 047 | Estado = Research/Development | ✅ Atual |
 | 048 | v0.1 = Data Foundation | ✅ Atual |
 

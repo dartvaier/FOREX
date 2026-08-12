@@ -38,11 +38,11 @@ cost_stress_done=True, risk_engine_done=True, ops_procedures_documented=True)); 
 print('READY:', r.ready); [print(i.category, i.item_id, i.satisfied) for i in r.items]"
 ```
 
-### Estado atual (2026-08-11)
+### Estado atual (2026-08-12)
 
 | Categoria | Item | Status | Evidencia |
 |---|---|---|---|
-| validation | backtest | OK | F5-F9, 1065 testes |
+| validation | backtest | OK | F5-F9, 1161 passed / 9 deselected |
 | validation | oos | OK | lockbox consultado (docs/15) |
 | validation | cost_stress | OK | 1.5x/2.0x (docs/15) |
 | risk | risk_engine | OK | F7 (sizing + limites) |
@@ -263,4 +263,7 @@ valores de capital real so se aplica se o operador decidir avancar.
   baseline registrado como referência separada.
 - **RA-05**: lockbox OOS "consultado UMA vez (2026-08-10), selado
   novamente" — wording consistente em docs/15 e docs/18.
-- **RA-07**: CI GitHub Actions (pytest non-integration).
+- **RA-06**: roadmap/DECISIONS/README/docs sincronizados ao estado
+  research/demo atual.
+- **RA-07**: CI GitHub Actions (pytest non-integration) verde em
+  Python 3.12, 3.13 e 3.14 no PR principal.
