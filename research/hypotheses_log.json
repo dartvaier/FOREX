@@ -301,20 +301,28 @@
    "acceptance_criteria": "net h1 > 0 em >= 3 pares e LOYO > 0 em >= 2",
    "status_initial": "ACTIVE (pre-registro docs/26 §38)",
    "execution_date": "2026-08-12",
-   "stage": "estagio 1 multi-par",
+   "stage": "estagio 2 AUDUSD/NZDUSD",
    "steps": "detect_gaps 0.50 ATR; net = signed - (spread open semanal medido + 0.40 + 1.0 + 0.7); auditoria bootstrap CI e anos",
    "evidence": [
     "docs/26 §38-§39",
-    "research/reports/h07h09_multipair_consolidated.json"
+    "research/reports/h07h09_multipair_consolidated.json",
+    "docs/26 §40-§41",
+    "research/h07_stage2.py",
+    "research/reports/h07_stage2_{AUDUSD,NZDUSD}.json"
    ],
    "metrics": {
     "pairs_net_positive": "5/6 (GBPUSD +0.05, USDJPY +0.43, USDCHF +0.29, AUDUSD +1.82, NZDUSD +3.23; USDCAD -2.17 pips)",
     "pairs_ci_excluding_zero": "2/6 (AUDUSD [+0.2,+3.5], NZDUSD [+1.4,+5.0])",
     "years_positive": "AUDUSD 10/12, NZDUSD 11/12",
-    "h09_multipair": "0/6 pares positivos (refutada fora do EURUSD)"
+    "h09_multipair": "0/6 pares positivos (refutada fora do EURUSD)",
+    "stage2_aud_net": -2.26,
+    "stage2_nzd_net": -2.49,
+    "stage2_hit_rate": "54.4%/59.4%",
+    "stage2_timeout": "38.2%/33.2%",
+    "stage2_blocks_2y": "AUDUSD 3/7, NZDUSD 1/7"
    },
-   "classification": "PROMISSORA (estagio 1 multi-par)",
-   "justification": "criterio pre-registrado atingido (5/6 pares net>0, LOYO 5); auditoria: apenas AUDUSD/NZDUSD com CI excluindo zero e robustez anual; proximo passo estagio 2 AUDUSD/NZDUSD pre-registrado"
+   "classification": "REFUTADA",
+   "justification": "estagio 1 multi-par promissor (AUDUSD +1.82, NZDUSD +3.23 pips, CI exclui zero); estagio 2 com trade completo (TP 0.5|gap|, SL |gap|, timeout 8h): net -2.26/-2.49 pips — edge bruto real (hit 54-59%, stop 7.4%) consumido pelo custo do open semanal + timeouts"
   },
   {
    "id": "H09-MP",
@@ -338,12 +346,11 @@
   }
  ],
  "summary": {
-  "total": 14,
-  "confirmed_stage2": 0,
-  "promising_stage1": 1,
-  "refuted": 13,
+  "total": 15,
+  "confirmed": 0,
+  "refuted": 15,
   "inconclusive": 0,
-  "note": "H01-H11 + estagio 2 H09 (12) + H07-MP/H09-MP (2). H07-MP PROMISSORA (AUDUSD +1.82 / NZDUSD +3.23 pips net h1, CI exclui zero, 10-11/12 anos); proximo passo estagio 2 AUDUSD/NZDUSD pre-registrado"
+  "note": "H01-H11 (12) + H07-MP/H09-MP (2) + estagio 2 H07-MP (1). Todos refutados sob custos calibrados. Programa fechado sem candidato a demo/capital real. Padrao: edge bruto marginal < custo round-trip calibrado em todos os 15 registros"
  },
  "cycle2": {
   "opened": "2026-08-12 (docs/26 §26)",

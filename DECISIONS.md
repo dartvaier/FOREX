@@ -1,3 +1,19 @@
+## H07 ESTAGIO 2 REJECTED — PROGRAMA ENCERRADO SEM CANDIDATO (2026-08-12)
+
+- **H07 estagio 2 (AUDUSD/NZDUSD)**: REFUTADA — trade completo
+  (TP 0.5|gap|, SL |gap|, timeout 8h): net -2.26/-2.49 pips; hit TP
+  54-59% e stop 7.4% (edge bruto real) consumidos pelo custo do
+  open semanal (4.5-6.2 pips) + 33-38% de timeouts.
+- **Programa fechado**: 15 execucoes registradas, 0 confirmadas /
+  15 refutadas sob custos calibrados. Padrao consolidado: edge
+  bruto marginal (0.1-3.7 pips) < custo round-trip calibrado
+  (1.9-7.9 pips).
+- **Nenhum sinal elegivel para demo/capital real.** Decisao de
+  capital (§92) permanece sob o operador, sem candidato do
+  programa. Recomendacao: nao operar o que foi testado; a evidencia
+  acumulada indica ausencia de edge liquido no universo estudado
+  (EURUSD intraday + 6 pares em gap semanal).
+
 ## H07 MULTI-PAR PROMISSORA (2026-08-12)
 
 - **H07-MP estagio 1**: 5/6 pares com net h1 > 0 (LOYO > 0 em 5) —

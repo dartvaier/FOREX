@@ -2147,3 +2147,106 @@ resultado do programa com net liquido positivo e estatisticamente
 significativo em pares individuais. Proximo passo: **estagio 2
 AUDUSD/NZDUSD** (trade completo com TP/SL, pre-registrado), seguido
 de walk-forward, antes de qualquer conclusao de exploracao.
+
+
+---
+
+# 40. Pre-registro do Estagio 2 do H07 (AUDUSD/NZDUSD) (2026-08-12)
+
+Imutavel. Nenhum backtest do estagio 2 foi executado antes deste
+registro. Origem: H07-MP estagio 1 (secao 39) — AUDUSD +1.82 pips
+(CI [+0.2,+3.5], 10/12 anos) e NZDUSD +3.23 pips (CI [+1.4,+5.0],
+11/12 anos), unicos pares com net liquido positivo estatisticamente
+solido.
+
+## Trade completo (fixado antes de rodar)
+
+- **Sinal**: gap semanal |gap|/ATR(H1,14) >= 0.50 (mesma definicao
+  do estagio 1, secao 19).
+- **Direcao**: contra o gap — gap up (gap > 0) -> SHORT; gap down
+  (gap < 0) -> LONG.
+- **Entrada**: open da primeira barra M15 da semana (`first_idx`).
+- **TP**: fechamento de 50% do gap (half-fill):
+  tp = entry + direction x 0.50 x |gap|.
+- **SL**: extensao de 100% do gap alem do open (invalidacao da
+  reversao):
+  sl = entry - direction x |gap|. R:R estrutural 1:2.
+- **Horizonte maximo**: 32 barras M15 (8h) — o efeito foi medido no
+  h1/h8; timeout = saida market no close da 32a barra.
+- **Simulacao intrabarra (M15)**: barra de entrada nao participa;
+  (1) gap no open — long: open <= sl -> stop no open, open >= tp ->
+  alvo no open; short: open >= sl -> stop no open, open <= tp ->
+  alvo no open; (2) SL-first: long: low <= sl -> SL; high >= tp ->
+  TP; short: high >= sl -> SL; low <= tp -> TP.
+- **Custos por trade**: custo_pips = spread medido da barra de
+  entrada + 0.40 (saida) + 1.0 (slippage) + 0.7 (comissao);
+  net = pnl - custo_pips x PIP_SIZE (PIP_SIZE = 0.0001).
+- **Pares**: AUDUSD, NZDUSD (mesmo desenho, validacao cruzada).
+  Dataset completo por par (anos 2024-2026 = OOS contaminado,
+  relatorio informativo).
+
+## Criterios de aceitacao (fixados antes de rodar)
+
+Por par:
+1. n >= 100 trades.
+2. net medio por trade > 0 (pips).
+3. leave-one-year-out do net medio > 0.
+4. mediana dos net anuais > 0.
+5. walk-forward blocos de 2 anos: >= 60% dos blocos com net > 0.
+6. hit rate do TP >= 20%.
+
+Decisao:
+- **>= 1 par passando TODOS os criterios**: H07 estagio 2
+  CONFIRMADA -> proximo passo: validacao OOS (lockbox) e walk-
+  forward formal; so entao candidata a demo (decisao do operador).
+- **0 pares**: H07 REFUTADA no estagio 2 (edge bruto < custo, mesmo
+  padrao do H09-EURUSD) -> programa encerra sem candidato.
+
+
+---
+
+# 41. Resultado do Estagio 2 do H07 (AUDUSD/NZDUSD) (2026-08-12) — REFUTADA
+
+## Execucao
+
+- Pre-registro na secao 40; `research/h07_stage2.py` (simulador
+  long/short com 12 testes unitarios sinteticos em
+  `tests/test_h07_stage2.py`).
+- Trade completo: contra o gap (up->short, down->long); TP =
+  entry +/- 0.50 x |gap|; SL = entry -/+ |gap| (R:R 1:2); timeout
+  32 barras M15 (8h); SL-first; custos: spread medido da barra de
+  entrada + 0.40 + 1.0 + 0.7 pips.
+
+## Resultados
+
+| par | n | net medio | bruto | hit TP | stop | timeout | payoff | barras |
+|---|---|---|---|---|---|---|---|---|
+| AUDUSD | 353 | **-2.26 pips** | +2.25 | 54.4% | 7.4% | 38.2% | 0.57 | 14.3 |
+| NZDUSD | 404 | **-2.49 pips** | +3.69 | 59.4% | 7.4% | 33.2% | 0.66 | 12.6 |
+
+- Criterios pre-registrados: AUDUSD blocos 2y 3/7 (42.9%),
+  NZDUSD 1/7 (14.3%); LOYO e mediana anual negativos nos dois.
+- Long ~63-66% dos trades (gaps down mais frequentes/maiores).
+
+## Decisao
+
+**H07 REFUTADA no estagio 2 — 0/2 pares.** O edge bruto do trade
+completo e real (hit TP 54-59%, stop raro 7.4%, R:R estrutural 1:2),
+mas o custo calibrado do open semanal (AUDUSD 4.51 / NZDUSD 6.18
+pips medios) somado aos 33-38% de timeouts que saem em prejuizo
+consome integralmente a expectativa. Padrao identico ao H09-EURUSD:
+**edge bruto marginal < custo calibrado**.
+
+## PROGRAMA DE HIPOTESES — VEREDITO FINAL
+
+15 execucoes registradas (research/hypotheses_log.json):
+**0 CONFIRMADAS / 14 REFUTADAS / 1 INCONCLUSIVA RESOLVIDA** (H09
+estagio 1, resolvida como refutada no estagio 2; H07-MP estagio 1
+promissora, resolvida como refutada no estagio 2).
+
+**Nenhuma hipotese produziu valor esperado liquido positivo sob
+custos calibrados.** O programa fecha sem candidato a demo/capital
+real. Padrao consolidado: edge bruto real (0.1-3.7 pips por trade)
+sistematicamente menor que o custo round-trip calibrado (1.9-7.9
+pips), agravado por timeouts/parciais quando o trade e modelado
+completamente.
