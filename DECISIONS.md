@@ -1,5 +1,21 @@
 # Architecture & Engineering Decisions
 
+## H03 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H03 (volatility surprise intradiaria) REJEITADA no
+  estagio 1 (previsao condicional, sem trade), conforme criterios
+  pre-registrados (docs/26 §10/§11).
+- **Evidencia**: retorno futuro condicional indistinguivel de zero
+  (h1/h8, janelas 40/60/80, ~54-55k eventos); por ano sem direcao
+  estavel; slot 00:00 UTC +0.018% = ~1.98 pips brutos < custo
+  round-trip 3.7 pips; destaque achado por inspecao de 24 slots
+  (multiple testing — nao vira hipotese).
+- **Consequencia**: feature `research/features.py` mantida como
+  ferramenta reutilizavel; proxima hipotese ativa = H05/H06
+  (directional_efficiency), com pre-registro antes de backtest.
+
+# Architecture & Engineering Decisions
+
 ## PROGRAMA DE PESQUISA ABERTO — H01..H07 (2026-08-12)
 
 - **Decisao**: abrir novo programa de pesquisa com as hipoteses

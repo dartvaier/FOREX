@@ -2772,11 +2772,13 @@ Hardening pos-auditoria (docs/25) — DONE 2026-08-12:
    v0.6.4 Readiness & Audit (RA-01..07)
 CI (RA-07) — GitHub Actions pytest non-integration
 Novo programa de pesquisa ABERTO (docs/26, 2026-08-12):
-   hipoteses H01-H07 registradas; ativa inicial = H03
-   (volatility surprise intradiaria), pre-registrada antes de
-   qualquer backtest (docs/26 §10)
-Proxima fase: implementar H03 em TDD (feature volatility_surprise
-+ experimento 3 modelos + custos + robustez)
+   hipoteses H01-H07 registradas
+H03 (volatility surprise) — ESTAGIO 1 REJECTED (docs/26 §11):
+   retorno condicional nulo nas janelas 40/60/80; slot 00:00
+   (~1.98 pips brutos) abaixo do custo round-trip 3.7 pips
+Proxima hipotese ativa: H05/H06 (choques eficientes/ineficientes,
+   docs/26 §4 prioridade 2) — pre-registro obrigatorio antes de
+   qualquer backtest
 Decisao de capital real (§92) permanece separada, sob o operador.
 ---
 

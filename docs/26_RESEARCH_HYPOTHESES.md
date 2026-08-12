@@ -739,3 +739,52 @@ git_commit:               merge 2a94589 + renumeracao docs/26
 
 Metricas: retorno futuro condicional, hit rate, expectancy liquida,
 turnover, estabilidade por horario/ano, sensibilidade 40/60/80.
+
+
+---
+
+# 11. Resultado H03 - Estagio 1 (2026-08-12) — REJECTED
+
+## Execucao
+
+- Feature `volatility_surprise` implementada em `research/features.py`
+  (pura, causal, 11 testes) e experimento em `research/h03_experiment.py`.
+- Dataset: EURUSD M15 2015-01-02..2026-08-10 (288,223 candles),
+  threshold 1.50, janelas de sensibilidade pre-registradas 40/60/80.
+- Etapa 1 (previsao condicional, SEM trade): retorno futuro 1/2/4/8
+  candles apos sinal vs baseline sem filtro vs ATR rolling 60.
+
+## Resultados (mean fwd return, overall)
+
+| modelo | h1 | h8 | eventos |
+|---|---|---|---|
+| no_filter | 0.000% | 0.000% | 288k |
+| rolling_atr | 0.000% | -0.002% | 58,146 |
+| volatility_surprise (60) | 0.000% | 0.000% | 54,711 |
+| volatility_surprise (40) | 0.000% | 0.000% | 54,338 |
+| volatility_surprise (80) | 0.000% | 0.000% | 55,057 |
+
+## Por ano e por hora
+
+- Por ano (h8): sinal oscila entre -0.011% e +0.012% sem direcao
+  estavel (7/12 anos positivos, magnitudes ~0.005%).
+- Por hora UTC (h8): agregado nulo. Unico destaque: slot 00:00 UTC
+  com +0.018% (61.3% pos, 2,691 eventos).
+
+## Decisao
+
+**H03 REJEITADA (estagio 1)**, conforme criterios pre-registrados
+(docs/26 §10): o retorno condicional medio e indistinguivel de zero
+nas 3 janelas; o destaque 00:00 representa ~1.98 pips BRUTOS por
+evento, abaixo do custo round-trip de 3.7 pips (nao sobreviveria a
+custos conservadores), e foi identificado por inspecao de 24 slots
+(risco de multiple testing — nao e declarado hipotese nova).
+
+Feature mantida no codigo como ferramenta reutilizavel
+(volatility_surprise e reutilizavel em H04/H05/H06 e futuros).
+
+## Proxima hipotese ativa
+
+H05/H06 (prioridade 2, docs/26 §4): choques eficientes e ineficientes
+(directional_efficiency). Requer pre-registro antes de qualquer
+backtest (protocolo §5).
