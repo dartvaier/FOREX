@@ -435,6 +435,83 @@ def test_ensemble_strategy_exits_long_when_alpha_weakens():
     )
 
 
+def test_ensemble_strategy_hysteresis_holds_above_exit_band():
+    no_hysteresis = EnsembleStrategy(
+        symbol="EURUSD",
+        models=(
+            SequenceAlphaModel(
+                model_id="seq",
+                values=(0.5, 0.2),
+            ),
+        ),
+        blender=WeightedAlphaBlender(
+            {
+                "seq": 1.0,
+            }
+        ),
+        min_conviction=0.1,
+        enter_long=0.4,
+        enter_short=-0.4,
+        exit_long_below=0.3,
+        exit_short_above=-0.3,
+    )
+    hysteresis = EnsembleStrategy(
+        symbol="EURUSD",
+        models=(
+            SequenceAlphaModel(
+                model_id="seq",
+                values=(0.5, 0.2),
+            ),
+        ),
+        blender=WeightedAlphaBlender(
+            {
+                "seq": 1.0,
+            }
+        ),
+        min_conviction=0.1,
+        enter_long=0.4,
+        enter_short=-0.4,
+        exit_long_below=0.05,
+        exit_short_above=-0.05,
+    )
+
+    no_hysteresis.on_bar(
+        make_context(
+            [
+                1.1000,
+            ]
+        )
+    )
+    hysteresis.on_bar(
+        make_context(
+            [
+                1.1000,
+            ]
+        )
+    )
+
+    no_hysteresis_signal = no_hysteresis.on_bar(
+        make_context(
+            [
+                1.1000,
+                1.1010,
+            ]
+        )
+    )
+    hysteresis_signal = hysteresis.on_bar(
+        make_context(
+            [
+                1.1000,
+                1.1010,
+            ]
+        )
+    )
+
+    assert no_hysteresis_signal.action == SignalAction.EXIT
+    assert hysteresis_signal.action == SignalAction.HOLD
+    assert hysteresis_signal.reason == "Long held by blended alpha"
+
+
 def test_ensemble_strategy_reset_clears_position_state():
     strategy = EnsembleStrategy(
         symbol="EURUSD",
