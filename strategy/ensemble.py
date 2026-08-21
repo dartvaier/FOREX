@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from numbers import Real
 
 from alpha.blender import WeightedAlphaBlender
+from alpha.ledger import AlphaLedger
 from alpha.models import AlphaSignal, BlendedAlphaView
 from alpha.protocol import AlphaModel
 from backtest.context import BacktestContext
@@ -38,6 +39,7 @@ class EnsembleStrategy:
     enter_short: float = -0.30
     exit_long_below: float = 0.0
     exit_short_above: float = 0.0
+    alpha_ledger: AlphaLedger | None = None
 
     _position_state: str = field(
         default=POSITION_FLAT,
@@ -96,6 +98,14 @@ class EnsembleStrategy:
         ):
             raise TypeError(
                 "blender must be a WeightedAlphaBlender"
+            )
+
+        if (
+            self.alpha_ledger is not None
+            and not isinstance(self.alpha_ledger, AlphaLedger)
+        ):
+            raise TypeError(
+                "alpha_ledger must be an AlphaLedger or None"
             )
 
         for model_id in model_ids:
@@ -260,6 +270,12 @@ class EnsembleStrategy:
 
         action, reason = self._decide(view)
 
+        self._record_alpha(
+            alpha_signals,
+            view=view,
+            action=action,
+        )
+
         if action == SignalAction.ENTER_LONG:
             object.__setattr__(
                 self,
@@ -383,6 +399,23 @@ class EnsembleStrategy:
                 "exit_short_above": self.exit_short_above,
             },
         )
+
+    def _record_alpha(
+        self,
+        signals: tuple[AlphaSignal, ...],
+        *,
+        view: BlendedAlphaView,
+        action: SignalAction,
+    ) -> None:
+        if self.alpha_ledger is None:
+            return
+
+        for signal in signals:
+            self.alpha_ledger.append_signal(
+                signal,
+                blended_value=view.value,
+                strategy_decision=action.value,
+            )
 
     def _validate_alpha_signals(
         self,

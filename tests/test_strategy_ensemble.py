@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from alpha.blender import WeightedAlphaBlender
+from alpha.ledger import AlphaLedger
 from alpha.models import AlphaSignal
 from alpha.quant import TimeSeriesMomentumAlphaModel
 from backtest.context import BacktestContext
@@ -531,6 +532,62 @@ def test_ensemble_strategy_rejects_invalid_alpha_output():
                 ]
             )
         )
+
+
+def test_ensemble_strategy_records_alpha_diagnostics():
+    ledger = AlphaLedger()
+    strategy = EnsembleStrategy(
+        symbol="EURUSD",
+        models=(
+            StaticAlphaModel(
+                model_id="ema",
+                value=0.5,
+            ),
+            StaticAlphaModel(
+                model_id="tsmom",
+                value=0.3,
+            ),
+        ),
+        blender=WeightedAlphaBlender(
+            {
+                "ema": 1.0,
+                "tsmom": 1.0,
+            }
+        ),
+        min_conviction=0.1,
+        enter_long=0.3,
+        enter_short=-0.3,
+        alpha_ledger=ledger,
+    )
+
+    signal = strategy.on_bar(
+        make_context(
+            [
+                1.1000,
+            ]
+        )
+    )
+
+    assert signal.action == SignalAction.ENTER_LONG
+    assert ledger.count == 2
+
+    records = ledger.records
+
+    assert {
+        record.model_id
+        for record in records
+    } == {
+        "ema",
+        "tsmom",
+    }
+    assert all(
+        record.blended_value == pytest.approx(0.4)
+        for record in records
+    )
+    assert all(
+        record.strategy_decision == "ENTER_LONG"
+        for record in records
+    )
 
 
 def test_ensemble_strategy_runs_through_backtest_engine():
