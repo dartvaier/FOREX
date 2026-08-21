@@ -13,6 +13,16 @@ from alpha.models import (
     BlendedAlphaView,
 )
 from alpha.protocol import AlphaModel
+from alpha.regime import (
+    REGIME_HIGH_VOLATILITY,
+    REGIME_RANGING,
+    REGIME_TRENDING_DOWN,
+    REGIME_TRENDING_UP,
+    REGIME_WARM_UP,
+    RegimeDecision,
+    RegimeGatedAlphaModel,
+    TrendVolatilityRegimeGate,
+)
 
 __all__ = [
     "AlphaContribution",
@@ -21,6 +31,14 @@ __all__ = [
     "AlphaModel",
     "AlphaSignal",
     "BlendedAlphaView",
+    "REGIME_HIGH_VOLATILITY",
+    "REGIME_RANGING",
+    "REGIME_TRENDING_DOWN",
+    "REGIME_TRENDING_UP",
+    "REGIME_WARM_UP",
+    "RegimeDecision",
+    "RegimeGatedAlphaModel",
+    "TrendVolatilityRegimeGate",
     "WeightedAlphaBlender",
     "agreement_rate",
     "alpha_direction",
