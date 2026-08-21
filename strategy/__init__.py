@@ -2,6 +2,7 @@ from strategy.asian_range_breakout import AsianRangeBreakoutStrategy
 from strategy.carry import SimpleCarryStrategy
 from strategy.ensemble import EnsembleStrategy
 from strategy.ema_trend import SimpleEmaTrendStrategy
+from strategy.ensemble_tsmom_ema import TsmomEmaEnsembleStrategy
 from strategy.mean_reversion import SimpleMeanReversionStrategy
 from strategy.multi_timeframe_momentum import MultiTimeframeMomentumStrategy
 from strategy.regime_detection import SimpleRegimeDetectionStrategy
@@ -13,6 +14,7 @@ __all__ = [
     "SimpleCarryStrategy",
     "EnsembleStrategy",
     "SimpleEmaTrendStrategy",
+    "TsmomEmaEnsembleStrategy",
     "SimpleMeanReversionStrategy",
     "MultiTimeframeMomentumStrategy",
     "SimpleRegimeDetectionStrategy",
