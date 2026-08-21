@@ -1,4 +1,11 @@
 from alpha.blender import WeightedAlphaBlender
+from alpha.diagnostics import (
+    agreement_rate,
+    alpha_direction,
+    coverage_rate,
+    disagreement_rate,
+    signal_turnover_rate,
+)
 from alpha.ledger import AlphaLedger, AlphaLedgerRecord
 from alpha.models import (
     AlphaContribution,
@@ -15,4 +22,9 @@ __all__ = [
     "AlphaSignal",
     "BlendedAlphaView",
     "WeightedAlphaBlender",
+    "agreement_rate",
+    "alpha_direction",
+    "coverage_rate",
+    "disagreement_rate",
+    "signal_turnover_rate",
 ]
