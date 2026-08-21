@@ -70,6 +70,9 @@ STRATEGY_REGISTRY = {
     "volatility_breakout": "strategy.volatility_breakout",
     "time_series_momentum": "strategy.time_series_momentum",
     "ensemble_tsmom_ema": "strategy.ensemble_tsmom_ema",
+    "ensemble_tsmom_ema_regime": (
+        "strategy.ensemble_tsmom_ema_regime"
+    ),
     "mean_reversion": "strategy.mean_reversion",
     "asian_range_breakout": "strategy.asian_range_breakout",
     "carry": "strategy.carry",
