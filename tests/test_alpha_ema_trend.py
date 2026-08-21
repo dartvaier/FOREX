@@ -93,6 +93,12 @@ def test_ema_trend_alpha_model_validates_parameters():
             score_scale=0.0,
         )
 
+    with pytest.raises(ValueError, match="pip_size"):
+        EmaTrendAlphaModel(
+            symbol="EURUSD",
+            pip_size=0.0,
+        )
+
 
 def test_ema_trend_alpha_model_satisfies_alpha_model_protocol():
     model = EmaTrendAlphaModel(
@@ -163,6 +169,10 @@ def test_ema_trend_alpha_model_scores_positive_trend():
     assert signal.reason == "Positive EMA trend"
     assert signal.metadata["fast_ema"] > signal.metadata["slow_ema"]
     assert signal.metadata["ema_spread"] > 0.0
+    assert signal.metadata["pip_size"] == 0.00010
+    assert signal.metadata["expected_move_pips"] == pytest.approx(
+        signal.metadata["ema_spread"] / 0.00010
+    )
 
 
 def test_ema_trend_alpha_model_scores_negative_trend():

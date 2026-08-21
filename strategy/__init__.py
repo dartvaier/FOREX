@@ -3,6 +3,9 @@ from strategy.carry import SimpleCarryStrategy
 from strategy.ensemble import EnsembleStrategy
 from strategy.ema_trend import SimpleEmaTrendStrategy
 from strategy.ensemble_tsmom_ema import TsmomEmaEnsembleStrategy
+from strategy.ensemble_tsmom_ema_cost_aware import (
+    TsmomEmaCostAwareEnsembleStrategy,
+)
 from strategy.ensemble_tsmom_ema_hysteresis import (
     TsmomEmaHysteresisEnsembleStrategy,
 )
@@ -21,6 +24,7 @@ __all__ = [
     "EnsembleStrategy",
     "SimpleEmaTrendStrategy",
     "TsmomEmaEnsembleStrategy",
+    "TsmomEmaCostAwareEnsembleStrategy",
     "TsmomEmaHysteresisEnsembleStrategy",
     "TsmomEmaRegimeGatedEnsembleStrategy",
     "SimpleMeanReversionStrategy",

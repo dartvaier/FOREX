@@ -1,4 +1,11 @@
 from alpha.blender import WeightedAlphaBlender
+from alpha.cost import (
+    CostAwareAlphaModel,
+    CostGateDecision,
+    MinimumExpectedMoveGate,
+    expected_move_pips_from_return,
+    price_distance_pips,
+)
 from alpha.diagnostics import (
     agreement_rate,
     alpha_direction,
@@ -31,6 +38,9 @@ __all__ = [
     "AlphaModel",
     "AlphaSignal",
     "BlendedAlphaView",
+    "CostAwareAlphaModel",
+    "CostGateDecision",
+    "MinimumExpectedMoveGate",
     "REGIME_HIGH_VOLATILITY",
     "REGIME_RANGING",
     "REGIME_TRENDING_DOWN",
@@ -44,5 +54,7 @@ __all__ = [
     "alpha_direction",
     "coverage_rate",
     "disagreement_rate",
+    "expected_move_pips_from_return",
+    "price_distance_pips",
     "signal_turnover_rate",
 ]

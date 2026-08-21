@@ -86,6 +86,12 @@ def test_tsmom_alpha_model_validates_parameters():
             score_scale=0.0,
         )
 
+    with pytest.raises(ValueError, match="pip_size"):
+        TimeSeriesMomentumAlphaModel(
+            symbol="EURUSD",
+            pip_size=0.0,
+        )
+
 
 def test_tsmom_alpha_model_satisfies_alpha_model_protocol():
     model = TimeSeriesMomentumAlphaModel(
@@ -156,6 +162,14 @@ def test_tsmom_alpha_model_scores_positive_momentum():
     assert signal.reason == "Positive time-series momentum"
     assert signal.metadata["momentum_return"] == pytest.approx(
         expected_return
+    )
+    assert signal.metadata["pip_size"] == 0.00010
+    assert signal.metadata["expected_move_pips"] == pytest.approx(
+        abs(
+            1.1110
+            * expected_return
+        )
+        / 0.00010
     )
 
 

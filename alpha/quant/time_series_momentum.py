@@ -2,6 +2,7 @@ import math
 from dataclasses import dataclass
 from numbers import Integral, Real
 
+from alpha.cost import expected_move_pips_from_return
 from alpha.models import AlphaSignal
 from backtest.context import BacktestContext
 
@@ -19,6 +20,7 @@ class TimeSeriesMomentumAlphaModel:
     symbol: str
     lookback: int = 96
     score_scale: float = 0.01
+    pip_size: float = 0.00010
     model_id: str = "TIME-SERIES-MOMENTUM-ALPHA"
 
     @property
@@ -59,6 +61,16 @@ class TimeSeriesMomentumAlphaModel:
         ):
             raise ValueError(
                 "score_scale must be a finite positive number"
+            )
+
+        if (
+            not isinstance(self.pip_size, Real)
+            or isinstance(self.pip_size, bool)
+            or not math.isfinite(self.pip_size)
+            or self.pip_size <= 0
+        ):
+            raise ValueError(
+                "pip_size must be a finite positive number"
             )
 
     def predict(
@@ -104,6 +116,11 @@ class TimeSeriesMomentumAlphaModel:
                 momentum_return / self.score_scale,
             ),
         )
+        expected_move_pips = expected_move_pips_from_return(
+            reference_price=current_bar.close,
+            expected_return=momentum_return,
+            pip_size=self.pip_size,
+        )
 
         reason = "Neutral time-series momentum"
 
@@ -125,5 +142,7 @@ class TimeSeriesMomentumAlphaModel:
                 "lookback": self.lookback,
                 "momentum_return": momentum_return,
                 "score_scale": self.score_scale,
+                "pip_size": self.pip_size,
+                "expected_move_pips": expected_move_pips,
             },
         )
