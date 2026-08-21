@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass, field
-from numbers import Real
+from numbers import Integral, Real
 
 from alpha.blender import WeightedAlphaBlender
 from alpha.ledger import AlphaLedger
@@ -35,6 +35,7 @@ class EnsembleStrategy:
     blender: WeightedAlphaBlender
     strategy_id: str = "ENSEMBLE"
     min_conviction: float = 0.0
+    min_active_models: int = 1
     enter_long: float = 0.30
     enter_short: float = -0.30
     exit_long_below: float = 0.0
@@ -163,6 +164,20 @@ class EnsembleStrategy:
         if self.exit_short_above <= self.enter_short:
             raise ValueError(
                 "exit_short_above must be greater than enter_short"
+            )
+
+        if (
+            not isinstance(self.min_active_models, Integral)
+            or isinstance(self.min_active_models, bool)
+            or self.min_active_models <= 0
+        ):
+            raise ValueError(
+                "min_active_models must be a positive integer"
+            )
+
+        if self.min_active_models > len(self.models):
+            raise ValueError(
+                "min_active_models cannot exceed number of models"
             )
 
     @property
@@ -314,6 +329,12 @@ class EnsembleStrategy:
                 "All alpha models abstained",
             )
 
+        if len(view.contributors) < self.min_active_models:
+            return (
+                SignalAction.HOLD,
+                "Blended alpha below minimum active model count",
+            )
+
         if self._position_state == POSITION_LONG:
             if view.value <= self.exit_long_below:
                 return (
@@ -393,6 +414,7 @@ class EnsembleStrategy:
                 "abstained_models": view.abstained_models,
                 "position_state": self._position_state,
                 "min_conviction": self.min_conviction,
+                "min_active_models": self.min_active_models,
                 "enter_long": self.enter_long,
                 "enter_short": self.enter_short,
                 "exit_long_below": self.exit_long_below,

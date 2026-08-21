@@ -1,5 +1,6 @@
 from strategy.asian_range_breakout import AsianRangeBreakoutStrategy
 from strategy.carry import SimpleCarryStrategy
+from strategy.declarative import DeclarativeEnsembleStrategy
 from strategy.ensemble import EnsembleStrategy
 from strategy.ema_trend import SimpleEmaTrendStrategy
 from strategy.ensemble_tsmom_ema import TsmomEmaEnsembleStrategy
@@ -21,6 +22,7 @@ from strategy.volatility_breakout import VolatilityBreakoutStrategy
 __all__ = [
     "AsianRangeBreakoutStrategy",
     "SimpleCarryStrategy",
+    "DeclarativeEnsembleStrategy",
     "EnsembleStrategy",
     "SimpleEmaTrendStrategy",
     "TsmomEmaEnsembleStrategy",

@@ -224,6 +224,22 @@ def test_ensemble_strategy_validates_parameters():
             blender=blender,
         )
 
+    with pytest.raises(ValueError, match="min_active_models"):
+        EnsembleStrategy(
+            symbol="EURUSD",
+            models=(model,),
+            blender=blender,
+            min_active_models=0,
+        )
+
+    with pytest.raises(ValueError, match="min_active_models"):
+        EnsembleStrategy(
+            symbol="EURUSD",
+            models=(model,),
+            blender=blender,
+            min_active_models=2,
+        )
+
 
 def test_ensemble_strategy_holds_when_all_models_abstain():
     strategy = EnsembleStrategy(
@@ -255,6 +271,46 @@ def test_ensemble_strategy_holds_when_all_models_abstain():
     assert signal.reason == "All alpha models abstained"
     assert signal.metadata["blended_abstained"] is True
     assert signal.metadata["abstained_models"] == ("session",)
+
+
+def test_ensemble_strategy_holds_below_minimum_active_model_count():
+    strategy = EnsembleStrategy(
+        symbol="EURUSD",
+        models=(
+            StaticAlphaModel(
+                model_id="ema",
+                value=0.7,
+            ),
+            AbstainingAlphaModel(
+                model_id="tsmom",
+            ),
+        ),
+        blender=WeightedAlphaBlender(
+            {
+                "ema": 1.0,
+                "tsmom": 1.0,
+            }
+        ),
+        min_active_models=2,
+        enter_long=0.3,
+        enter_short=-0.3,
+    )
+
+    signal = strategy.on_bar(
+        make_context(
+            [
+                1.1000,
+            ]
+        )
+    )
+
+    assert signal.action == SignalAction.HOLD
+    assert (
+        signal.reason
+        == "Blended alpha below minimum active model count"
+    )
+    assert signal.metadata["min_active_models"] == 2
+    assert signal.metadata["blended_abstained"] is False
 
 
 def test_ensemble_strategy_enters_long_from_blended_alpha():

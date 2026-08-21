@@ -66,6 +66,7 @@ DEFAULT_EXPLICIT_COSTS = {
 }
 
 STRATEGY_REGISTRY = {
+    "declarative_ensemble": "strategy.declarative",
     "ema_trend": "strategy.ema_trend",
     "volatility_breakout": "strategy.volatility_breakout",
     "time_series_momentum": "strategy.time_series_momentum",
