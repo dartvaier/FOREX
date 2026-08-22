@@ -223,3 +223,111 @@ Critério inicial de rejeicao:
 - resultado depender de uma unica janela temporal;
 - turnover alto destruir expectancy;
 - ganho concentrado em poucos eventos extremos.
+
+## SC-02 — USDJPY Micro Breakout em Regime Favoravel
+
+Status:
+
+```text
+RESEARCHED / NOT PROMOTED
+```
+
+Hipotese:
+
+> Em USDJPY, quando o regime M15 esta direcional e o spread esta
+> comprimido, rompimentos M5 na direcao do regime podem carregar
+> continuacao curta por alguns candles.
+
+Regra do primeiro estudo:
+
+```text
+Filtro superior: M15 ensemble_regime_cost
+Base micro: M5
+Canal: maxima/minima dos 6 candles M5 anteriores
+Entrada long: close rompe a maxima anterior na direcao de regime long
+Entrada short: close rompe a minima anterior na direcao de regime short
+Min breakout: 0.5 pip
+Min corpo: 0.5 pip na direcao do regime
+Horizontes: 1/2/3/6 candles M5
+Custo: spread de entrada + 1.7 pips
+```
+
+Implementacao do estudo:
+
+```powershell
+python -m research.scalping_breakout_study --symbol USDJPY
+```
+
+Saidas:
+
+```text
+research/reports/scalping/scalping_breakout_study_USDJPY.json
+research/reports/scalping/scalping_breakout_study_USDJPY.csv
+```
+
+Primeira medicao com USDJPY M5 2015-01-01 -> 2026-08-21,
+horizonte de 6 candles M5:
+
+| Sessao | Eventos | Gross medio | Hit rate | Net medio |
+|---|---:|---:|---:|---:|
+| all | 22,951 | -0.04 | 47.56% | -2.21 |
+| london_morning | 4,747 | 0.13 | 48.35% | -1.96 |
+| london_ny_overlap | 4,518 | 0.03 | 49.67% | -2.05 |
+| new_york | 4,573 | -0.28 | 46.23% | -2.40 |
+| off_session | 9,113 | -0.03 | 46.78% | -2.32 |
+
+Recortes por lado no horizonte de 6 candles M5:
+
+| Sessao | Lado | Eventos | Gross medio | Hit rate | Net medio |
+|---|---|---:|---:|---:|---:|
+| london_morning | long | 2,836 | 0.31 | 49.68% | -1.79 |
+| london_ny_overlap | short | 1,843 | 0.28 | 48.56% | -1.79 |
+| new_york | short | 1,776 | -0.28 | 44.99% | -2.38 |
+| off_session | short | 3,788 | 0.10 | 47.36% | -2.19 |
+
+Sweep de filtros de qualidade:
+
+```powershell
+python -m research.scalping_breakout_filter_sweep --symbol USDJPY
+```
+
+Saidas:
+
+```text
+research/reports/scalping/scalping_breakout_filter_sweep_USDJPY.json
+research/reports/scalping/scalping_breakout_filter_sweep_USDJPY.csv
+```
+
+O sweep combina:
+
+- sessao: all, liquid, london_morning, london_ny_overlap;
+- lado: all, long, short;
+- horizonte: 3 e 6 candles M5;
+- spread: percentil causal por slot UTC <= p50/p60;
+- forca do regime M15: abs(blended_value) >= 0.35/0.50/0.65;
+- breakout minimo: 0.5/1.0/2.0 pips;
+- corpo minimo: 0.5/1.0 pip.
+
+Melhor recorte com pelo menos 250 eventos:
+
+| Sessao | Lado | H | Spread slot | Regime | Breakout | Corpo | Eventos | Gross medio | Hit rate | Net medio |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| london_ny_overlap | short | 6 | p50 | 0.65 | 2.0 | 0.5 | 446 | 1.24 | 48.88% | -0.78 |
+| london_ny_overlap | short | 6 | p60 | 0.65 | 2.0 | 0.5 | 557 | 1.06 | 49.73% | -0.96 |
+| liquid | short | 6 | p50 | 0.65 | 2.0 | 0.5 | 833 | 0.89 | 48.98% | -1.13 |
+
+Leitura: SC-02 tambem nao passa no criterio de custo. O mesmo padrao
+aparece de novo: short no overlap Londres/NY com regime forte e spread
+comprimido e a melhor regiao, mas o edge bruto medio ainda nao paga a
+barreira de spread + slippage/commission. Isso sugere que continuar
+apertando filtros direcionais simples tende a virar parameter mining.
+
+Proximo caminho de pesquisa:
+
+1. testar micro mean reversion apos excesso intrabar, em vez de
+   continuacao direcional simples;
+2. adicionar filtro de volatilidade intradiaria antes de novas regras;
+3. avaliar M1 apenas como timing de entrada, mantendo M5/M15 como
+   contexto;
+4. pausar promocao de qualquer scalper ate haver edge liquido positivo
+   em estudo simples e reproduzivel.
