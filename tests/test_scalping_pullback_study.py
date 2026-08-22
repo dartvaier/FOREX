@@ -91,6 +91,8 @@ def test_build_pullback_events_finds_long_pullback_reversal() -> None:
     assert (events["pullback_pips"] <= -2.0).all()
     assert (events["body_pips"] > 0).all()
     assert events["entry_spread_pips"].iloc[0] == pytest.approx(0.4)
+    assert list(events["regime_strength"]) == pytest.approx([0.5, 0.5])
+    assert "spread_slot_percentile" in events.columns
 
 
 def test_summarize_events_includes_session_and_all_rows() -> None:

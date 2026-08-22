@@ -181,6 +181,42 @@ deve ser adicionar filtros de qualidade do setup: spread por slot,
 forca do regime M15, distancia do pullback, volatilidade intradiaria e
 separacao long/short.
 
+Sweep de filtros de qualidade:
+
+```powershell
+python -m research.scalping_pullback_filter_sweep --symbol USDJPY
+```
+
+Saidas:
+
+```text
+research/reports/scalping/scalping_pullback_filter_sweep_USDJPY.json
+research/reports/scalping/scalping_pullback_filter_sweep_USDJPY.csv
+```
+
+O sweep combina:
+
+- sessao: all, liquid, london_morning, london_ny_overlap;
+- lado: all, long, short;
+- horizonte: 3 e 6 candles M5;
+- spread: percentil causal por slot UTC <= p50/p60;
+- forca do regime M15: abs(blended_value) >= 0.35/0.50/0.65;
+- pullback minimo: 2/3/4 pips.
+
+Melhor recorte com pelo menos 250 eventos:
+
+| Sessao | Lado | H | Spread slot | Regime | Pullback | Eventos | Gross medio | Hit rate | Net medio |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| london_ny_overlap | short | 6 | p50 | 0.65 | 4.0 | 308 | 1.64 | 52.92% | -0.40 |
+| london_ny_overlap | short | 6 | p60 | 0.65 | 4.0 | 356 | 1.30 | 51.69% | -0.74 |
+| liquid | short | 6 | p50 | 0.65 | 4.0 | 575 | 1.13 | 52.00% | -0.91 |
+
+Leitura: os filtros melhoram muito a hipotese bruta, principalmente
+short no overlap Londres/NY com regime forte, pullback maior e spread
+abaixo do p50 do slot. Mesmo assim, nenhuma combinacao ficou positiva
+apos custo estimado. SC-01 continua como pesquisa; ainda nao deve virar
+Strategy.
+
 Critério inicial de rejeicao:
 
 - edge liquido <= 0 apos custo calibrado;

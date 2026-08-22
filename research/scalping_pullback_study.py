@@ -16,6 +16,7 @@ from backtest.instruments import instrument_specification
 from backtest.models import BacktestConfig, Timeframe
 from backtest.models.enums import SimulationPhase
 from research.alpha_diagnostic_matrix import write_variant_configs
+from research.features import slot_percentile
 from research.runner import REPORTS_DIR
 from research.scalping_spread_profile import session_label
 from strategy import DeclarativeEnsembleStrategy
@@ -173,6 +174,14 @@ def build_pullback_events(
     merged["entry_spread_pips"] = (
         merged["spread"].astype(float) / points_per_pip
     )
+    merged["spread_slot_percentile"] = slot_percentile(
+        values=list(merged["entry_spread_pips"].astype(float)),
+        timestamps=[
+            timestamp.to_pydatetime()
+            for timestamp in merged["event_time"]
+        ],
+    )
+    merged["regime_strength"] = merged["blended_value"].abs()
 
     previous_close = merged["close"].shift(pullback_lookback)
     direction = merged["direction"].astype(float)
@@ -221,9 +230,11 @@ def build_pullback_events(
                     "direction",
                     "state_time",
                     "blended_value",
+                    "regime_strength",
                     "pullback_pips",
                     "body_pips",
                     "entry_spread_pips",
+                    "spread_slot_percentile",
                     "horizon_bars",
                     "gross_pips",
                     "net_pips",
