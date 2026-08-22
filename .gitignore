@@ -29,6 +29,7 @@ data/raw/
 data/processed/
 data/cache/
 data/import/
+data/scalping/
 # Agent Cluster workspace
 .cluster/
 

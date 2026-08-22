@@ -27,6 +27,27 @@ class JForexImportResult:
     last_time: pd.Timestamp
 
 
+@dataclass(frozen=True, slots=True)
+class JForexRawImportResult:
+    symbol: str
+    timeframe: str
+    raw_path: Path
+    rows: int
+    first_time: pd.Timestamp
+    last_time: pd.Timestamp
+
+
+@dataclass(frozen=True, slots=True)
+class JForexScalpingImportResult:
+    symbol: str
+    m1_path: Path
+    m5_path: Path
+    m1_rows: int
+    m5_rows: int
+    first_time: pd.Timestamp
+    last_time: pd.Timestamp
+
+
 def read_jforex_csv(
     path: Path,
     *,
@@ -92,6 +113,220 @@ def read_jforex_csv(
     return output
 
 
+def import_jforex_timeframe(
+    input_dir: Path,
+    *,
+    timeframe: str,
+    raw_base_path: Path,
+    symbols: tuple[str, ...] | list[str],
+    source_timezone: str = "Europe/Helsinki",
+    repair_ohlc: bool = True,
+) -> list[JForexRawImportResult]:
+    input_dir = Path(input_dir)
+    timeframe = timeframe.upper()
+
+    if timeframe not in {"M1", "M15"}:
+        raise JForexImportError(
+            f"unsupported JForex import timeframe: {timeframe}"
+        )
+
+    if not input_dir.exists():
+        raise JForexImportError(
+            f"input directory does not exist: {input_dir}"
+        )
+
+    requested_symbols = tuple(
+        symbol.upper()
+        for symbol in symbols
+    )
+    unsupported = sorted(set(requested_symbols) - set(MAJOR_SYMBOLS))
+
+    if unsupported:
+        raise JForexImportError(
+            f"unsupported symbols: {unsupported}"
+        )
+
+    files = _collect_jforex_files(
+        input_dir,
+        requested_symbols=requested_symbols,
+        timeframe=timeframe,
+    )
+
+    results: list[JForexRawImportResult] = []
+
+    for symbol in requested_symbols:
+        if symbol not in files:
+            continue
+
+        bid_path = files[symbol].get("bid")
+        ask_path = files[symbol].get("ask")
+
+        if bid_path is None or ask_path is None:
+            raise JForexImportError(
+                f"{symbol}: both Bid and Ask {timeframe} CSV files "
+                "are required"
+            )
+
+        bid = read_jforex_csv(
+            bid_path,
+            source_timezone=source_timezone,
+            repair_ohlc=repair_ohlc,
+        )
+        ask = read_jforex_csv(
+            ask_path,
+            source_timezone=source_timezone,
+            repair_ohlc=repair_ohlc,
+        )
+        frame = _combine_bid_ask(
+            symbol=symbol,
+            bid=bid,
+            ask=ask,
+        )
+
+        validator = HistoricalData(
+            client=None,  # type: ignore[arg-type]
+            base_path=str(raw_base_path),
+        )
+        validator.validate(frame)
+        raw_path = validator.save(
+            frame,
+            symbol=symbol,
+            timeframe_name=timeframe,
+        )
+
+        results.append(
+            JForexRawImportResult(
+                symbol=symbol,
+                timeframe=timeframe,
+                raw_path=raw_path,
+                rows=len(frame),
+                first_time=frame["time"].iloc[0],
+                last_time=frame["time"].iloc[-1],
+            )
+        )
+
+    if not results:
+        raise JForexImportError(
+            f"no supported JForex {timeframe} Bid/Ask files found in "
+            f"{input_dir}"
+        )
+
+    return results
+
+
+def import_jforex_scalping_directory(
+    input_dir: Path,
+    *,
+    symbol: str = "USDJPY",
+    raw_base_path: Path = Path("data/scalping/raw"),
+    processed_base_path: Path = Path("data/scalping/processed"),
+    source_timezone: str = "Europe/Helsinki",
+    repair_ohlc: bool = True,
+) -> JForexScalpingImportResult:
+    symbol = symbol.upper()
+    raw_results = import_jforex_timeframe(
+        input_dir,
+        timeframe="M1",
+        raw_base_path=raw_base_path,
+        symbols=(symbol,),
+        source_timezone=source_timezone,
+        repair_ohlc=repair_ohlc,
+    )
+    raw_result = raw_results[0]
+    m1 = pd.read_parquet(raw_result.raw_path)
+    m5 = resample_intraday_candles(
+        m1,
+        timeframe="M5",
+    )
+
+    output_directory = processed_base_path / symbol
+    output_directory.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    m5_path = output_directory / "M5.parquet"
+    m5.to_parquet(
+        m5_path,
+        index=False,
+    )
+
+    return JForexScalpingImportResult(
+        symbol=symbol,
+        m1_path=raw_result.raw_path,
+        m5_path=m5_path,
+        m1_rows=raw_result.rows,
+        m5_rows=len(m5),
+        first_time=raw_result.first_time,
+        last_time=raw_result.last_time,
+    )
+
+
+def resample_intraday_candles(
+    df: pd.DataFrame,
+    *,
+    timeframe: str,
+) -> pd.DataFrame:
+    timeframe = timeframe.upper()
+
+    if timeframe != "M5":
+        raise JForexImportError(
+            f"unsupported scalping resample timeframe: {timeframe}"
+        )
+
+    _validate_resample_source(df)
+
+    source = (
+        df
+        .sort_values("time")
+        .copy()
+        .set_index("time")
+    )
+
+    resampled = source.resample(
+        "5min",
+        label="left",
+        closed="left",
+        origin="epoch",
+    ).agg(
+        open=("open", "first"),
+        high=("high", "max"),
+        low=("low", "min"),
+        close=("close", "last"),
+        tick_volume=("tick_volume", "sum"),
+        spread=("spread", "mean"),
+        real_volume=("real_volume", "sum"),
+        source_bar_count=("close", "count"),
+    )
+
+    resampled = resampled[
+        resampled["source_bar_count"] > 0
+    ].copy()
+    resampled["expected_bar_count"] = 5
+    resampled["complete"] = (
+        resampled["source_bar_count"] == 5
+    )
+    resampled["tick_volume"] = (
+        resampled["tick_volume"]
+        .round()
+        .astype("int64")
+    )
+    resampled["real_volume"] = (
+        resampled["real_volume"]
+        .round()
+        .astype("int64")
+    )
+
+    result = (
+        resampled
+        .reset_index()
+        .sort_values("time")
+        .reset_index(drop=True)
+    )
+    _validate_ohlc(result, label=timeframe)
+
+    return result
+
+
 def import_jforex_directory(
     input_dir: Path,
     *,
@@ -124,6 +359,7 @@ def import_jforex_directory(
     files = _collect_jforex_files(
         input_dir,
         requested_symbols=requested_symbols,
+        timeframe="M15",
     )
 
     results: list[JForexImportResult] = []
@@ -321,6 +557,7 @@ def _collect_jforex_files(
     input_dir: Path,
     *,
     requested_symbols: tuple[str, ...],
+    timeframe: str,
 ) -> dict[str, dict[str, Path]]:
     files: dict[str, dict[str, Path]] = {}
 
@@ -331,7 +568,7 @@ def _collect_jforex_files(
         if symbol is None or side is None:
             continue
 
-        if not _is_m15_file(path.name):
+        if not _is_timeframe_file(path.name, timeframe):
             continue
 
         files.setdefault(symbol, {})
@@ -377,8 +614,62 @@ def _detect_side(filename: str) -> str | None:
 
 
 def _is_m15_file(filename: str) -> bool:
+    return _is_timeframe_file(filename, "M15")
+
+
+def _is_timeframe_file(
+    filename: str,
+    timeframe: str,
+) -> bool:
     normalized = filename.upper().replace("_", " ")
-    return "15 MIN" in normalized
+    compact = normalized.replace(" ", "")
+
+    if timeframe == "M1":
+        return (
+            "1 MIN" in normalized
+            or "1MIN" in compact
+            or "M1" in compact
+        ) and "15 MIN" not in normalized
+
+    if timeframe == "M15":
+        return (
+            "15 MIN" in normalized
+            or "15MIN" in compact
+            or "M15" in compact
+        )
+
+    return False
+
+
+def _validate_resample_source(
+    df: pd.DataFrame,
+) -> None:
+    required = {
+        "time",
+        "open",
+        "high",
+        "low",
+        "close",
+        "tick_volume",
+        "spread",
+        "real_volume",
+    }
+    missing = required - set(df.columns)
+
+    if missing:
+        raise JForexImportError(
+            f"resample source missing columns: {sorted(missing)}"
+        )
+
+    if df.empty:
+        raise JForexImportError(
+            "resample source is empty"
+        )
+
+    if df["time"].dt.tz is None or str(df["time"].dt.tz) != "UTC":
+        raise JForexImportError(
+            "resample source timestamps must be UTC"
+        )
 
 
 def _combine_bid_ask(

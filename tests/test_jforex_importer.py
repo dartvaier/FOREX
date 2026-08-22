@@ -8,7 +8,10 @@ import pytest
 from data.jforex_importer import (
     JForexImportError,
     import_jforex_directory,
+    import_jforex_scalping_directory,
+    import_jforex_timeframe,
     read_jforex_csv,
+    resample_intraday_candles,
 )
 
 
@@ -18,6 +21,7 @@ def _write_csv(
     rows: int = 4,
     delimiter: str = ",",
     ask_offset: float = 0.00020,
+    step_minutes: int = 15,
 ) -> None:
     lines = [
         delimiter.join(
@@ -36,7 +40,7 @@ def _write_csv(
     is_ask = "Ask" in path.name
 
     for index in range(rows):
-        timestamp = start + pd.Timedelta(minutes=15 * index)
+        timestamp = start + pd.Timedelta(minutes=step_minutes * index)
         base = 1.10000 + index * 0.00010
         offset = ask_offset if is_ask else 0.0
         open_ = base + offset
@@ -291,3 +295,119 @@ def test_import_directory_can_build_processed_timeframes(
     assert len(h4) == 2
     assert h1["complete"].all()
     assert int(h4["source_bar_count"].sum()) == 16
+
+
+def test_import_jforex_timeframe_imports_m1_without_m15_files(
+    tmp_path: Path,
+) -> None:
+    input_dir = tmp_path / "import"
+    raw_dir = tmp_path / "scalping" / "raw"
+    input_dir.mkdir()
+
+    _write_csv(
+        input_dir / "USDJPY_1 Min_Bid_2020.01.02_2020.01.02.csv",
+        rows=6,
+        step_minutes=1,
+        ask_offset=0.020,
+    )
+    _write_csv(
+        input_dir / "USDJPY_1 Min_Ask_2020.01.02_2020.01.02.csv",
+        rows=6,
+        step_minutes=1,
+        ask_offset=0.020,
+    )
+
+    results = import_jforex_timeframe(
+        input_dir,
+        timeframe="M1",
+        raw_base_path=raw_dir,
+        symbols=("USDJPY",),
+    )
+
+    assert len(results) == 1
+    assert results[0].timeframe == "M1"
+    assert results[0].rows == 6
+
+    m1 = pd.read_parquet(raw_dir / "USDJPY" / "M1.parquet")
+
+    assert len(m1) == 6
+    assert m1["tick_volume"].dtype.kind in {"i", "u"}
+    assert m1["spread"].iloc[0] == pytest.approx(20.0)
+
+
+def test_resample_intraday_candles_builds_m5_without_filling_gaps(
+    tmp_path: Path,
+) -> None:
+    times = pd.to_datetime(
+        [
+            "2020-01-01 00:00:00+00:00",
+            "2020-01-01 00:01:00+00:00",
+            "2020-01-01 00:02:00+00:00",
+            "2020-01-01 00:03:00+00:00",
+            "2020-01-01 00:04:00+00:00",
+            "2020-01-01 00:10:00+00:00",
+        ],
+        utc=True,
+    )
+    m1 = pd.DataFrame(
+        {
+            "time": times,
+            "open": [1.0, 1.1, 1.2, 1.3, 1.4, 2.0],
+            "high": [1.2, 1.2, 1.3, 1.4, 1.5, 2.1],
+            "low": [0.9, 1.0, 1.1, 1.2, 1.3, 1.9],
+            "close": [1.1, 1.2, 1.3, 1.4, 1.5, 2.1],
+            "tick_volume": [10, 11, 12, 13, 14, 20],
+            "spread": [2.0, 2.0, 3.0, 3.0, 4.0, 5.0],
+            "real_volume": [0, 0, 0, 0, 0, 0],
+        }
+    )
+
+    m5 = resample_intraday_candles(
+        m1,
+        timeframe="M5",
+    )
+
+    assert len(m5) == 2
+    assert m5["time"].tolist() == [
+        pd.Timestamp("2020-01-01 00:00:00", tz="UTC"),
+        pd.Timestamp("2020-01-01 00:10:00", tz="UTC"),
+    ]
+    assert m5["source_bar_count"].tolist() == [5, 1]
+    assert m5["complete"].tolist() == [True, False]
+    assert m5["tick_volume"].tolist() == [60, 20]
+    assert m5["spread"].iloc[0] == pytest.approx(2.8)
+
+
+def test_import_jforex_scalping_directory_writes_separate_m1_and_m5(
+    tmp_path: Path,
+) -> None:
+    input_dir = tmp_path / "import"
+    raw_dir = tmp_path / "scalping" / "raw"
+    processed_dir = tmp_path / "scalping" / "processed"
+    input_dir.mkdir()
+
+    _write_csv(
+        input_dir / "USDJPY_1 Min_Bid_2020.01.02_2020.01.02.csv",
+        rows=10,
+        step_minutes=1,
+        ask_offset=0.020,
+    )
+    _write_csv(
+        input_dir / "USDJPY_1 Min_Ask_2020.01.02_2020.01.02.csv",
+        rows=10,
+        step_minutes=1,
+        ask_offset=0.020,
+    )
+
+    result = import_jforex_scalping_directory(
+        input_dir,
+        raw_base_path=raw_dir,
+        processed_base_path=processed_dir,
+        symbol="USDJPY",
+    )
+
+    assert result.symbol == "USDJPY"
+    assert result.m1_rows == 10
+    assert result.m5_rows == 2
+    assert (raw_dir / "USDJPY" / "M1.parquet").exists()
+    assert (processed_dir / "USDJPY" / "M5.parquet").exists()
