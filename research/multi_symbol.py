@@ -24,6 +24,7 @@ from research.runner import (
     dataset_path,
     discover_strategy_class,
     parse_params,
+    resolve_spread_pips,
     run_single,
     validate_cost_multiplier,
 )
@@ -205,6 +206,35 @@ def symbol_tag(
     return f"{tag.strip()}-{suffix}"
 
 
+def symbol_cost_params(
+    *,
+    symbol: str,
+    cost_mode: str,
+    base_cost_params: dict[str, float | None],
+    calibrated_spread: bool,
+    calibration_path: Path | None,
+) -> dict[str, float]:
+    spread_pips = resolve_spread_pips(
+        symbol=symbol,
+        spread_pips=base_cost_params.get("spread_pips"),
+        calibrated=calibrated_spread,
+        cost_mode=cost_mode,
+        calibration_path=calibration_path,
+    )
+
+    return {
+        "spread_pips": spread_pips,
+        "slippage_pips": float(
+            base_cost_params["slippage_pips"]
+        ),
+        "commission_per_lot_per_side": float(
+            base_cost_params[
+                "commission_per_lot_per_side"
+            ]
+        ),
+    }
+
+
 def extract_summary_row(
     report_path: Path,
 ) -> dict[str, Any]:
@@ -320,12 +350,14 @@ def run_multi_symbol(
     initial_capital: float,
     fixed_quantity: float,
     cost: str,
-    cost_params: dict[str, float],
+    cost_params: dict[str, float | None],
     cost_multiplier: float,
     out_dir: Path,
     tag: str | None,
     write_equity: bool,
     skip_missing: bool = False,
+    calibrated_spread: bool = False,
+    calibration_path: Path | None = None,
     run_single_fn: RunSingleFn = run_single,
 ) -> list[dict[str, Any]]:
     if strategy_key not in STRATEGY_REGISTRY:
@@ -367,6 +399,14 @@ def run_multi_symbol(
             )
 
         for mode in cost_modes(cost):
+            run_cost_params = symbol_cost_params(
+                symbol=symbol,
+                cost_mode=mode,
+                base_cost_params=cost_params,
+                calibrated_spread=calibrated_spread,
+                calibration_path=calibration_path,
+            )
+
             report_path = run_single_fn(
                 symbol=symbol,
                 timeframe=timeframe,
@@ -382,7 +422,7 @@ def run_multi_symbol(
                 initial_capital=initial_capital,
                 fixed_quantity=fixed_quantity,
                 cost_mode=mode,
-                cost_params=dict(cost_params),
+                cost_params=run_cost_params,
                 cost_multiplier=cost_multiplier,
                 out_dir=out_dir,
                 write_equity=write_equity,
@@ -468,7 +508,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--spread-pips",
         type=float,
-        default=DEFAULT_EXPLICIT_COSTS["spread_pips"],
+        default=None,
+        help=(
+            "override spread in pips; default: baseline 2.0, "
+            "or measured median per symbol with --calibrated-spread"
+        ),
+    )
+    parser.add_argument(
+        "--calibrated-spread",
+        action="store_true",
+        help=(
+            "use measured median spread per symbol from a "
+            "cost_measurement JSON file"
+        ),
+    )
+    parser.add_argument(
+        "--calibration-path",
+        type=Path,
+        default=None,
+        help=(
+            "path to cost measurement JSON; default follows "
+            "research.runner --calibrated-spread"
+        ),
     )
     parser.add_argument(
         "--slippage-pips",
@@ -561,6 +622,8 @@ def main() -> None:
             tag=args.tag,
             write_equity=args.equity_csv,
             skip_missing=args.skip_missing,
+            calibrated_spread=args.calibrated_spread,
+            calibration_path=args.calibration_path,
         )
     except FileNotFoundError as exc:
         raise SystemExit(str(exc)) from exc

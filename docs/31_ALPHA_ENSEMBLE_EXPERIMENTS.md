@@ -235,13 +235,52 @@ ha slippage e comissao no round-trip. O proximo passo deve comparar
 `explicit` fixo contra custo calibrado por simbolo, sem mudar a regra
 de entrada ainda.
 
-## 8. Proximos Passos
+## 8. Execucao Com Spread Calibrado
 
-1. Rodar backtests com custo calibrado por simbolo a partir da tabela
-   de spreads JForex.
-2. Rodar diagnosticos por alpha para separar TSMOM, EMA, regime gate e
+Comando:
+
+```powershell
+python -m research.multi_symbol --cost both --tag alpha-ensemble-calibrated --calibrated-spread --calibration-path research/reports/cost_measurement_jforex_all.json
+```
+
+Resumo agregado:
+
+```text
+research/reports/multi_symbol_declarative_ensemble_M15_both_alpha-ensemble-calibrated.csv
+```
+
+| Symbol | Cost | Trades | Net PnL | Return % | Max DD % | PF | Expectancy | Cost pips |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| AUDUSD | explicit | 2068 | -985.96 | -9.86 | 10.05 | 0.763 | -0.4768 | 2.70 |
+| AUDUSD | zero | 2068 | -427.61 | -4.28 | 4.49 | 0.887 | -0.2068 | 0.00 |
+| EURUSD | explicit | 1957 | -337.48 | -3.37 | 4.84 | 0.922 | -0.1724 | 2.00 |
+| EURUSD | zero | 1957 | 53.92 | 0.54 | 2.48 | 1.013 | 0.0276 | 0.00 |
+| GBPUSD | explicit | 2354 | -627.71 | -6.28 | 7.43 | 0.903 | -0.2667 | 2.60 |
+| GBPUSD | zero | 2354 | -15.66 | -0.16 | 4.53 | 0.997 | -0.0067 | 0.00 |
+| NZDUSD | explicit | 1987 | -676.71 | -6.77 | 7.17 | 0.822 | -0.3406 | 2.80 |
+| NZDUSD | zero | 1987 | -120.34 | -1.20 | 2.67 | 0.965 | -0.0606 | 0.00 |
+| USDCAD | explicit | 2065 | -691.15 | -6.91 | 7.82 | 0.823 | -0.3347 | 3.13 |
+| USDCAD | zero | 2065 | -202.68 | -2.03 | 4.14 | 0.943 | -0.0982 | 0.00 |
+| USDCHF | explicit | 1804 | -640.30 | -6.40 | 6.68 | 0.845 | -0.3549 | 2.65 |
+| USDCHF | zero | 1804 | -124.71 | -1.25 | 2.58 | 0.967 | -0.0691 | 0.00 |
+| USDJPY | explicit | 2617 | 30.84 | 0.31 | 2.25 | 1.006 | 0.0118 | 2.28 |
+| USDJPY | zero | 2617 | 510.47 | 5.10 | 1.82 | 1.106 | 0.1951 | 0.00 |
+
+Leitura:
+
+- custo calibrado melhora todos os pares frente ao `explicit` fixo;
+- USDJPY passa de negativo para levemente positivo apos custo;
+- o edge ainda e fraco: profit factor 1.006 e expectancy 0.0118;
+- antes de qualquer portfolio, USDJPY precisa de analise temporal,
+  diagnostico por alpha e stress de custo.
+
+## 9. Proximos Passos
+
+1. Rodar diagnosticos por alpha para separar TSMOM, EMA, regime gate e
    cost gate.
-3. Avaliar USDJPY isoladamente em janelas temporais e stress de custo.
+2. Avaliar USDJPY isoladamente em janelas temporais e stress de custo.
+3. Calibrar tambem o `cost_gate.cost_estimate_pips` declarativo por
+   simbolo, em vez de manter 3.7 pips fixo para todos.
 4. Ajustar filtros de turnover/conviccao apenas com hipoteses
    predefinidas.
 5. Se houver edge robusto apos custo, planejar portfolio multi-symbol agregado,

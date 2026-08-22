@@ -14,6 +14,7 @@ from research.multi_symbol import (
     parse_symbols,
     run_multi_symbol,
     summary_stem,
+    symbol_cost_params,
     symbol_tag,
     write_summary_files,
 )
@@ -24,6 +25,34 @@ BASE_COSTS = {
     "slippage_pips": 0.5,
     "commission_per_lot_per_side": 3.50,
 }
+
+BASE_COSTS_DEFAULT_SPREAD = {
+    "spread_pips": None,
+    "slippage_pips": 0.5,
+    "commission_per_lot_per_side": 3.50,
+}
+
+
+def _calibration_fixture(
+    tmp_path: Path,
+    spreads: dict[str, float],
+) -> Path:
+    path = tmp_path / "cost_measurement_all.json"
+    path.write_text(
+        json.dumps(
+            {
+                "symbols": {
+                    symbol: {
+                        "spread_pips_median": spread,
+                    }
+                    for symbol, spread in spreads.items()
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return path
 
 
 def minimal_report(
@@ -103,6 +132,61 @@ def test_cost_modes():
 def test_symbol_tag_adds_symbol_suffix():
     assert symbol_tag(None, "EURUSD") == "eurusd"
     assert symbol_tag("dev", "USDJPY") == "dev-usdjpy"
+
+
+def test_symbol_cost_params_uses_baseline_spread_by_default():
+    params = symbol_cost_params(
+        symbol="EURUSD",
+        cost_mode="explicit",
+        base_cost_params=BASE_COSTS_DEFAULT_SPREAD,
+        calibrated_spread=False,
+        calibration_path=None,
+    )
+
+    assert params == BASE_COSTS
+
+
+def test_symbol_cost_params_can_load_calibrated_spread(
+    tmp_path,
+):
+    calibration_path = _calibration_fixture(
+        tmp_path,
+        {
+            "EURUSD": 0.3,
+        },
+    )
+
+    params = symbol_cost_params(
+        symbol="EURUSD",
+        cost_mode="explicit",
+        base_cost_params=BASE_COSTS_DEFAULT_SPREAD,
+        calibrated_spread=True,
+        calibration_path=calibration_path,
+    )
+
+    assert params["spread_pips"] == pytest.approx(0.3)
+    assert params["slippage_pips"] == pytest.approx(0.5)
+    assert params["commission_per_lot_per_side"] == pytest.approx(3.5)
+
+
+def test_symbol_cost_params_rejects_calibrated_and_override(
+    tmp_path,
+):
+    calibration_path = _calibration_fixture(
+        tmp_path,
+        {
+            "EURUSD": 0.3,
+        },
+    )
+
+    with pytest.raises(ValueError, match="not both"):
+        symbol_cost_params(
+            symbol="EURUSD",
+            cost_mode="explicit",
+            base_cost_params=BASE_COSTS,
+            calibrated_spread=True,
+            calibration_path=calibration_path,
+        )
 
 
 def test_dataset_preflight_reports_missing_datasets(monkeypatch, tmp_path):
@@ -305,6 +389,91 @@ def test_run_multi_symbol_calls_runner_for_each_symbol_and_mode(
         row["symbol"]
         for row in rows
     } == {"EURUSD", "USDJPY"}
+
+
+def test_run_multi_symbol_passes_calibrated_spread_per_symbol(
+    monkeypatch,
+    tmp_path,
+):
+    for symbol in ("EURUSD", "USDJPY"):
+        path = tmp_path / "data" / symbol / "M15.parquet"
+        path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        path.write_text(
+            "placeholder",
+            encoding="utf-8",
+        )
+
+    calibration_path = _calibration_fixture(
+        tmp_path,
+        {
+            "EURUSD": 0.3,
+            "USDJPY": 0.4,
+        },
+    )
+
+    def fake_dataset_path(symbol, timeframe):
+        return tmp_path / "data" / symbol / f"{timeframe}.parquet"
+
+    monkeypatch.setattr(
+        "research.multi_symbol.dataset_path",
+        fake_dataset_path,
+    )
+
+    calls = []
+
+    def fake_run_single(**kwargs) -> Path:
+        calls.append(kwargs)
+        path = (
+            tmp_path
+            / f"{kwargs['symbol']}_{kwargs['cost_mode']}.json"
+        )
+        path.write_text(
+            json.dumps(
+                minimal_report(
+                    symbol=kwargs["symbol"],
+                    cost=kwargs["cost_mode"],
+                    tag=kwargs["tag"],
+                )
+            ),
+            encoding="utf-8",
+        )
+        return path
+
+    run_multi_symbol(
+        symbols=("EURUSD", "USDJPY"),
+        strategy_key="declarative_ensemble",
+        strategy_params={
+            "config_path": DEFAULT_CONFIG_PATH,
+        },
+        timeframe="M15",
+        date_from=None,
+        date_to=None,
+        initial_capital=10000.0,
+        fixed_quantity=0.01,
+        cost="explicit",
+        cost_params=BASE_COSTS_DEFAULT_SPREAD,
+        cost_multiplier=1.0,
+        out_dir=tmp_path,
+        tag="cal",
+        write_equity=False,
+        calibrated_spread=True,
+        calibration_path=calibration_path,
+        run_single_fn=fake_run_single,
+    )
+
+    assert [
+        (
+            call["symbol"],
+            call["cost_params"]["spread_pips"],
+        )
+        for call in calls
+    ] == [
+        ("EURUSD", pytest.approx(0.3)),
+        ("USDJPY", pytest.approx(0.4)),
+    ]
 
 
 def test_run_multi_symbol_skip_missing_runs_available_symbol(
