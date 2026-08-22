@@ -148,6 +148,39 @@ Primeiro experimento:
 3. comparar contra Londres manha e fora de sessao como controles;
 4. somente depois criar uma Strategy operacional.
 
+Implementacao do estudo:
+
+```powershell
+python -m research.scalping_pullback_study --symbol USDJPY
+```
+
+Saidas:
+
+```text
+research/reports/scalping/scalping_pullback_study_USDJPY.json
+research/reports/scalping/scalping_pullback_study_USDJPY.csv
+```
+
+Primeira medicao com USDJPY M5 2015-01-01 -> 2026-08-21,
+pullback de 3 candles M5, minimo 2.0 pips, horizonte de 6 candles
+M5 e custo adicional de 1.7 pips alem do spread de entrada:
+
+| Sessao | Eventos | Gross medio | Hit rate | Net medio |
+|---|---:|---:|---:|---:|
+| all | 15,676 | 0.16 | 50.62% | -2.11 |
+| london_morning | 3,295 | 0.28 | 52.14% | -1.81 |
+| london_ny_overlap | 3,125 | 0.18 | 51.20% | -1.92 |
+| new_york | 3,050 | -0.01 | 49.90% | -2.14 |
+| off_session | 6,206 | 0.16 | 49.87% | -2.36 |
+
+Leitura: a forma pura da hipotese SC-01 nao passa no criterio de
+custo. Existe uma leve inclinacao bruta em Londres manha e overlap,
+mas pequena demais para vencer spread + slippage/commission estimados.
+O proximo passo nao deve ser criar uma estrategia operacional ainda;
+deve ser adicionar filtros de qualidade do setup: spread por slot,
+forca do regime M15, distancia do pullback, volatilidade intradiaria e
+separacao long/short.
+
 Critério inicial de rejeicao:
 
 - edge liquido <= 0 apos custo calibrado;
