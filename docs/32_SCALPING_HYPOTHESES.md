@@ -45,6 +45,49 @@ O importador converte EET/EEST para UTC, combina Bid/Ask em preco
 medio, calcula `spread` em pontos, grava M1 raw e gera M5 por resample
 sem preencher gaps.
 
+## Perfil de Spread
+
+Depois de importar M1/M5, medir o custo micro por horario:
+
+```powershell
+python -m research.scalping_spread_profile --symbol USDJPY --timeframe M1
+python -m research.scalping_spread_profile --symbol USDJPY --timeframe M5
+```
+
+Saidas:
+
+```text
+research/reports/scalping/scalping_spread_profile_USDJPY_M1.json
+research/reports/scalping/scalping_spread_profile_USDJPY_M1.csv
+research/reports/scalping/scalping_spread_profile_USDJPY_M5.json
+research/reports/scalping/scalping_spread_profile_USDJPY_M5.csv
+```
+
+Primeira medicao com JForex USDJPY M1/M5 2015-01-01 -> 2026-08-21:
+
+```text
+M1: mediana 0.40 pips, p90 0.90, p95 1.20
+M5: mediana 0.40 pips, p90 0.86, p95 1.16
+```
+
+Por sessao:
+
+| Timeframe | Sessao | Spread med | Spread p90 | Spread p95 |
+|---|---|---:|---:|---:|
+| M1 | london_ny_overlap | 0.30 | 0.70 | 0.80 |
+| M1 | london_morning | 0.40 | 0.70 | 0.80 |
+| M1 | new_york | 0.40 | 0.80 | 1.00 |
+| M1 | off_session | 0.50 | 1.20 | 2.30 |
+| M5 | london_ny_overlap | 0.34 | 0.68 | 0.78 |
+| M5 | london_morning | 0.36 | 0.66 | 0.76 |
+| M5 | new_york | 0.40 | 0.78 | 0.94 |
+| M5 | off_session | 0.46 | 1.18 | 2.34 |
+
+Leitura inicial: para SC-01, a janela operacional candidata deve
+comecar por Londres/NY overlap, especialmente UTC 14-16. Fora de
+sessao o p90/p95 de spread cresce o bastante para tornar scalping
+menos atraente.
+
 ## SC-01 — USDJPY Micro Pullback em Regime Favoravel
 
 Status:
@@ -100,9 +143,9 @@ Timeout: 5-12 candles M1, ou 2-4 candles M5
 
 Primeiro experimento:
 
-1. medir spreads M1/M5 por horario;
-2. marcar periodos em que o M15 `ensemble_regime_cost` esta direcional;
-3. estudar retornos condicionais apos pullbacks em M5;
+1. marcar periodos em que o M15 `ensemble_regime_cost` esta direcional;
+2. estudar retornos condicionais apos pullbacks em M5 durante UTC 14-16;
+3. comparar contra Londres manha e fora de sessao como controles;
 4. somente depois criar uma Strategy operacional.
 
 Critério inicial de rejeicao:
