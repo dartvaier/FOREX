@@ -21,6 +21,7 @@ from research.runner import (
     REPORTS_DIR,
     STRATEGY_REGISTRY,
     coerce_strategy_params,
+    dataset_path,
     discover_strategy_class,
     parse_params,
     run_single,
@@ -53,6 +54,81 @@ SUMMARY_COLUMNS = [
 ]
 
 RunSingleFn = Callable[..., Path]
+
+
+def missing_dataset_paths(
+    symbols: tuple[str, ...],
+    *,
+    timeframe: str,
+) -> dict[str, Path]:
+    missing = {}
+
+    for symbol in symbols:
+        path = dataset_path(
+            symbol,
+            timeframe,
+        )
+
+        if not path.exists():
+            missing[symbol] = path
+
+    return missing
+
+
+def available_symbols(
+    symbols: tuple[str, ...],
+    *,
+    timeframe: str,
+) -> tuple[str, ...]:
+    missing = missing_dataset_paths(
+        symbols,
+        timeframe=timeframe,
+    )
+
+    return tuple(
+        symbol
+        for symbol in symbols
+        if symbol not in missing
+    )
+
+
+def dataset_preflight_message(
+    missing: dict[str, Path],
+) -> str:
+    lines = [
+        "missing datasets for multi-symbol run:",
+    ]
+
+    for symbol, path in sorted(missing.items()):
+        lines.append(
+            f"- {symbol}: {path}"
+        )
+
+    lines.extend(
+        [
+            "To prepare M15 data for a symbol:",
+            "  python collect_history.py --symbol <SYMBOL>",
+            "  python build_timeframes.py --symbol <SYMBOL>",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def assert_datasets_available(
+    symbols: tuple[str, ...],
+    *,
+    timeframe: str,
+) -> None:
+    missing = missing_dataset_paths(
+        symbols,
+        timeframe=timeframe,
+    )
+
+    if missing:
+        raise FileNotFoundError(
+            dataset_preflight_message(missing)
+        )
 
 
 def parse_symbols(
@@ -249,6 +325,7 @@ def run_multi_symbol(
     out_dir: Path,
     tag: str | None,
     write_equity: bool,
+    skip_missing: bool = False,
     run_single_fn: RunSingleFn = run_single,
 ) -> list[dict[str, Any]]:
     if strategy_key not in STRATEGY_REGISTRY:
@@ -264,6 +341,23 @@ def run_multi_symbol(
     strategy_class = discover_strategy_class(
         strategy_module
     )
+
+    if skip_missing:
+        symbols = available_symbols(
+            symbols,
+            timeframe=timeframe,
+        )
+    else:
+        assert_datasets_available(
+            symbols,
+            timeframe=timeframe,
+        )
+
+    if not symbols:
+        raise FileNotFoundError(
+            "no requested symbols have available datasets"
+        )
+
     rows = []
 
     for symbol in symbols:
@@ -412,6 +506,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--equity-csv",
         action="store_true",
     )
+    parser.add_argument(
+        "--skip-missing",
+        action="store_true",
+        help="run only symbols with available datasets",
+    )
     return parser
 
 
@@ -441,26 +540,30 @@ def main() -> None:
         ),
     )
 
-    rows = run_multi_symbol(
-        symbols=symbols,
-        strategy_key=args.strategy,
-        strategy_params=strategy_params,
-        timeframe=args.timeframe,
-        date_from=args.date_from,
-        date_to=args.date_to,
-        initial_capital=args.initial_capital,
-        fixed_quantity=args.fixed_quantity,
-        cost=args.cost,
-        cost_params={
-            "spread_pips": args.spread_pips,
-            "slippage_pips": args.slippage_pips,
-            "commission_per_lot_per_side": args.commission,
-        },
-        cost_multiplier=args.cost_multiplier,
-        out_dir=args.out_dir,
-        tag=args.tag,
-        write_equity=args.equity_csv,
-    )
+    try:
+        rows = run_multi_symbol(
+            symbols=symbols,
+            strategy_key=args.strategy,
+            strategy_params=strategy_params,
+            timeframe=args.timeframe,
+            date_from=args.date_from,
+            date_to=args.date_to,
+            initial_capital=args.initial_capital,
+            fixed_quantity=args.fixed_quantity,
+            cost=args.cost,
+            cost_params={
+                "spread_pips": args.spread_pips,
+                "slippage_pips": args.slippage_pips,
+                "commission_per_lot_per_side": args.commission,
+            },
+            cost_multiplier=args.cost_multiplier,
+            out_dir=args.out_dir,
+            tag=args.tag,
+            write_equity=args.equity_csv,
+            skip_missing=args.skip_missing,
+        )
+    except FileNotFoundError as exc:
+        raise SystemExit(str(exc)) from exc
     json_path, csv_path = write_summary_files(
         rows,
         out_dir=args.out_dir,
