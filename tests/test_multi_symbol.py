@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import pytest
 
+from backtest.instruments import (
+    INSTRUMENT_REGISTRY,
+    instrument_specification,
+)
 from backtest.models import InstrumentSpecification
 from research.runner import (
-    INSTRUMENT_REGISTRY,
     money_to_pips,
     round_trip_cost_money,
 )
@@ -38,9 +41,7 @@ def test_registry_has_all_seven_majors():
 
 
 def test_usdjpy_uses_three_digits_and_pip_001():
-    spec = InstrumentSpecification(
-        **INSTRUMENT_REGISTRY["USDJPY"]
-    )
+    spec = instrument_specification("USDJPY")
 
     assert spec.digits == 3
     assert spec.point == 0.001

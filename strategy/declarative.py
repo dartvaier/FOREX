@@ -11,6 +11,7 @@ from alpha.protocol import AlphaModel
 from alpha.quant import EmaTrendAlphaModel, TimeSeriesMomentumAlphaModel
 from alpha.regime import RegimeGatedAlphaModel, TrendVolatilityRegimeGate
 from backtest.context import BacktestContext
+from backtest.instruments import instrument_specification
 from backtest.models import Signal, Timeframe
 from strategy.ensemble import EnsembleStrategy
 
@@ -34,6 +35,7 @@ class AlphaEnsembleConfig:
     name: str
     strategy_id: str
     symbol: str | None
+    symbols: tuple[str, ...] | None
     models: tuple[Mapping[str, Any], ...]
     blend: Mapping[str, Any]
     signal_policy: Mapping[str, Any]
@@ -75,6 +77,14 @@ class DeclarativeEnsembleStrategy:
         if config.symbol is not None and config.symbol != self.symbol:
             raise ValueError(
                 "config symbol does not match strategy symbol"
+            )
+
+        if (
+            config.symbols is not None
+            and self.symbol not in config.symbols
+        ):
+            raise ValueError(
+                "strategy symbol is not listed in config symbols"
             )
 
         models, weights = build_alpha_models(
@@ -184,6 +194,7 @@ class DeclarativeEnsembleStrategy:
                     self._config.source_path
                 ),
                 "strategy_config_sha256": self._config.sha256,
+                "strategy_config_symbols": self._config.symbols,
             },
         )
 
@@ -242,13 +253,16 @@ def build_alpha_models(
                 f"unknown alpha model id: {model_key}"
             )
 
-        params = _optional_mapping(
-            model_config,
-            "params",
+        params = _resolve_model_params(
+            _optional_mapping(
+                model_config,
+                "params",
+            ),
+            symbol=symbol,
         )
         model = model_class(
             symbol=symbol,
-            **dict(params),
+            **params,
         )
 
         if "regime_gate" in model_config:
@@ -333,6 +347,38 @@ def _strategy_config_from_mapping(
 
         symbol = symbol.strip()
 
+    symbols = payload.get(
+        "symbols",
+    )
+
+    if symbols is not None:
+        if not isinstance(symbols, list) or not symbols:
+            raise ValueError(
+                "symbols must be a non-empty list or omitted"
+            )
+
+        normalized_symbols = []
+
+        for item in symbols:
+            if not isinstance(item, str) or not item.strip():
+                raise ValueError(
+                    "symbols must contain only non-empty strings"
+                )
+
+            normalized_symbols.append(item.strip())
+
+        if len(set(normalized_symbols)) != len(normalized_symbols):
+            raise ValueError(
+                "symbols must not contain duplicates"
+            )
+
+        symbols = tuple(normalized_symbols)
+
+    if symbol is not None and symbols is not None:
+        raise ValueError(
+            "use either symbol or symbols, not both"
+        )
+
     models = payload.get(
         "models",
     )
@@ -382,6 +428,7 @@ def _strategy_config_from_mapping(
         name=name,
         strategy_id=strategy_id.strip(),
         symbol=symbol,
+        symbols=symbols,
         models=tuple(models),
         blend=blend,
         signal_policy=signal_policy,
@@ -390,6 +437,21 @@ def _strategy_config_from_mapping(
         source_path=source_path,
         sha256=sha256,
     )
+
+
+def _resolve_model_params(
+    params: Mapping[str, Any],
+    *,
+    symbol: str,
+) -> dict[str, Any]:
+    resolved = dict(params)
+
+    if resolved.get("pip_size") == "auto":
+        resolved["pip_size"] = instrument_specification(
+            symbol
+        ).pip_size
+
+    return resolved
 
 
 def _wrap_cost_gate(

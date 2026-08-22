@@ -138,6 +138,7 @@ def test_load_strategy_config_parses_yaml_subset(tmp_path):
     assert config.name == "test-declarative"
     assert config.strategy_id == "TEST-DECLARATIVE"
     assert config.symbol == "EURUSD"
+    assert config.symbols is None
     assert len(config.models) == 2
     assert config.blend["method"] == "weighted_mean"
     assert config.signal_policy["enter_long"] == 0.25
@@ -154,6 +155,24 @@ def test_load_strategy_config_loads_default_yaml():
     assert config.strategy_id == "ENSEMBLE-LOW-TURNOVER-V1"
     assert config.blend["min_active_models"] == 2
     assert config.cost_gate["cost_estimate_pips"] == 3.7
+
+
+def test_load_strategy_config_loads_multi_symbol_yaml():
+    config = load_strategy_config(
+        "config/strategies/ensemble_low_turnover_multi_symbol_v1.yaml"
+    )
+
+    assert config.name == "ensemble-low-turnover-multi-symbol-v1"
+    assert config.symbol is None
+    assert config.symbols == (
+        "AUDUSD",
+        "EURUSD",
+        "GBPUSD",
+        "NZDUSD",
+        "USDCAD",
+        "USDCHF",
+        "USDJPY",
+    )
 
 
 def test_build_alpha_models_from_config(tmp_path):
@@ -174,6 +193,38 @@ def test_build_alpha_models_from_config(tmp_path):
         "TIME-SERIES-MOMENTUM-ALPHA": 1.0,
         "EMA-TREND-ALPHA": 1.0,
     }
+
+
+def test_build_alpha_models_resolves_auto_pip_size_for_usdjpy():
+    config = load_strategy_config(
+        "config/strategies/ensemble_low_turnover_multi_symbol_v1.yaml"
+    )
+
+    models, _ = build_alpha_models(
+        config,
+        symbol="USDJPY",
+    )
+
+    assert all(
+        model.inner.pip_size == 0.01
+        for model in models
+    )
+
+
+def test_build_alpha_models_resolves_auto_pip_size_for_eurusd():
+    config = load_strategy_config(
+        "config/strategies/ensemble_low_turnover_multi_symbol_v1.yaml"
+    )
+
+    models, _ = build_alpha_models(
+        config,
+        symbol="EURUSD",
+    )
+
+    assert all(
+        model.inner.pip_size == 0.00010
+        for model in models
+    )
 
 
 def test_declarative_ensemble_enters_when_yaml_models_agree(tmp_path):
@@ -252,6 +303,37 @@ def test_declarative_ensemble_rejects_symbol_mismatch(tmp_path):
             symbol="EURUSD",
             config_path=str(path),
         )
+
+
+def test_declarative_ensemble_rejects_symbol_outside_config_symbols(
+    tmp_path,
+):
+    path = write_config(
+        tmp_path,
+        valid_config_text().replace(
+            "symbol: EURUSD",
+            "symbols: [GBPUSD, USDJPY]",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="config symbols"):
+        DeclarativeEnsembleStrategy(
+            symbol="EURUSD",
+            config_path=str(path),
+        )
+
+
+def test_load_strategy_config_rejects_symbol_and_symbols(tmp_path):
+    path = write_config(
+        tmp_path,
+        valid_config_text().replace(
+            "symbol: EURUSD",
+            "symbol: EURUSD\nsymbols: [EURUSD, GBPUSD]",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="either symbol or symbols"):
+        load_strategy_config(path)
 
 
 def test_load_strategy_config_rejects_unknown_model(tmp_path):
