@@ -211,10 +211,34 @@ Leitura:
 - o proximo trabalho deve focar diagnostico por alpha, por regime e por
   custo medido antes de qualquer portfolio agregado.
 
-## 7. Proximos Passos
+## 7. Medicao de Spreads JForex
 
-1. Medir spreads historicos por simbolo a partir do campo `spread`
-   importado.
+Comando:
+
+```powershell
+python -m research.cost_measurement --out research/reports/cost_measurement_jforex_all.json
+```
+
+| Symbol | Spread med | Spread p90 | RT overall med | RT weekly med |
+|---|---:|---:|---:|---:|
+| AUDUSD | 1.00 | 1.40 | 2.70 | 2.70 |
+| EURUSD | 0.30 | 0.60 | 2.00 | 2.10 |
+| GBPUSD | 0.90 | 1.60 | 2.60 | 2.70 |
+| NZDUSD | 1.10 | 1.70 | 2.80 | 2.80 |
+| USDCAD | 1.20 | 1.80 | 2.90 | 3.00 |
+| USDCHF | 1.00 | 1.90 | 2.70 | 2.80 |
+| USDJPY | 0.40 | 0.90 | 2.10 | 2.20 |
+
+Leitura: os spreads medianos importados do JForex sao menores que o
+baseline fixo de 2.0 pips usado nos backtests `explicit`, mas ainda
+ha slippage e comissao no round-trip. O proximo passo deve comparar
+`explicit` fixo contra custo calibrado por simbolo, sem mudar a regra
+de entrada ainda.
+
+## 8. Proximos Passos
+
+1. Rodar backtests com custo calibrado por simbolo a partir da tabela
+   de spreads JForex.
 2. Rodar diagnosticos por alpha para separar TSMOM, EMA, regime gate e
    cost gate.
 3. Avaliar USDJPY isoladamente em janelas temporais e stress de custo.
