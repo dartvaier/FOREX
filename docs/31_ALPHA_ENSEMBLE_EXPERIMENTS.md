@@ -274,13 +274,59 @@ Leitura:
 - antes de qualquer portfolio, USDJPY precisa de analise temporal,
   diagnostico por alpha e stress de custo.
 
-## 9. Proximos Passos
+## 9. Diagnostico por Alpha — USDJPY
 
-1. Rodar diagnosticos por alpha para separar TSMOM, EMA, regime gate e
-   cost gate.
-2. Avaliar USDJPY isoladamente em janelas temporais e stress de custo.
-3. Calibrar tambem o `cost_gate.cost_estimate_pips` declarativo por
+Comando:
+
+```powershell
+python -m research.alpha_diagnostic_matrix --symbol USDJPY --cost both --calibrated-spread --calibration-path research/reports/cost_measurement_jforex_all.json
+```
+
+Resumo agregado:
+
+```text
+research/reports/alpha_diagnostics/alpha_diagnostic_matrix_USDJPY_both.csv
+```
+
+| Variant | Cost | Trades | Net PnL | Return % | Max DD % | PF | Expectancy | Cost pips |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ema_only | explicit | 8078 | -921.26 | -9.21 | 9.69 | 0.887 | -0.1140 | 2.27 |
+| ema_only | zero | 8078 | 568.23 | 5.68 | 1.21 | 1.080 | 0.0703 | 0.00 |
+| ensemble_cost_gate | explicit | 2617 | 30.84 | 0.31 | 2.25 | 1.006 | 0.0118 | 2.28 |
+| ensemble_cost_gate | zero | 2617 | 510.47 | 5.10 | 1.82 | 1.106 | 0.1951 | 0.00 |
+| ensemble_raw | explicit | 4973 | -281.85 | -2.82 | 4.01 | 0.956 | -0.0567 | 2.27 |
+| ensemble_raw | zero | 4973 | 635.78 | 6.36 | 1.41 | 1.109 | 0.1278 | 0.00 |
+| ensemble_regime | explicit | 1617 | 74.82 | 0.75 | 2.03 | 1.023 | 0.0463 | 2.27 |
+| ensemble_regime | zero | 1617 | 374.52 | 3.75 | 1.77 | 1.120 | 0.2316 | 0.00 |
+| ensemble_regime_cost | explicit | 1104 | 253.14 | 2.53 | 2.00 | 1.090 | 0.2293 | 2.27 |
+| ensemble_regime_cost | zero | 1104 | 457.25 | 4.57 | 1.69 | 1.170 | 0.4142 | 0.00 |
+| tsmom_only | explicit | 2201 | -94.59 | -0.95 | 2.73 | 0.975 | -0.0430 | 2.28 |
+| tsmom_only | zero | 2201 | 308.46 | 3.08 | 2.26 | 1.086 | 0.1401 | 0.00 |
+
+Leitura:
+
+- TSMOM e EMA possuem edge bruto em zero-cost, mas nao cobrem custo
+  calibrado sozinhos;
+- EMA tem turnover muito alto, o que destrói o resultado apos custo;
+- ensemble bruto melhora edge bruto, mas ainda perde apos custo;
+- cost gate atual torna o ensemble levemente positivo;
+- regime gate melhora profit factor e reduz trades;
+- regime + cost gate e a melhor variante ate aqui: 1104 trades,
+  `+2.53%`, PF 1.090, expectancy 0.2293 apos custo calibrado.
+
+Conclusao provisoria: para USDJPY, o sinal promissor nao e um alpha
+isolado. Ele aparece quando o ensemble e filtrado por regime e custo.
+O proximo passo deve testar se isso e estavel por janelas temporais e
+sob stress de custo antes de promover a variante.
+
+## 10. Proximos Passos
+
+1. Avaliar USDJPY `ensemble_regime_cost` por janelas temporais e stress
+   de custo.
+2. Calibrar tambem o `cost_gate.cost_estimate_pips` declarativo por
    simbolo, em vez de manter 3.7 pips fixo para todos.
+3. Rodar o mesmo diagnostico nos outros pares para confirmar se USDJPY
+   e caso isolado ou padrao repetivel.
 4. Ajustar filtros de turnover/conviccao apenas com hipoteses
    predefinidas.
 5. Se houver edge robusto apos custo, planejar portfolio multi-symbol agregado,
