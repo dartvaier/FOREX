@@ -17,7 +17,7 @@ O objetivo do projeto é desenvolver uma infraestrutura confiável para:
 O projeto é desenvolvido de forma incremental, priorizando integridade dos dados, reprodutibilidade e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
 > **Status atual:** infraestrutura de mercado e dados concluída; o Backtest
-> Engine baseline está em implementação, com F5.1–F5.13 concluídas.
+> Quantitative Research Core (F5) concluído; F6.1 Research Service iniciado.
 
 ---
 
@@ -30,7 +30,8 @@ O projeto é desenvolvido de forma incremental, priorizando integridade dos dado
 | F2 | Market Data Layer | ✅ Concluída |
 | F3 | Historical Data Layer | ✅ Concluída |
 | F4 | Data Transformation | ✅ Concluída |
-| F5 | Backtest Engine | 🟡 Em andamento (F5.1–F5.13 concluídas) |
+| F5 | Quantitative Research Core | ✅ Concluída |
+| F6.1 | Research Service / Agent Tool Layer | 🟡 Em andamento |
 | F6 | Strategy Engine | ⬜ Não iniciada |
 | F7 | Risk Engine | ⬜ Não iniciada |
 | F8 | Execution Engine | ⬜ Não iniciada |
