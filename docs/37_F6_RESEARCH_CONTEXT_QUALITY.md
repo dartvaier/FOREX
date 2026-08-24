@@ -14,6 +14,11 @@ and novelty against the Registry context. It also prohibits unregistered
 indicators, filters and conditions: only the declared EMA crossover may define
 the hypothesis.
 
+The context also carries non-negotiable EURUSD facts: one pip is `0.00010`, one
+point is `0.00001`, and historical gaps are preserved rather than filled. A
+proposal must use units consistent with those facts and cannot assume a
+continuous historical series.
+
 `HypothesisProposal` now carries `parameter_rationale`; the deterministic
 validator requires it and a quantitative falsification criterion. This remains
 a proposal boundary: an accepted proposal does not start research, alter the
