@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Mapping
 
 from research.agent import ResearchAssessment
+from research.context import proposal_context
 from research.ollama_provider import OllamaProvider, OllamaProviderError
 from research.proposal import HypothesisProposal, HypothesisProposalValidator
 from research.registry import StrategyRegistry
@@ -34,10 +35,7 @@ class ProviderCanaryRunner:
 
     def proposal_only(self, canary_id: str) -> CanaryResult:
         self._id(canary_id)
-        context = {
-            "hypotheses": [(x.hypothesis_id, x.fingerprint) for x in self.registry._records.values()],
-            "allowed_strategy": "EMA_CROSSOVER EURUSD H1",
-        }
+        context = proposal_context(self.registry)
         try:
             proposal = self.provider.propose(context)
             validation = self.validator.validate(proposal)
