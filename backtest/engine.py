@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from math import isfinite
 
 from backtest.clock import SimulationClock
@@ -31,16 +32,18 @@ class BacktestResult:
 
 
 class BacktestEngine:
-    def __init__(self, *, feed: HistoricalBarFeed, strategy: Strategy, risk_model: RiskModel, execution: SimulatedExecution, portfolio: Portfolio, context_closed_bar_limit: int | None = None) -> None:
+    def __init__(self, *, feed: HistoricalBarFeed, strategy: Strategy, risk_model: RiskModel, execution: SimulatedExecution, portfolio: Portfolio, context_closed_bar_limit: int | None = None, trading_start: datetime | None = None) -> None:
         if not isinstance(feed, HistoricalBarFeed): raise TypeError("feed must be a HistoricalBarFeed")
         if not isinstance(strategy, Strategy): raise TypeError("strategy must be a Strategy")
         if not isinstance(risk_model, RiskModel): raise TypeError("risk_model must be a RiskModel")
         if not isinstance(execution, SimulatedExecution): raise TypeError("execution must be a SimulatedExecution")
         if not isinstance(portfolio, Portfolio): raise TypeError("portfolio must be a Portfolio")
         if context_closed_bar_limit is not None and (not isinstance(context_closed_bar_limit, int) or isinstance(context_closed_bar_limit, bool) or context_closed_bar_limit <= 0): raise ValueError("context_closed_bar_limit must be a positive integer or None")
+        if trading_start is not None and (trading_start.tzinfo is None or trading_start.utcoffset() != timedelta(0)): raise ValueError("trading_start must be timezone-aware UTC")
         if portfolio.symbol != feed.config.symbol: raise ValueError("portfolio symbol must match feed symbol")
         self.feed, self.strategy, self.risk_model, self.execution, self.portfolio = feed, strategy, risk_model, execution, portfolio
         self.context_closed_bar_limit = context_closed_bar_limit
+        self.trading_start = trading_start
 
     def run(self) -> BacktestResult:
         clock = SimulationClock(self.feed.bar_starts, self.feed.config.timeframe)
@@ -64,6 +67,8 @@ class BacktestEngine:
                 self.portfolio.mark_to_market(timestamp=event.timestamp, price=context.current_bar.close)
             signal = self.strategy.on_bar(context)
             if not isinstance(signal, Signal): raise TypeError("Strategy.on_bar must return a Signal")
+            if self.trading_start is not None and context.current_bar.time < self.trading_start:
+                continue
             signals.append(signal)
             decision = self.risk_model.evaluate(signal, position=self.portfolio.position)
             decisions.append(decision)
