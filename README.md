@@ -16,8 +16,9 @@ O objetivo do projeto é desenvolver uma infraestrutura confiável para:
 
 O projeto é desenvolvido de forma incremental, priorizando integridade dos dados, reprodutibilidade e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-> **Status atual:** infraestrutura de mercado e dados concluída; o Backtest
-> Quantitative Research Core (F5) concluído; F6.1 Research Service iniciado.
+> **Status atual:** Quantitative Research Core (F5) concluído; a camada de
+> pesquisa com IA está em F6.8e, limitada a canaries proposal-only auditáveis.
+> Não há pesquisa autônoma, execução, MT5 ou acesso a holdout pelo agente.
 
 ---
 
@@ -31,8 +32,8 @@ O projeto é desenvolvido de forma incremental, priorizando integridade dos dado
 | F3 | Historical Data Layer | ✅ Concluída |
 | F4 | Data Transformation | ✅ Concluída |
 | F5 | Quantitative Research Core | ✅ Concluída |
-| F6.1 | Research Service / Agent Tool Layer | 🟡 Em andamento |
-| F6 | Strategy Engine | ⬜ Não iniciada |
+| F6.1–F6.8e | AI Research Layer / canaries controlados | 🟡 Em andamento — sem autonomia |
+| F6.9 | Strategy Catalog Expansion | ⬜ Não iniciada |
 | F7 | Risk Engine | ⬜ Não iniciada |
 | F8 | Execution Engine | ⬜ Não iniciada |
 | F9 | Validação em conta Demo | ⬜ Não iniciada |
