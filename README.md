@@ -30,7 +30,7 @@ O projeto é desenvolvido de forma incremental, priorizando integridade dos dado
 | F2 | Market Data Layer | ✅ Concluída |
 | F3 | Historical Data Layer | ✅ Concluída |
 | F4 | Data Transformation | ✅ Concluída |
-| F5 | Backtest Engine | 🟡 Em andamento (F5.1–F5.3 concluídas) |
+| F5 | Backtest Engine | 🟡 Em andamento (F5.1–F5.4 concluídas) |
 | F6 | Strategy Engine | ⬜ Não iniciada |
 | F7 | Risk Engine | ⬜ Não iniciada |
 | F8 | Execution Engine | ⬜ Não iniciada |

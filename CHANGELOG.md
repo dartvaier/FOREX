@@ -66,6 +66,7 @@ Backtesting Infrastructure
 - F5.2 strategy-safe `BacktestContext`, deterministic clock, immutable bars,
   historical feed, and explicit no-look-ahead tests.
 - F5.3 single-symbol Portfolio, Position and immutable accounting snapshots.
+- F5.4 deterministic ZeroCostModel and FixedCostModel execution-cost estimates.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
