@@ -70,7 +70,7 @@ F3  Historical Data             ✅ COMPLETE
 
 F4  Data Transformation         ✅ COMPLETE
 
-F5  Backtest Engine             🟡 IN PROGRESS (F5.1–F5.7 complete)
+F5  Backtest Engine             🟡 IN PROGRESS (F5.1–F5.8 complete)
 
 F6  Strategy Research           ⬜ NOT STARTED
 
