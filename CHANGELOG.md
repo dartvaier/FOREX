@@ -67,6 +67,7 @@ Backtesting Infrastructure
   historical feed, and explicit no-look-ahead tests.
 - F5.3 single-symbol Portfolio, Position and immutable accounting snapshots.
 - F5.4 deterministic ZeroCostModel and FixedCostModel execution-cost estimates.
+- F5.5 fixed-size RiskModel with one-position baseline RiskLimits and decisions.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
