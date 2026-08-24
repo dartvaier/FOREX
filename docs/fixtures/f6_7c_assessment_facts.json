@@ -1,0 +1,11 @@
+{
+  "evidence_fingerprint": "67dc149886586d7b9a51a1fb9b6bf7eb7c72eea36a3a20aab4f2a786a5e4ee51",
+  "gate_status": "PASS",
+  "metrics": {
+    "max_drawdown": -0.08,
+    "net_return": 0.14,
+    "sharpe": 1.25,
+    "trade_count": 120
+  },
+  "source": "synthetic_frozen_f6_7c_canary"
+}

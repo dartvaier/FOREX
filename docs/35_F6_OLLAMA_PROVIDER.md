@@ -21,3 +21,18 @@ check, validator execution and the bounded scope. A proposal-only canary has no
 
 Review the artifacts before running assessment-only. A provider timeout or other
 failure is fail-closed: the command exits non-zero and no research is started.
+
+Assessment-only needs an explicitly frozen JSON object supplied by the trusted
+operator; the LLM receives its values but never a file capability. It snapshots
+and fingerprints the facts before the provider call, then requires the same
+snapshot and `gate_status` afterwards:
+
+```powershell
+python -m research.canary assessment-only `
+  --canary-id assessment-qwen3-14b-YYYYMMDD `
+  --facts-file docs/fixtures/f6_7c_assessment_facts.json
+```
+
+The output includes `facts.json` and `assessment.json`. The latter is an
+interpretation alongside the immutable fact snapshot; it is not an authority to
+rewrite any metric or GateStatus.
