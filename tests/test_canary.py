@@ -5,7 +5,7 @@ from research.proposal import HypothesisProposalValidator,HypothesisProposal
 from research.service import StrategySpec,RegisteredStrategy
 import json
 class Mock:
- def propose(self,c):return HypothesisProposal("title","sufficient thesis","sufficient mechanism",StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",{"fast_period":2,"slow_period":3}),("falsify",))
+ def propose(self,c):return HypothesisProposal("title","sufficient thesis","sufficient mechanism",StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",{"fast_period":2,"slow_period":3}),("net return below 0.0 over six months",),("Periods separate short and medium trend horizons",))
  def assess(self,f):return "text only"
 class FailedProvider:
  def propose(self,c):raise OllamaProviderError(OllamaErrorCode.TIMEOUT,"deadline")

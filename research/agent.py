@@ -7,6 +7,7 @@ import json
 from types import MappingProxyType
 from typing import Mapping
 from research.proposal import HypothesisProposal,HypothesisProposalValidator,ProposalValidationResult,ProposalStatus
+from research.context import proposal_context
 from research.registry import StrategyRegistry
 from research.orchestrator import ResearchOrchestrator,ResearchRun
 
@@ -32,7 +33,7 @@ class ResearchAgent:
  def query_hypotheses(self,status=None): return tuple(self.registry._records.values() if status is None else self.registry.by_status(status))
  def propose(self):
   if self._proposals>=self.limits.max_proposals: raise RuntimeError("proposal limit reached")
-  context={"hypotheses":[(x.hypothesis_id,x.fingerprint) for x in self.registry._records.values()],"allowed_strategy":"EMA_CROSSOVER EURUSD H1"}; raw=self.provider.propose(context); self._proposals+=1
+  raw=self.provider.propose(proposal_context(self.registry)); self._proposals+=1
   if not isinstance(raw,HypothesisProposal): return ProposalValidationResult(ProposalStatus.INVALID,"","provider output is not a proposal")
   return self.validator.validate(raw)
  def submit(self,proposal:HypothesisProposal): return self.validator.validate(proposal)
