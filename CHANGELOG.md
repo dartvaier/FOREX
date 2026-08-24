@@ -78,6 +78,7 @@ Backtesting Infrastructure
   in-sample/out-of-sample PerformanceReports.
 - F5.11 pre-declared development-only EMA parameter sensitivity analysis.
 - F5.12 rolling walk-forward validation with final-holdout exclusion.
+- F5.13 frozen final-holdout Strategy Gate with explicit inconclusive state.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
