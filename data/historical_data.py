@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from broker.mt5_client import MT5Client
+if TYPE_CHECKING:
+    from broker.mt5_client import MT5Client
 
 
 class HistoricalData:
@@ -14,7 +16,7 @@ class HistoricalData:
 
     def __init__(
         self,
-        client: MT5Client,
+        client: "MT5Client",
         base_path: str = "data/raw"
     ):
         self.client = client

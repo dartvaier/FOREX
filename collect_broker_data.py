@@ -6,10 +6,7 @@ from argparse import ArgumentParser
 from datetime import datetime, timezone
 from pathlib import Path
 
-import MetaTrader5 as mt5
-
 from broker.history_export import collect_broker_snapshot
-from broker.mt5_client import MT5Client
 
 
 DEFAULT_SYMBOLS = [
@@ -75,6 +72,10 @@ def build_parser() -> ArgumentParser:
 
 
 def main() -> int:
+    import MetaTrader5 as mt5
+
+    from broker.mt5_client import MT5Client
+
     args = build_parser().parse_args()
     if bool(args.date_from) != bool(args.date_to):
         raise SystemExit("--date-from e --date-to devem ser informados juntos")
