@@ -2,6 +2,8 @@
 import json,os
 from dataclasses import dataclass
 from enum import StrEnum
+from multiprocessing import get_context
+from queue import Empty
 from urllib.error import HTTPError,URLError
 from urllib.request import Request,urlopen
 from research.agent import LLMProvider
@@ -12,16 +14,25 @@ class OllamaProviderError(RuntimeError):
  def __init__(self,code,message):self.code=code;super().__init__(message)
 @dataclass(frozen=True,slots=True)
 class OllamaTelemetry: host:str; model:str
+def _request_worker(host,payload,timeout,result_queue):
+ try:
+  req=Request(host+"/api/chat",data=json.dumps(payload).encode(),headers={"Content-Type":"application/json"});result_queue.put(("SUCCESS",json.loads(urlopen(req,timeout=timeout).read())))
+ except HTTPError as e:result_queue.put(("MODEL_NOT_FOUND" if e.code==404 else "PROVIDER_ERROR","ollama request failed"))
+ except URLError:result_queue.put(("CONNECTION_REFUSED","ollama unavailable"))
+ except TimeoutError:result_queue.put(("TIMEOUT","ollama timeout"))
+ except Exception:result_queue.put(("PROVIDER_ERROR","ollama request failed"))
 class OllamaProvider(LLMProvider):
  def __init__(self,host=None,model=None,transport=None,timeout=30): self.host=(host or os.getenv("OLLAMA_HOST","http://localhost:11434")).rstrip("/");self.model=model or os.getenv("OLLAMA_MODEL","qwen3:8b");self.transport=transport or self._http;self.timeout=timeout;self.telemetry=OllamaTelemetry(self.host,self.model)
  def _http(self,payload):
-  try:
-   req=Request(self.host+"/api/chat",data=json.dumps(payload).encode(),headers={"Content-Type":"application/json"});return json.loads(urlopen(req,timeout=self.timeout).read())
-  except HTTPError as e: raise OllamaProviderError(OllamaErrorCode.MODEL_NOT_FOUND if e.code==404 else OllamaErrorCode.PROVIDER_ERROR,"ollama request failed")
-  except URLError as e: raise OllamaProviderError(OllamaErrorCode.CONNECTION_REFUSED,"ollama unavailable") from e
-  except TimeoutError as e: raise OllamaProviderError(OllamaErrorCode.TIMEOUT,"ollama timeout") from e
+  context=get_context("spawn");result_queue=context.Queue();process=context.Process(target=_request_worker,args=(self.host,payload,self.timeout,result_queue));process.start();process.join(self.timeout)
+  if process.is_alive(): process.terminate();process.join();result_queue.close();raise OllamaProviderError(OllamaErrorCode.TIMEOUT,"ollama deadline exceeded")
+  try: status,value=result_queue.get(timeout=1)
+  except Empty: raise OllamaProviderError(OllamaErrorCode.INVALID_OUTPUT,"ollama returned no result")
+  finally: result_queue.close()
+  if status!="SUCCESS": raise OllamaProviderError(OllamaErrorCode(status),value)
+  return value
  def _ask(self,prompt,schema):
-  try: raw=self.transport({"model":self.model,"messages":[{"role":"user","content":prompt}],"stream":False,"format":schema,"options":{"temperature":0}});return json.loads(raw["message"]["content"])
+  try: raw=self.transport({"model":self.model,"messages":[{"role":"user","content":prompt}],"stream":False,"think":False,"format":schema,"options":{"temperature":0}});return json.loads(raw["message"]["content"])
   except OllamaProviderError: raise
   except Exception as e: raise OllamaProviderError(OllamaErrorCode.INVALID_OUTPUT,"invalid structured output") from e
  def propose(self,context):
