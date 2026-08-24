@@ -15,6 +15,11 @@ def test_duplicate_rationale_unsupported_and_lineage(tmp_path):
  assert v.validate(proposal(thesis="bad")).status is ProposalStatus.INSUFFICIENT_RATIONALE
  assert v.validate(proposal(parameter_rationale=())).status is ProposalStatus.INSUFFICIENT_RATIONALE
  assert v.validate(proposal(expected_mechanism="ATR confirms volatility conditions")).status is ProposalStatus.UNSUPPORTED_STRATEGY
+ assert v.validate(proposal(parameter_rationale=("ATR determines the fixed EMA periods for this proposal",))).status is ProposalStatus.UNSUPPORTED_STRATEGY
+ assert v.validate(proposal(title="ATR EMA crossover hypothesis")).status is ProposalStatus.UNSUPPORTED_STRATEGY
+ assert v.validate(proposal(parameter_rationale=("Dynamic EMA periods respond to current market conditions",))).status is ProposalStatus.SEMANTIC_MISMATCH
+ assert v.validate(proposal(parameter_rationale=("Adaptive periods respond to current market conditions",))).status is ProposalStatus.SEMANTIC_MISMATCH
+ assert v.validate(proposal()).status is ProposalStatus.DUPLICATE
  assert v.validate(proposal(thesis="EMA crossover predicts a reversal")).status is ProposalStatus.SEMANTIC_MISMATCH
  assert v.validate(proposal(falsification_criteria=(FalsificationCriterion(FalsificationMetric.MAXIMUM_DRAWDOWN_PERCENT,FalsificationOperator.GT,20,FalsificationScope.EXPERIMENT),))).status is ProposalStatus.DUPLICATE
  assert v.validate(HypothesisProposal("x","enough thesis","enough mechanism",object(),(FalsificationCriterion(FalsificationMetric.PERCENTAGE_RETURN,FalsificationOperator.LT,-1,FalsificationScope.EXPERIMENT),))).status is ProposalStatus.UNSUPPORTED_STRATEGY

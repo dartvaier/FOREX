@@ -32,13 +32,16 @@ class ProposalValidationResult:
 class HypothesisProposalValidator:
     _UNREGISTERED_INDICATORS=("atr","rsi","macd","bollinger")
     _COUNTERTREND_TERMS=("countertrend","counter-trend","reversal","mean reversion","mean-reversion","opposite direction","fade")
-    _UNSUPPORTED_CRITERION_TERMS=("p-value","statistical significance","statistically significant","event study","correlation","probability","pips","reversal")
+    _DYNAMIC_PARAMETER_TERMS=("adaptive","dynamic","volatility-adjusted","volatility adjusted","regime-dependent","regime dependent","runtime adjustment")
     def __init__(self,registry:StrategyRegistry): self.registry=registry
     def validate(self,proposal:HypothesisProposal):
         if not isinstance(proposal,HypothesisProposal): return ProposalValidationResult(ProposalStatus.INVALID,"","proposal schema is invalid")
         if not isinstance(proposal.strategy,StrategySpec): return ProposalValidationResult(ProposalStatus.UNSUPPORTED_STRATEGY,proposal.fingerprint,"strategy is not registered")
-        proposal_text=" ".join((proposal.thesis,proposal.expected_mechanism,*proposal.assumptions,*proposal.tags)).lower()
+        parameters=proposal.strategy.parameters
+        if not all(isinstance(parameters.get(key),int) and not isinstance(parameters.get(key),bool) and parameters[key]>0 for key in ("fast_period","slow_period")) or parameters["fast_period"]>=parameters["slow_period"]: return ProposalValidationResult(ProposalStatus.UNSUPPORTED_STRATEGY,proposal.fingerprint,"EMA periods must be fixed positive integers with fast_period below slow_period")
+        proposal_text=" ".join((proposal.title,proposal.thesis,proposal.expected_mechanism,*proposal.parameter_rationale,*proposal.assumptions,*proposal.tags)).lower()
         if any(re.search(rf"\b{indicator}\b",proposal_text) for indicator in self._UNREGISTERED_INDICATORS): return ProposalValidationResult(ProposalStatus.UNSUPPORTED_STRATEGY,proposal.fingerprint,"proposal depends on an unregistered indicator")
+        if any(term in proposal_text for term in self._DYNAMIC_PARAMETER_TERMS): return ProposalValidationResult(ProposalStatus.SEMANTIC_MISMATCH,proposal.fingerprint,"proposal depends on unsupported dynamic EMA periods")
         if any(term in proposal_text for term in self._COUNTERTREND_TERMS): return ProposalValidationResult(ProposalStatus.SEMANTIC_MISMATCH,proposal.fingerprint,"proposal conflicts with directional trend-following EMA semantics")
         quantitative_falsification=bool(proposal.falsification_criteria)
         rationale_valid=bool(proposal.parameter_rationale) and all(isinstance(x,str) and len(x.strip())>=15 for x in proposal.parameter_rationale)
