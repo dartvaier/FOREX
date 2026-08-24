@@ -63,3 +63,5 @@ def test_engine_validates_dependencies():
     subject,_=engine([SignalAction.HOLD]*4)
     with pytest.raises(TypeError,match="strategy"):
         BacktestEngine(feed=subject.feed,strategy=None,risk_model=subject.risk_model,execution=subject.execution,portfolio=subject.portfolio)
+    with pytest.raises(ValueError, match="context_closed_bar_limit"):
+        BacktestEngine(feed=subject.feed, strategy=subject.strategy, risk_model=subject.risk_model, execution=subject.execution, portfolio=subject.portfolio, context_closed_bar_limit=0)
