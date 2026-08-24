@@ -95,6 +95,12 @@ class ExperimentRunner:
         test = self._run_window(spec, spec.split.test_start, spec.split.test_end)
         return ExperimentResult(spec, spec.fingerprint, PerformanceAnalytics().analyze(train), PerformanceAnalytics().analyze(test), train, test)
 
+    def run_development(self, spec: ExperimentSpec) -> tuple[BacktestResult, PerformanceReport]:
+        """Run only the in-sample window; OOS is deliberately untouched."""
+        if not isinstance(spec, ExperimentSpec): raise TypeError("spec must be an ExperimentSpec")
+        result = self._run_window(spec, spec.split.train_start, spec.split.train_end)
+        return result, PerformanceAnalytics().analyze(result)
+
     def _run_window(self, spec: ExperimentSpec, start: datetime, end: datetime) -> BacktestResult:
         before = self._dataframe[self._dataframe.time < pd.Timestamp(start)]
         active = self._dataframe[(self._dataframe.time >= pd.Timestamp(start)) & (self._dataframe.time < pd.Timestamp(end))]
