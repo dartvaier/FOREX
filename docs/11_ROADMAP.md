@@ -70,7 +70,9 @@ F3  Historical Data             ✅ COMPLETE
 
 F4  Data Transformation         ✅ COMPLETE
 
-F5  Backtest Engine             🟡 IN PROGRESS (F5.1–F5.13 complete)
+F5  Quantitative Research Core ✅ COMPLETE (F5.1–F5.14 complete)
+
+F6.1 Research Service           🟡 IN PROGRESS
 
 F6  Strategy Research           ⬜ NOT STARTED
 

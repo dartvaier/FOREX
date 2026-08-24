@@ -79,6 +79,9 @@ Backtesting Infrastructure
 - F5.11 pre-declared development-only EMA parameter sensitivity analysis.
 - F5.12 rolling walk-forward validation with final-holdout exclusion.
 - F5.13 frozen final-holdout Strategy Gate with explicit inconclusive state.
+- F5.14 immutable JSON Strategy & Hypothesis Registry.
+- F5 Quantitative Research Core formally completed.
+- F6.1 typed deterministic Research Service tool layer.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
