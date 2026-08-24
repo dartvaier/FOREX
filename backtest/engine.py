@@ -1,0 +1,67 @@
+from dataclasses import dataclass
+
+from backtest.clock import SimulationClock
+from backtest.context import BacktestContext, BacktestContextBuilder
+from backtest.execution import ExecutionResult, ExecutionStatus, SimulatedExecution
+from backtest.feed import HistoricalBarFeed
+from backtest.portfolio import Portfolio, PortfolioSnapshot
+from backtest.position import PositionSide
+from backtest.risk import RiskDecision, RiskModel
+from backtest.strategy import Strategy
+from domain.fill import Fill
+from domain.order_intent import OrderIntent, OrderSide
+from domain.signal import Signal
+
+
+@dataclass(frozen=True, slots=True)
+class BacktestResult:
+    signals: tuple[Signal, ...]
+    risk_decisions: tuple[RiskDecision, ...]
+    orders: tuple[OrderIntent, ...]
+    executions: tuple[ExecutionResult, ...]
+    fills: tuple[Fill, ...]
+    portfolio_snapshots: tuple[PortfolioSnapshot, ...]
+    contexts: tuple[BacktestContext, ...]
+
+
+class BacktestEngine:
+    def __init__(self, *, feed: HistoricalBarFeed, strategy: Strategy, risk_model: RiskModel, execution: SimulatedExecution, portfolio: Portfolio) -> None:
+        if not isinstance(feed, HistoricalBarFeed): raise TypeError("feed must be a HistoricalBarFeed")
+        if not isinstance(strategy, Strategy): raise TypeError("strategy must be a Strategy")
+        if not isinstance(risk_model, RiskModel): raise TypeError("risk_model must be a RiskModel")
+        if not isinstance(execution, SimulatedExecution): raise TypeError("execution must be a SimulatedExecution")
+        if not isinstance(portfolio, Portfolio): raise TypeError("portfolio must be a Portfolio")
+        if portfolio.symbol != feed.config.symbol: raise ValueError("portfolio symbol must match feed symbol")
+        self.feed, self.strategy, self.risk_model, self.execution, self.portfolio = feed, strategy, risk_model, execution, portfolio
+
+    def run(self) -> BacktestResult:
+        clock = SimulationClock(self.feed.bar_starts, self.feed.config.timeframe)
+        builder = BacktestContextBuilder(self.feed, clock)
+        signals, decisions, orders, executions, fills, contexts = [], [], [], [], [], []
+        pending = None
+        for event in clock.events():
+            context = builder.build(event)
+            contexts.append(context)
+            if event.phase.value == "BAR_OPEN":
+                if pending is not None:
+                    result = self.execution.execute(pending, feed=self.feed)
+                    executions.append(result)
+                    if result.status is ExecutionStatus.FILLED:
+                        fills.append(result.fill)
+                        if pending.metadata.get("risk_action") == "EXIT": self.portfolio.close_position(result.fill)
+                        else: self.portfolio.open_position(result.fill, side=PositionSide.LONG if pending.side is OrderSide.BUY else PositionSide.SHORT)
+                    pending = None
+                continue
+            if self.portfolio.position is not None:
+                self.portfolio.mark_to_market(timestamp=event.timestamp, price=context.current_bar.close)
+            signal = self.strategy.on_bar(context)
+            if not isinstance(signal, Signal): raise TypeError("Strategy.on_bar must return a Signal")
+            signals.append(signal)
+            decision = self.risk_model.evaluate(signal, position=self.portfolio.position)
+            decisions.append(decision)
+            if decision.approved:
+                pending = decision.order_intent
+                orders.append(pending)
+        if pending is not None:
+            executions.append(self.execution.execute(pending, feed=self.feed))
+        return BacktestResult(tuple(signals), tuple(decisions), tuple(orders), tuple(executions), tuple(fills), self.portfolio.snapshots, tuple(contexts))
