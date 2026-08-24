@@ -31,3 +31,10 @@ textual policy. It was not allowed to progress: the deterministic validator now
 returns `UNSUPPORTED_STRATEGY` for that dependency. A fresh proposal-only
 canary must satisfy this boundary and the human quality review before any loop,
 assessment repetition or autonomy decision.
+
+When a proposal is `ACCEPTED`, the proposal-only canary writes
+`human_review.json` beside the proposal and validation artifacts. It records
+the proposal fingerprint, Registry-context version and fingerprint, validation,
+parameter rationale and falsification criteria, with
+`research_authorization=NOT_AUTHORIZED`. No freeze, experiment or controlled
+loop is permitted until explicit human approval.

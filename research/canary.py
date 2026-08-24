@@ -55,6 +55,18 @@ class ProviderCanaryRunner:
             )
 
         schema_valid = isinstance(proposal, HypothesisProposal) and validation.fingerprint == proposal.fingerprint
+        items = {"proposal": proposal, "validation": validation}
+        if schema_valid and validation.status.value == "ACCEPTED":
+            items["human_review"] = {
+                "status": "PENDING_HUMAN_APPROVAL",
+                "research_authorization": "NOT_AUTHORIZED",
+                "proposal_fingerprint": proposal.fingerprint,
+                "registry_context_version": context["policy_version"],
+                "registry_context_fingerprint": self._fingerprint(context),
+                "validation": self._json_value(validation),
+                "parameter_rationale": proposal.parameter_rationale,
+                "falsification_criteria": proposal.falsification_criteria,
+            }
         return self._write(
             canary_id,
             "proposal_only",
@@ -69,7 +81,7 @@ class ProviderCanaryRunner:
                 "holdout_not_used": True,
                 "decision": validation.status.value,
             },
-            {"proposal": proposal, "validation": validation},
+            items,
         )
 
     def assessment_only(self, canary_id: str, facts: Mapping[str, object]) -> CanaryResult:
