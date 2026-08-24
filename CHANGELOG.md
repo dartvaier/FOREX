@@ -60,6 +60,13 @@ Backtesting Infrastructure
 - Next-open execution.
 - Tratamento de posições abertas no final do backtest.
 
+## Implemented
+
+- F5.1 trading domain models (`Signal`, `OrderIntent`, `Fill`).
+- F5.2 strategy-safe `BacktestContext`, deterministic clock, immutable bars,
+  historical feed, and explicit no-look-ahead tests.
+- GitHub Actions unit-test matrix excluding `integration` tests.
+
 ## Baseline Decisions
 
 O BacktestEngine inicial seguirá:

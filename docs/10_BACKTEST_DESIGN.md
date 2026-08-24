@@ -29,7 +29,7 @@ O princípio central é:
 Estado atual:
 
 ```text
-DESIGN
+PARTIALLY IMPLEMENTED
 ```
 
 Implementação:
