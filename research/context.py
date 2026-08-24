@@ -23,6 +23,7 @@ def proposal_context(registry: StrategyRegistry) -> dict:
         "policy_version": QUALITY_POLICY_VERSION,
         "task": "Propose exactly one novel, declarative research hypothesis.",
         "allowed_strategy": {"strategy": "EMA_CROSSOVER", "symbol": "EURUSD", "timeframe": "H1"},
+        "catalog_constraints": {"fast_period": "fixed positive integer per StrategySpec/Experiment", "slow_period": "fixed positive integer per StrategySpec/Experiment", "runtime_period_adjustment": "UNSUPPORTED"},
         "strategy_semantics": {"version": EMA_CROSSOVER_SEMANTICS_VERSION, **EMA_CROSSOVER_SEMANTICS},
         "measurable_metrics": {"version": METRIC_ALLOWLIST_VERSION, "allowlist": MEASURABLE_METRICS},
         "falsification_semantics": {
@@ -51,6 +52,7 @@ def proposal_context(registry: StrategyRegistry) -> dict:
             "Do not claim unprovided external facts or results.",
             "Do not assume the historical series is continuous or that gaps were filled.",
             "Do not use unregistered indicators, filters, entries or conditions; only the declared EMA crossover may define the hypothesis.",
+            "Do not use adaptive, dynamic, volatility-adjusted or regime-dependent EMA periods; both periods are fixed per StrategySpec and Experiment.",
             "Do not request tools, filesystem, shell, MT5, research runs, gates, or holdout access.",
         ),
         "registry_hypotheses": records,
