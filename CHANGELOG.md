@@ -1,3 +1,34 @@
+## [0.6.1] - 2026-08-12 - Hardening pós-auditoria (docs/25)
+
+### v0.6.1 Execution Safety
+- ES-01: cancel via `order_send(TRADE_ACTION_REMOVE)` (API real).
+- ES-02: enums de filling alinhados à API MT5 (mock corrigido).
+- ES-03: `allowed_trade_modes=("demo",)` + kill switch no caminho
+  obrigatório (submit/cancel/close).
+- ES-04: fill real preservado; `requires_reconciliation` em violação.
+- ES-05: pip size real por instrumento no fill validation.
+
+### v0.6.2 Risk Composition
+- RC-01: wrappers propagam `observe_equity` para o inner.
+- RC-02: KillSwitch HARD renomeado `freeze_all_orders`
+  (`block_exits` deprecado), explícito, nunca implícito.
+
+### v0.6.3 Multi-Currency Financial Integrity
+- MC-01..03: conversão quote→USD em StopBasedRiskGate,
+  ExposureLimitRiskGate e TradeFactory (account currency).
+- MC-04: USDCHF/USDCAD reclassificados como USD-base nos testes.
+- MC-05: matriz dev reexecutada — 19/19 negativos, trades
+  idênticos; docs/21-22 atualizados.
+
+### v0.6.4 Readiness & Audit
+- RA-01: `risk_per_trade_pct` realmente avaliado.
+- RA-02: exposure vs leverage com semântica (margin_used).
+- RA-03: unidades padronizadas em fração (0-1).
+- RA-04: zero-cost report com custos efetivos zero.
+- RA-05: OOS wording consistente (lockbox selado).
+- RA-06: roadmap/DECISIONS/README/docs sincronizados.
+- RA-07: CI GitHub Actions (pytest non-integration).
+
 # Changelog
 
 Todas as mudanças relevantes da plataforma:
@@ -24,11 +55,164 @@ As versões representam marcos técnicos do projeto e não necessariamente relea
 Próxima fase planejada:
 
 ```text
-FOREX v0.2.0
-Backtesting Infrastructure
+FOREX v0.3.0
+Strategy Research
 ```
 
 ## Planned
+
+- Fixtures e relatórios para pesquisa de estratégia.
+- Validação out-of-sample inicial.
+- Comparação com custos explícitos.
+
+## Added
+
+- Simple EMA Trend Following baseline.
+- Strategy Research documentation.
+- Unit tests for warm-up, EMA cross above, EMA cross below and no-cross scenarios.
+- BacktestEngine integration tests for EMA strategy with zero-cost and explicit-cost configurations.
+- Causal closed-bar context windowing for stateful strategies.
+- Initial historical EMA baseline result for EURUSD M15.
+- Local sensitivity results for EMA 10/30, 20/50 and 50/200.
+- Volatility Breakout baseline strategy, tests and initial EURUSD M15 result.
+- Time-Series Momentum baseline strategy, tests and initial EURUSD M15 result.
+- Simple Mean Reversion baseline strategy, tests and initial EURUSD M15 result.
+- Reproducible research runner and report summaries (research/).
+- Asian Range Breakout baseline strategy, tests and initial EURUSD M15 result.
+- Simple Carry baseline strategy, tests and initial EURUSD M15 result.
+- Simple Regime Detection baseline strategy, tests and initial EURUSD M15 result.
+- Multi-Timeframe Momentum baseline strategy, tests, causal H1/H4 context support and initial EURUSD M15 result.
+- RiskGate protocol, volume-step validation and StopBasedRiskGate sizing from entry/stop metadata.
+- ExposureLimitRiskGate wrapper with max quantity and max notional checks.
+- DailyLossRiskGate wrapper with absolute and percentage daily loss limits.
+- DrawdownRiskGate wrapper with absolute and percentage all-time-high drawdown locks.
+- KillSwitchRiskGate wrapper with latch kill/reset and SOFT/HARD modes (ADR-045).
+- Cost stress support in the research runner (--cost-multiplier 1.0/1.5/2.0) with
+  auditable base params + multiplier in reports (F8 first block).
+- Structured local sensitivity and subperiod harness (research/sweep.py):
+  one-parameter sweeps (--range/--values) and standard F8 subperiods
+  (--subperiods), each run an auditable runner report, with comparison CSV.
+- Formal Development/Validation/OOS period definitions (research/periods.py):
+  pre-registered roles (dev 2015-20, val 2021-23, oos lockbox 2024-26),
+  mechanical OOS guard (--period oos requires --allow-oos), and structured
+  stability analysis (--stability: dev vs val deltas + signal consistency).
+- F8 COMPLETE: robustness results documented in docs/15_ROBUSTNESS.md
+  (sweep grids, subperiods, dev/val stability, cost stress 1.5x/2.0x for
+  TSM/EMA/MR; OOS lockbox untouched). All three baseline strategies are
+  consistently negative under explicit costs; no parameter islands.
+- OOS lockbox consulted once at baseline close (2026-08-10, explicit
+  --allow-oos): TSM -1.71%, EMA -2.48%, MR -4.23% explicit; TSM +0.42%
+  zero-cost. Out-of-sample confirms dev/val: no baseline strategy passes
+  under explicit costs. Event logged in docs/15_ROBUSTNESS.md.
+- F9 (Demo Execution) IN PROGRESS, engineering core without activation:
+  execution/ package (ExecutionInterface, BrokerState, Order/Fill
+  validation, Position Reconciliation) with 28 tests; no MT5 dependency,
+  TRADING_ENABLED=false unchanged (docs/16_EXECUTION_LAYER.md).
+- F9 MT5Execution adapter (execution/mt5_execution.py): implements
+  ExecutionInterface via MT5 API with lazy import, order validation before
+  send, retcode translation and fill validation; trading_enabled=False
+  guard blocks submit/cancel (read-only monitoring allowed). 16 tests with
+  a fake MT5 module; no real broker call. 943 tests total.
+- F9 Logs, Monitoring and Broker/Demo validation (execution/audit_log.py,
+  monitoring.py, broker_validation.py): JSONL audit trail, immutable demo
+  metrics (latency, slippage, rejection rate) and roadmap 84 preconditions
+  (demo trade mode, server allowlist, TRADING_ENABLED, kill switch).
+  BrokerAccountState.trade_mode added; MT5Execution.validate_environment()
+  gates Demo activation. +20 tests; 963 total.
+- F9 Execution comparison (execution/comparison.py): expected vs observed
+  (roadmap 86-87) with pips/latency tolerances, WITHIN/OUTSIDE verdicts and
+  comparison_summary for the Demo validation period. F9 engineering is now
+  COMPLETE; only explicit Demo activation remains. +12 tests; 975 total.
+- F10 Live Readiness IN PROGRESS (readiness/ package + docs/17):
+  programmatic readiness review (module availability as evidence), risk
+  limits (risk per trade, daily loss, drawdown, leverage, exposure),
+  safety helpers (duplicate orders, connection breach) and operational
+  procedures documented. Real-state review shows only demo_validation and
+  trading_flag pending (both require explicit activation). +20 tests; 995.
+- F10 readiness CLI (readiness/__main__.py, python -m readiness): renders
+  the review with live module evidence + operator flags, optional risk
+  limits check; exit 0/1 for scripting. Demo activation procedure
+  documented in docs/17 (section 9). +15 tests; 1010 total.
+- Demo activation test (authorized, 2026-08-10): first live market
+  round-trip on the demo account (EURUSD 0.01, SL 20 pips). FILLED with
+  233ms latency and 0.0 pips slippage; total virtual cost 0.01 USD.
+  Adapter fixes from real-broker findings: symbol-derived filling mode
+  (retcode 10030), close_position() by ticket for hedging accounts, and
+  positions_get() without symbol=None. 1012 tests.
+- F9 COMPLETE: demo validation period executed (2026-08-10, authorized).
+  5/5 round-trips within tolerance, 100% fill rate, 0 rejections, avg
+  latency 231ms, slippage 0.00 pips; execution comparison summary closes
+  the F9 DoD (8/8). Platform remains research/demo (no strategy has edge).
+- Live Readiness Review formal (roadmap §91, 10 dimensions) documented
+  in docs/17 §10 with concrete demo evidence; roadmap #131 estado
+  section updated to real state (F0-F9 done, F10 in progress, v0.6).
+  Remaining roadmap work: Walk-Forward (v0.5 scope, not implemented),
+  optional future items (Monte Carlo, DSR/PBO, D1, multi-symbol, MTF,
+  ML/HMM, DB, experiment tracking, dataset versioning, CI/CD), and the
+  operator-only real-capital decision (§92).
+- Walk-Forward (roadmap §75, v0.5 scope) DONE: new
+  research/walkforward.py rolling train(2y)/val(1y) harness with
+  pre-registered F8 grids and expectancy selection (+17 tests).
+  Result: all three baselines REJECT (TSM 2/7, EMA 1/7, MR 0/7
+  positive windows; avg val expectancy negative everywhere). OOS
+  lockbox stays sealed — nothing passed the pre-registered
+  acceptance criteria. docs/18_WALK_FORWARD.md.
+- RF-01 regime filter (docs/19): TSM gains optional
+  regime_filter=h4_vol_high (H4 volatility above historical
+  median; entry filter only; default none preserves regression,
+  +14 tests). Result: reduces losses (dev -17%, val -6%) but
+  expectancy stays negative -> pre-registered acceptance criteria
+  failed -> REJECT. Sensitivity stable (24/48/96, no island).
+  OOS lockbox remains sealed.
+- Multi-symbol + MTF runtime (docs/20): §106 audited DONE
+  (runtime M15/H1/H4 sync already implemented and tested); §104
+  infra delivered - INSTRUMENT_REGISTRY with 7 majors (USDJPY
+  digits 3/pip 0.01 tested), collect_history.py --symbol,
+  build_timeframes.py --symbol, GBPUSD PoC (288k M15 candles +
+  H1/H4 + backtest). Cost invariant 3.7 pips verified across
+  USD-quote pairs; quote-currency conversion declared future
+  work. +6 tests (1049 total).
+- Multi-symbol research first pass (docs/21): all 6 majors
+  collected (M15 2015-2026 + H1/H4). Baseline backtests dev
+  explicit: 16/16 USD-quote runs negative - no pair shows edge
+  under costs; USDJPY monetary values invalid without currency
+  conversion (quote JPY mixed with USD commission) - declared
+  unusable for research decisions until conversion exists.
+- Currency conversion quote->USD (docs/22): InstrumentSpecification
+  gains base/quote currencies + quote_to_account_rate(price);
+  Portfolio converts realized and unrealized PnL at the price
+  available at the decision instant (causal); round-trip cost
+  helpers convert the quote leg. USDJPY dev fixed: TSM -33461 ->
+  -401 USD (dd 40% -> 4%). All 19 pair/strategy dev backtests now
+  valid and negative - no pair has edge under costs. +8 tests
+  (1057 total). Crosses (triangular) still future work.
+- SO-01 trailing ATR exit (docs/23): TSM gains exit_mode=
+  trailing_atr (ATR trailing stop replaces momentum exit; default
+  momentum preserves regression, +8 tests). REJECT: trailing
+  increases turnover (1397->3672 trades) and loses more under
+  explicit costs (-1226 vs -325 dev baseline; no mult/lookback
+  config beats baseline). Key finding: zero-cost dev baseline is
+  POSITIVE (+192, exp +0.137) - the raw edge exists but is fully
+  consumed by turnover costs (~517 USD costs vs +192 gross).
+  Next hypothesis: same TSM on H1/H4 (fewer trades, lower
+  relative cost). OOS lockbox not consulted.
+- TF-01 timeframe (docs/24): TSM on H1/H4 - REJECT. H1 cuts
+  dev losses 5x vs M15 (-64 vs -325) but expectancy stays
+  negative; H4 has no raw edge (zero-cost -96). Structural
+  pattern: TSM gross edge is ~1.4-2.3 pips/trade, always below
+  the 3.7-pip round-trip cost. EDGE SEARCH CLOSED (roadmap #93):
+  no baseline hypothesis survives explicit costs; platform stays
+  research/demo. ML/HMM frontier is a separate project, not an
+  incremental continuation.
+- Documentation state sync: README, roadmap and F10 readiness docs
+  aligned to the real current gate (`1161 passed, 9 deselected`) and to the
+  infra-ready/operator-decision status.
+
+---
+
+# [0.2.0] - 2026-08-10
+
+## Backtesting Infrastructure
 
 - BacktestEngine bar-by-bar.
 - Simulation Clock.
@@ -59,10 +243,12 @@ Backtesting Infrastructure
 - Proteção explícita contra look-ahead.
 - Next-open execution.
 - Tratamento de posições abertas no final do backtest.
+- Resultado consolidado em `BacktestResult`.
+- Estratégias podem informar `stop_loss` e `take_profit` via metadata do Signal.
 
 ## Baseline Decisions
 
-O BacktestEngine inicial seguirá:
+O BacktestEngine inicial segue:
 
 ```text
 Clock:
@@ -101,6 +287,7 @@ explicit CostModel
 Look-ahead:
 prohibited
 ```
+
 # [0.1.1] - 2026-08-08
 
 ## Documentation Completion
@@ -110,6 +297,7 @@ Patch release destinado a completar a documentação do marco:
 ```text
 FOREX v0.1
 Data & Infrastructure Foundation
+```
 
 ---
 

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from data.timeframe_builder import TimeframeBuilder
 
@@ -8,6 +9,12 @@ from data.timeframe_builder import TimeframeBuilder
 SOURCE = Path(
     "data/raw/EURUSD/M15.parquet"
 )
+
+if not SOURCE.exists():
+    pytest.skip(
+        "dataset historico local nao disponivel",
+        allow_module_level=True,
+    )
 
 
 def get_source():

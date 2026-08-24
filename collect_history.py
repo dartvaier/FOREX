@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from datetime import datetime, timezone
 
 import MetaTrader5 as mt5
@@ -5,18 +6,64 @@ import MetaTrader5 as mt5
 from broker.mt5_client import MT5Client
 from data.historical_data import HistoricalData
 
+SUPPORTED_SYMBOLS = [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCHF",
+    "AUDUSD",
+    "USDCAD",
+    "NZDUSD",
+]
 
-SYMBOL = "EURUSD"
+DEFAULT_DATE_FROM = datetime(
+    2015,
+    1,
+    1,
+    tzinfo=timezone.utc,
+)
 
 
-def main():
-
-    date_from = datetime(
-        2015,
-        1,
-        1,
-        tzinfo=timezone.utc
+def build_parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        description=(
+            "Download M15 historical data for a symbol "
+            "(roadmap §104 multi-symbol)."
+        )
     )
+
+    parser.add_argument(
+        "--symbol",
+        default="EURUSD",
+        choices=SUPPORTED_SYMBOLS,
+        help="instrument key (default: EURUSD)",
+    )
+
+    parser.add_argument(
+        "--date-from",
+        default=None,
+        help="inclusive start, UTC (YYYY-MM-DD); "
+        "default 2015-01-01",
+    )
+
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+
+    symbol = args.symbol
+
+    date_from = (
+        datetime.fromisoformat(args.date_from)
+        if args.date_from
+        else DEFAULT_DATE_FROM
+    )
+
+    if date_from.tzinfo is None:
+        date_from = date_from.replace(
+            tzinfo=timezone.utc
+        )
 
     date_to = datetime.now(
         timezone.utc
@@ -28,7 +75,7 @@ def main():
     print("FOREX BOT - HISTORICAL DATA")
     print("=" * 70)
 
-    print("\nSímbolo:", SYMBOL)
+    print("\nSímbolo:", symbol)
     print("Timeframe: M15")
     print("De:", date_from)
     print("Até:", date_to)
@@ -38,7 +85,7 @@ def main():
         history = HistoricalData(client)
 
         df = history.download(
-            symbol=SYMBOL,
+            symbol=symbol,
             timeframe=mt5.TIMEFRAME_M15,
             date_from=date_from,
             date_to=date_to,
@@ -47,18 +94,18 @@ def main():
         print("\n--- RESULTADO ---")
 
         print("Candles:", len(df))
-        print("Primeiro:", df.iloc[0]["time"])
-        print("Último:", df.iloc[-1]["time"])
 
-        print("\n--- DATASET ---")
-
-        print(df.head())
-        print("\n...")
-        print(df.tail())
+        if len(df):
+            print("Primeiro:", df.iloc[0]["time"])
+            print("Último:", df.iloc[-1]["time"])
+            print("\n--- DATASET ---")
+            print(df.head())
+            print("\n...")
+            print(df.tail())
 
         path = history.save(
             df=df,
-            symbol=SYMBOL,
+            symbol=symbol,
             timeframe_name="M15",
         )
 

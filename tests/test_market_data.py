@@ -1,7 +1,11 @@
 from datetime import timezone
 
-import MetaTrader5 as mt5
 import pytest
+
+mt5 = pytest.importorskip(
+    "MetaTrader5",
+    reason="testes de integração MT5 exigem pacote/terminal MetaTrader 5",
+)
 
 pytestmark = pytest.mark.integration
 

@@ -1,30 +1,57 @@
+from argparse import ArgumentParser
 from pathlib import Path
 
 import pandas as pd
 
 from data.timeframe_builder import TimeframeBuilder
 
+SUPPORTED_SYMBOLS = [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCHF",
+    "AUDUSD",
+    "USDCAD",
+    "NZDUSD",
+]
 
-SOURCE = Path(
-    "data/raw/EURUSD/M15.parquet"
-)
 
-OUTPUT_DIRECTORY = Path(
-    "data/processed/EURUSD"
-)
+def build_parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        description=(
+            "Build H1/H4 datasets from M15 raw data "
+            "(roadmap §104 multi-symbol)."
+        )
+    )
+
+    parser.add_argument(
+        "--symbol",
+        default="EURUSD",
+        choices=SUPPORTED_SYMBOLS,
+        help="instrument key (default: EURUSD)",
+    )
+
+    return parser
 
 
-def main():
+def main() -> None:
+    args = build_parser().parse_args()
+
+    symbol = args.symbol
+
+    source = Path(f"data/raw/{symbol}/M15.parquet")
+    output_directory = Path(f"data/processed/{symbol}")
 
     print("=" * 70)
     print("FOREX BOT - TIMEFRAME BUILDER")
     print("=" * 70)
+    print("Símbolo:", symbol)
 
-    df = pd.read_parquet(SOURCE)
+    df = pd.read_parquet(source)
 
     builder = TimeframeBuilder()
 
-    OUTPUT_DIRECTORY.mkdir(
+    output_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -41,7 +68,7 @@ def main():
         )
 
         output = (
-            OUTPUT_DIRECTORY
+            output_directory
             / f"{timeframe}.parquet"
         )
 
@@ -59,33 +86,13 @@ def main():
         )
 
         print(
-            "Candles:",
-            len(result)
+            f"{timeframe}: {len(result)} candles "
+            f"({complete} completos, "
+            f"{incomplete} incompletos)"
         )
-
         print(
-            "Completos:",
-            complete
-        )
-
-        print(
-            "Incompletos:",
-            incomplete
-        )
-
-        print(
-            "Primeiro:",
-            result["time"].min()
-        )
-
-        print(
-            "Último:",
-            result["time"].max()
-        )
-
-        print(
-            "Salvo em:",
-            output
+            "Salvo:",
+            output,
         )
 
 

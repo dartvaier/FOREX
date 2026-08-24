@@ -1,0 +1,519 @@
+{
+ "program": "FOREX Research Program — Hypotheses H01-H16",
+ "repository": "C:\\Users\\Gabriel\\Desktop\\FOREX",
+ "branch": "feature/backtest-core-models",
+ "dataset": "Seven FX majors M15/H1/H4 + OECD/FRED monthly call-money rates; see per-hypothesis evidence",
+ "methodology": "Pre-registro imutavel (docs/26 §5) -> estagio 1 (previsao condicional, sem trade) -> criterios de rejeicao pre-registrados -> classificacao",
+ "periods": {
+  "development": "2015-01-01..2021-01-01",
+  "validation": "2021-01-01..2024-01-01",
+  "oos": "2024-01-01..2027-01-01 (CONTAMINADO — consultado 2026-08-10; confirmacao final so com --allow-oos + evento)"
+ },
+ "cost_baseline_pips": {
+  "spread": 2.0,
+  "slippage": 0.5,
+  "commission_per_lot_per_side": 3.5,
+  "round_trip_reference": 3.7
+ },
+ "hypotheses": [
+  {
+   "id": "H03",
+   "name": "Surpresa de volatilidade intradiarua",
+   "priority": 1,
+   "acceptance_criteria": "Retorno condicional medio significativo e estavel por ano; sobreviver a 1.5x custo",
+   "status_initial": "ACTIVE (prioridade 1)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "volatility_surprise (mediana por slot, 60 slots) -> retorno condicional por janela 40/60/80 x h1/2/4/8 x ano x hora",
+   "evidence": [
+    "docs/26 §10-§11",
+    "research/features.py (volatility_surprise, 11 testes)",
+    "research/h03_experiment.py",
+    "research/reports/h03_experiment{,_lb40,_lb80}.json",
+    "tests/test_research_features.py"
+   ],
+   "metrics": {
+    "rows": 288223,
+    "events": "54,338-55,057 (lb40/60/80)",
+    "overall_mean_signed": "0.000%",
+    "h8_by_year_range": "-0.011% a +0.012%",
+    "best_highlight": "00:00 UTC +0.018% (61.3% pos, n=2,691) ~ 1.98 pips brutos < 3.7 pips"
+   },
+   "classification": "REFUTADA",
+   "justification": "Retorno condicional ~0 em todas as janelas; unico highlight (00:00 UTC) nao cobre custo e tem risco de multiple testing (24 slots inspecionados)"
+  },
+  {
+   "id": "H05",
+   "name": "Reversao apos choque ineficiente (DE baixa)",
+   "priority": 2,
+   "acceptance_criteria": "DE adicionar poder explicativo vs controles; estavel entre subperiodos; sobreviver a custos",
+   "status_initial": "ACTIVE (prioridade 2, com H06)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "directional_efficiency + slot_percentile -> matriz 6 celulas (range x tick x DE) -> h1/2/4/8 -> p85/p90/p95 -> por ano",
+   "evidence": [
+    "docs/26 §12-§13",
+    "research/features.py (directional_efficiency, slot_percentile)",
+    "research/h05_h06_experiment.py",
+    "research/reports/h0506_experiment{,_p85,_p95}.json",
+    "tests/test_research_features.py"
+   ],
+   "metrics": {
+    "events_H05": 2999,
+    "h8_signed": "+0.003%",
+    "by_year_sign_flips": 3,
+    "p85_p95": "mesmo padrao (~0)"
+   },
+   "classification": "REFUTADA",
+   "justification": "DE nao discrimina (controles com DE alta tem mesmo padrao); H05 ~0 com 3 inversoes de sinal por ano; magnitude <= 0.037%"
+  },
+  {
+   "id": "H06",
+   "name": "Continuacao apos choque eficiente (DE alta + CLV)",
+   "priority": 2,
+   "acceptance_criteria": "DE adicionar poder explicativo vs controles; estavel entre subperiodos; sobreviver a custos",
+   "status_initial": "ACTIVE (prioridade 2, com H05)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "mesma matriz de H05; confirmacao CLV >= 0.90/<= 0.10",
+   "evidence": [
+    "docs/26 §12-§13",
+    "research/h05_h06_experiment.py",
+    "research/reports/h0506_experiment{,_p85,_p95}.json"
+   ],
+   "metrics": {
+    "events_H06": 3296,
+    "h8_signed": "-0.004% (NEGATIVO, pos 44-48%)",
+    "by_year": "negativo (2015-2020) e ~0 (2021+)"
+   },
+   "classification": "REFUTADA",
+   "justification": "Efeito NEGATIVO (oposto da hipotese); controles com DE alta tem o mesmo padrao"
+  },
+  {
+   "id": "H01",
+   "name": "Falso rompimento da faixa asiatica",
+   "priority": 3,
+   "acceptance_criteria": "Retorno assinado medio > 0; estavel entre subperiodos; sem ilha de parametro; sobreviver a custos",
+   "status_initial": "ACTIVE (prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "faixa Asia Europe/London [00:00,07:00) zoneinfo -> ATR(H1,14) causal -> rompimento buffer 0.10/0.15/0.20 -> confirmacao {N,N+1,N+2} -> 1 evento/lado/dia -> h1/2/4/8 -> por ano/lado",
+   "evidence": [
+    "docs/26 §14-§15",
+    "research/h01_experiment.py",
+    "research/reports/h01_experiment{,_b010,_b020}.json"
+   ],
+   "metrics": {
+    "events_b015": 3956,
+    "h8_signed": "+0.003% (levemente POSITIVO — continuacao, nao reversao)",
+    "buffers": "0.10: +0.004% / 0.20: +0.003%",
+    "by_year_sign_flips": 4,
+    "midpoint_touch_rate": "1.00 (nao discrimina)"
+   },
+   "classification": "REFUTADA",
+   "justification": "Signed ~0 e levemente positivo (direcao contraria); 4 inversoes de sinal por ano; magnitude ~0.4 pips vs custo 3.7 pips"
+  },
+  {
+   "id": "H02",
+   "name": "Handoff Asia-Londres condicionado ao formato da sessao",
+   "priority": 3,
+   "acceptance_criteria": "Direcao esperada estavel entre subperiodos/regimes/fronteiras; retorno assinado medio > 0 por grupo",
+   "status_initial": "ACTIVE (prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "percentil empirico range 60d + CLV -> 4 grupos (p30/p70 x CLV 0.2/0.8) -> fwd 1/2/4h -> sensibilidade p25-75 / CLV 0.15-0.85 -> por ano",
+   "evidence": [
+    "docs/26 §16-§17",
+    "research/h02_experiment.py",
+    "research/reports/h02_experiment.json + h02_exp_{p25_p35,p65_p75,clv_75_85,clv_15_25}.json"
+   ],
+   "metrics": {
+    "sessions": 3363,
+    "continuation_up_h4": "-0.035% (NEGATIVO em todas as variacoes e 10/12 anos)",
+    "reversal_down_h4": "+0.011% (mas h1/h2 negativos; 2016 +0.087% vs 2025 -0.045%)",
+    "continuation_down_h4": "-0.000%",
+    "reversal_up_h4": "+0.000%"
+   },
+   "classification": "REFUTADA",
+   "justification": "Unico grupo consistente (continuation_up) e negativo na direcao OPOSTA; demais instaveis; amostras 5-31/ano; padrao anti-H02 nao elevado (multiple testing)"
+  },
+  {
+   "id": "H04",
+   "name": "Compressao seguida por choque de preco e atividade",
+   "priority": 3,
+   "acceptance_criteria": "A4 superar controle de breakout simples; ablation incremental; sem efeito so de horario; sem dependencia de eventos extremos",
+   "status_initial": "ACTIVE (prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "realized_range_16 slot_percentile p25 + TR p90 + TV p80 + CLV -> ablation A1/A2/A3/A4 + CTRL breakout simples -> h1/2/4/8 -> por ano/hora",
+   "evidence": [
+    "docs/26 §18",
+    "research/h04_experiment.py",
+    "research/reports/h04_experiment.json"
+   ],
+   "metrics": {
+    "A1_h8": "-0.001% (n=75,629)",
+    "A2_h8": "-0.000% (n=1,825)",
+    "A3_h8": "+0.005% (n=694)",
+    "A4_h8": "+0.009% (n=439, pos 48.97%)",
+    "CTRL_h8": "-0.002% (n=32,174)",
+    "A4_by_year": "6 pos / 6 neg (2017 -0.036% vs 2023 +0.060%)",
+    "A4_hourly": "n 6-23/slot, sinais alternando"
+   },
+   "classification": "REFUTADA",
+   "justification": "A4 nao supera CTRL consistentemente (h1 -0.003% vs -0.002%); pos < 50% com media > 0 = cauda (eventos extremos); instavel por ano; ablation sem melhora monotona"
+  },
+  {
+   "id": "H07",
+   "name": "Reversao parcial do gap semanal",
+   "priority": 4,
+   "acceptance_criteria": "Retorno assinado medio > 0; robusto a leave-one-year-out e sem top-5; cobrir custos conservadores",
+   "status_initial": "PROPOSED / LOW SAMPLE PRIORITY",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "gap semanal = first_open - last_close (sem criar candles de fim de semana); normalized = |gap|/ATR(H1,14) causal >= 0.50 (sensibilidade 0.40/0.60); fwd 1/4/8/16h; bootstrap CI; leave-one-year-out; sem top-5",
+   "evidence": [
+    "docs/26 §19",
+    "research/h07_experiment.py",
+    "research/reports/h07_experiment.json"
+   ],
+   "metrics": {
+    "events": 301,
+    "h1_signed": "+0.031% (pos 66.78%, gap fechado 14.0%)",
+    "h4_signed": "+0.025% (pos 56.81%)",
+    "h8_signed": "+0.014% (pos 54.49%; CI 95% [-0.009%, +0.037%])",
+    "h16_signed": "+0.012% (pos 48.17%)",
+    "without_top5_h8": "+0.014% (robusto)",
+    "leave_one_year_out_h8": "0.009% a 0.019% (nunca desaparece)",
+    "cost_check": "h1 bruto ~3.1 pips < 3.7 pips round-trip"
+   },
+   "classification": "REFUTADA",
+   "justification": "Sinal estatistico real no h1 (66.8% pos, robusto), mas edge bruto (~3.1 pips) NAO cobre custo conservador (3.7 pips) e se dissipa (h16 pos 48%) — falha o criterio de custo pre-registrado"
+  },
+  {
+   "id": "H08",
+   "name": "Reversao do gap semanal com filtro de liquidez no open",
+   "priority": 1,
+   "cycle": 2,
+   "acceptance_criteria": "net medio > 0 com n >= 50, robusto a leave-one-year-out e sem top-5",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 1)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "eventos H07 (301) + filtro spread de entrada <= 1.2/1.0/0.8 pips + custo por evento",
+   "evidence": [
+    "docs/26 §27, §31",
+    "research/h08_experiment.py",
+    "research/reports/h08_experiment.json"
+   ],
+   "metrics": {
+    "n": "134-169 por limiar",
+    "net_mean": "+0.001% a +0.002% (CI contem zero)",
+    "gross": "0.025% a 0.027% (caiu de 0.031% sem filtro)",
+    "key_finding": "o filtro removeu sinal: reversao do gap concentra-se nos opens caros"
+   },
+   "classification": "REFUTADA",
+   "justification": "net ~0.2 pips com CI bootstrap contendo zero; filtro de liquidez removeu sinal (racional invertido)"
+  },
+  {
+   "id": "H09",
+   "name": "Reversao apos faixa asiatica comprimida + fechamento no extremo",
+   "priority": 2,
+   "cycle": 2,
+   "acceptance_criteria": "net > 0 estavel no leave-one-year-out, sem cauda, robusto as fronteiras",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 2)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 2 (completo)",
+   "steps": "faixa < p30 (60d) + CLV 0.80/0.20; fwd 1/2/4h; net = signed - custo por evento; sensibilidade p25/p35, CLV 0.75/0.85",
+   "evidence": [
+    "docs/26 §28, §32",
+    "research/h09_experiment.py",
+    "research/reports/h09_experiment.json",
+    "docs/26 §36-§37",
+    "research/h09_stage2.py",
+    "research/reports/h09_stage2.json"
+   ],
+   "metrics": {
+    "group_high_h4_net": "+0.003% a +0.012% (todas as variacoes)",
+    "leave_one_year_out": "+0.002% a +0.014% (sempre > 0; sem 2015: +0.002%)",
+    "group_low_h4": "-0.026% a -0.036% (sem sinal)",
+    "timing": "so no h4 (h1/h2 negativos)",
+    "stage2_n": 168,
+    "stage2_net_mean_pips": -0.81,
+    "stage2_gross_mean_pips": 1.73,
+    "stage2_hit_rate": 0.435,
+    "stage2_payoff": 1.03
+   },
+   "classification": "REFUTADA",
+   "justification": "estagio 1 inconclusivo (net +0.003% a +0.012% em todas as fronteiras, marginal e concentrado em 2015); estagio 2 com trade completo (TP midpoint, SL high+0.10r, timeout 4h): net -0.81 pips — edge bruto real (+1.73 pips) menor que o custo calibrado (~2.5 pips)"
+  },
+  {
+   "id": "H10",
+   "name": "Momentum da primeira hora de Londres",
+   "priority": 3,
+   "cycle": 2,
+   "acceptance_criteria": "signed medio > 0 estavel por ano",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 3)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "janela 07:00-08:00 London; fwd ate 22:00 London; signed; net com custo",
+   "evidence": [
+    "docs/26 §29, §33",
+    "research/h10_experiment.py",
+    "research/reports/h10_experiment.json"
+   ],
+   "metrics": {
+    "days": 2998,
+    "net_mean": "-0.023% (pos 47.0%)",
+    "by_year_negative": "9 de 12 anos"
+   },
+   "classification": "REFUTADA",
+   "justification": "retorno pos-janela indiferente ao sinal; net negativo"
+  },
+  {
+   "id": "H11",
+   "name": "Eficiencia direcional H1 com volume -> continuacao no proximo H1",
+   "priority": 4,
+   "cycle": 2,
+   "acceptance_criteria": "net > 0 e DE adicionar poder vs controle (candle simples)",
+   "status_initial": "ACTIVE (ciclo 2, prioridade 4)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "H1 agregado; DE + TV p50; fwd proximo H1; net 1.9 pips; sensibilidade DE 0.60/0.80, TV p40/p60",
+   "evidence": [
+    "docs/26 §30, §34",
+    "research/h11_experiment.py",
+    "research/reports/h11_experiment.json"
+   ],
+   "metrics": {
+    "n": 7622,
+    "gross": "-0.002% (pos 46.6%)",
+    "control": "-0.001% (pos 48.1%)",
+    "all_variations": "filtro pior que o controle"
+   },
+   "classification": "REFUTADA",
+   "justification": "DE/TV nao adiciona poder vs controle; continuacao H1-a-H1 inexistente"
+  },
+  {
+   "id": "H07-MP",
+   "name": "Reversao do gap semanal multi-par (6 pares, custos calibrados)",
+   "priority": 5,
+   "cycle": "2-multipar",
+   "acceptance_criteria": "net h1 > 0 em >= 3 pares e LOYO > 0 em >= 2",
+   "status_initial": "ACTIVE (pre-registro docs/26 §38)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 2 AUDUSD/NZDUSD",
+   "steps": "detect_gaps 0.50 ATR; net = signed - (spread open semanal medido + 0.40 + 1.0 + 0.7); auditoria bootstrap CI e anos",
+   "evidence": [
+    "docs/26 §38-§39",
+    "research/reports/h07h09_multipair_consolidated.json",
+    "docs/26 §40-§41",
+    "research/h07_stage2.py",
+    "research/reports/h07_stage2_{AUDUSD,NZDUSD}.json",
+    "WRC re-audit (docs/26 §42): p=0.0002 (7 pares) / 0.0004 (6 pares) — stage-1 signal was NOT a selection artifact; stage-2 refutation stands"
+   ],
+   "metrics": {
+    "pairs_net_positive": "5/6 (GBPUSD +0.05, USDJPY +0.43, USDCHF +0.29, AUDUSD +1.82, NZDUSD +3.23; USDCAD -2.17 pips)",
+    "pairs_ci_excluding_zero": "2/6 (AUDUSD [+0.2,+3.5], NZDUSD [+1.4,+5.0])",
+    "years_positive": "AUDUSD 10/12, NZDUSD 11/12",
+    "h09_multipair": "0/6 pares positivos (refutada fora do EURUSD)",
+    "stage2_aud_net": -2.26,
+    "stage2_nzd_net": -2.49,
+    "stage2_hit_rate": "54.4%/59.4%",
+    "stage2_timeout": "38.2%/33.2%",
+    "stage2_blocks_2y": "AUDUSD 3/7, NZDUSD 1/7"
+   },
+   "classification": "REFUTADA",
+   "justification": "estagio 1 multi-par promissor (AUDUSD +1.82, NZDUSD +3.23 pips, CI exclui zero); estagio 2 com trade completo (TP 0.5|gap|, SL |gap|, timeout 8h): net -2.26/-2.49 pips — edge bruto real (hit 54-59%, stop 7.4%) consumido pelo custo do open semanal + timeouts"
+  },
+  {
+   "id": "H09-MP",
+   "name": "Reversao comprimida+extremo multi-par (6 pares)",
+   "priority": 6,
+   "cycle": "2-multipar",
+   "acceptance_criteria": "net h4 > 0 em >= 3 pares e LOYO > 0 em >= 2",
+   "status_initial": "ACTIVE (pre-registro docs/26 §38)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1 multi-par",
+   "steps": "mesmo modelo do estagio 1 EURUSD, 6 pares, custo por evento",
+   "evidence": [
+    "docs/26 §38-§39",
+    "research/reports/h09_multipair_*.json"
+   ],
+   "metrics": {
+    "pairs_net_positive": "0/6 (GBPUSD -0.010%, USDJPY -0.053%, USDCHF -0.031%, AUDUSD -0.032%, USDCAD -0.012%, NZDUSD -0.011%)"
+   },
+   "classification": "REFUTADA",
+   "justification": "0/6 pares com net > 0; sinal do EURUSD nao generaliza; H09 encerrada (estagio 2 EURUSD ja refutado)"
+  },
+  {
+   "id": "H12",
+   "name": "Liquidity premium (Cooper analog) EURUSD",
+   "priority": 7,
+   "cycle": "3",
+   "acceptance_criteria": "n>=50, net>0, LOYO>0, CI95 exclui zero",
+   "status_initial": "ACTIVE (pre-registro docs/26 §43)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "ret 10d <= -1.0% + volume declinante; long open t+1, saida close t+5; custo spread + 2.1 pips",
+   "evidence": [
+    "docs/26 §43-§44",
+    "research/reports/cycle3_results.json"
+   ],
+   "metrics": {
+    "n": 315,
+    "net_mean_pct": 0.1035,
+    "ci95": [
+     -0.0112,
+     0.2159
+    ],
+    "loyo_positive": true,
+    "classificacao_criterio": "net>0 mas CI contem zero"
+   },
+   "classification": "INCONCLUSIVA",
+   "justification": "net +0.1035% (n=315, LOYO>0) mas CI95 contem zero; edge marginal ~0.1%/evento semanal; nao elevado a stage-2 (perfil H09 stage-1, refutado no stage-2)"
+  },
+  {
+   "id": "H13",
+   "name": "Regras complexas voting (Hsu-Kuan analog) EURUSD M15",
+   "priority": 8,
+   "cycle": "3",
+   "acceptance_criteria": "n>=2000, net>0, LOYO>0, WRC significativo",
+   "status_initial": "ACTIVE (pre-registro docs/26 §43)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "voting majoritario de 8 regras simples binarias; custo de flip por mudanca de lado",
+   "evidence": [
+    "docs/26 §43-§44",
+    "research/reports/cycle3_results.json"
+   ],
+   "metrics": {
+    "n_bars": 279146,
+    "net_mean_pct_per_bar": -5e-05,
+    "ci95": [
+     -0.00031,
+     0.00022
+    ]
+   },
+   "classification": "REFUTADA",
+   "justification": "net <= 0; combinar regras refutadas nao cria edge no M15 EURUSD; analogo ao S&P 500 do Hsu-Kuan"
+  },
+  {
+   "id": "H14",
+   "name": "Trend following semanal MLM (hedge risk premium) EURUSD",
+   "priority": 9,
+   "cycle": "3",
+   "acceptance_criteria": "n>=100, net>0, LOYO>0, CI95 exclui zero",
+   "status_initial": "ACTIVE (pre-registro docs/26 §43)",
+   "execution_date": "2026-08-12",
+   "stage": "estagio 1",
+   "steps": "W1: preco vs MA12s; revisao semanal; custo open semanal + 2.1 pips",
+   "evidence": [
+    "docs/26 §43-§44",
+    "research/reports/cycle3_results.json"
+   ],
+   "metrics": {
+    "n_weeks": 593,
+    "net_mean_pct": -0.0845,
+    "ci95": [
+     -0.1694,
+     -0.0026
+    ],
+    "loyo_positive": false
+   },
+   "classification": "REFUTADA",
+   "justification": "net < 0 com CI95 negativo significativo; risk premium de commodities nao existe no EURUSD spot varejo"
+  },
+  {
+   "id": "H15",
+   "name": "Momentum cambial cross-sectional mensal spot-only",
+   "priority": 10,
+   "cycle": "4",
+   "acceptance_criteria": "3/4 lookbacks positivos; Sharpe primario > 0.50; stress 1.5x positivo; estabilidade anual",
+   "status_initial": "PRE-REGISTERED",
+   "execution_date": "2026-08-22",
+   "stage": "development",
+   "steps": "sete majors; moeda estrangeira normalizada contra USD; top/bottom 2; lookbacks 1/3/6/12m; custos 3.7 pips",
+   "evidence": [
+    "docs/32_H15_CROSS_SECTIONAL_FX_MOMENTUM.md",
+    "docs/33_RESEARCH_AUDIT_2026_08_22.md",
+    "research/cross_sectional_momentum.py"
+   ],
+   "metrics": {
+    "net_annualized_1m": -0.0093,
+    "net_annualized_3m": -0.0273,
+    "net_annualized_6m": -0.0303,
+    "net_annualized_12m": -0.0193
+   },
+   "classification": "REFUTADA",
+   "justification": "todos os quatro horizontes foram negativos no development; validation nao consultada"
+  },
+  {
+   "id": "H16",
+   "name": "Carry cambial cross-sectional mensal com proxy call-money",
+   "priority": 11,
+   "cycle": "4",
+   "acceptance_criteria": "liquido e Sharpe > 0.50; stress 1.5x positivo; 4 anos positivos; concentracao <= 50%; sensibilidades positivas",
+   "status_initial": "PRE-REGISTERED",
+   "execution_date": "2026-08-22",
+   "stage": "development",
+   "steps": "sete majors; diferencial de taxas OECD/FRED t-2; top/bottom 1/2/3; accrual mensal; custos 3.7 pips",
+   "evidence": [
+    "docs/34_H16_CROSS_SECTIONAL_CARRY_PROXY.md",
+    "docs/35_H16_CROSS_SECTIONAL_CARRY_RESULT.md",
+    "research/cross_sectional_carry.py",
+    "research/reports/h16_cross_sectional_carry_dev.json",
+    "research/reports/h16_leak_check_dev/leak_check_summary.json",
+    "research/reports/h16_overfit_dev/overfit_report.json"
+   ],
+   "metrics": {
+    "months": 71,
+    "primary_net_annualized": 0.00833,
+    "primary_sharpe": 0.2345,
+    "primary_max_drawdown": -0.0632,
+    "dsr": 0.5903,
+    "mintrl_months": 587.9,
+    "leak_checks": "138/138 PASS"
+   },
+   "classification": "REFUTADA",
+   "justification": "retorno liquido positivo, mas Sharpe 0.23 falhou o gate 0.50; DSR e MinTRL insuficientes; validation e lockbox nao consultadas"
+  }
+ ],
+ "summary": {
+  "total": 18,
+  "confirmed": 0,
+  "refuted": 17,
+  "inconclusive": 1,
+  "note": "18 hipoteses registradas: 17 refutadas + H12 INCONCLUSIVA. H15 momentum spot foi negativo; H16 carry proxy teve retorno positivo, mas Sharpe/DSR/MinTRL insuficientes. Sem candidato a demo/capital real"
+ },
+ "cycle2": {
+  "opened": "2026-08-12 (docs/26 §26)",
+  "results": "3 REFUTADAS (H08/H10/H11) + 1 INCONCLUSIVA (H09)",
+  "note": "H09 candidata a estagio 2 focado, condicionado ao operador"
+ },
+ "audits": [
+  {
+   "id": "H07-DUKA",
+   "name": "H07 GBPUSD com custo Dukascopy tick",
+   "type": "exploratory_cost_audit_and_prereg",
+   "execution_date": "2026-08-12",
+   "status": "NAO CONFIRMADA",
+   "prereg": "docs/26 §45",
+   "result": "docs/26 §46",
+   "evidence": [
+    "research/h07_dukascopy_tick_audit.py",
+    "research/reports/h07_dukascopy_tick_audit_current.json",
+    "research/reports/h07_dukascopy_tick_audit_current.csv"
+   ],
+   "metrics": {
+    "n_h07_events": 15,
+    "positive_events": "12/15",
+    "mean_first_spread_pips": 1.04,
+    "mean_dukascopy_tick_net_pips": 5.53,
+    "median_dukascopy_tick_net_pips": 9.9,
+    "blocks_positive_fraction": 0.75,
+    "weakness": "2016 mean -11.47 pips in challenge sample"
+   },
+   "justification": "Amostra manual sugere que custo Dukascopy tick pode reabrir H07 GBPUSD, mas n=15 e exploratorio. Confirmacao exige expansao completa pre-registrada e depois simulador tick-complete."
+  }
+ ]
+}

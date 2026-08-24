@@ -70,17 +70,17 @@ F3  Historical Data             ✅ COMPLETE
 
 F4  Data Transformation         ✅ COMPLETE
 
-F5  Backtest Engine             ⬜ NOT STARTED
+F5  Backtest Engine             ✅ COMPLETE
 
-F6  Strategy Research           ⬜ NOT STARTED
+F6  Strategy Research           ✅ COMPLETE BASELINE
 
-F7  Risk Management             ⬜ NOT STARTED
+F7  Risk Management             ✅ COMPLETE
 
-F8  Robustness & Validation     ⬜ NOT STARTED
+F8  Robustness & Validation     ✅ COMPLETE
 
-F9  Demo Execution              ⬜ NOT STARTED
+F9  Demo Execution              ✅ COMPLETE
 
-F10 Live Readiness              ⬜ NOT STARTED
+F10 Live Readiness              🟡 INFRA READY / OPERATOR DECISION
 ```
 
 ---
@@ -90,13 +90,13 @@ F10 Live Readiness              ⬜ NOT STARTED
 O projeto encontra-se no marco lógico:
 
 ```text
-FOREX v0.1
+FOREX v0.6
 ```
 
 Descrição:
 
 ```text
-Data & Infrastructure Foundation
+MT5Execution / Demo Trading / Monitoring / Reconciliation
 ```
 
 Esse marco representa:
@@ -119,20 +119,34 @@ H1/H4 derivados
 testes automatizados
 
 documentação da base
+
+BacktestEngine deterministico
+
+performance metrics básicas
+
+strategy research baseline completo
+
+Risk Engine completo
+
+robustez, cost stress e walk-forward
+
+Execution Layer demo validada
+
+monitoring, reconciliation e audit log
+
+Live Readiness com infraestrutura pronta
 ```
 
 Não representa:
 
 ```text
-trading bot completo
+capital real autorizado
 
-Strategy validada
+Strategy com edge liquido validado
 
-BacktestEngine pronto
+operacao live automatica
 
-Risk Engine pronto
-
-execução de ordens
+decisao de risco/capital do operador
 ```
 
 ---
@@ -735,7 +749,7 @@ Estado atual:
 Status:
 
 ```text
-NOT STARTED
+COMPLETE
 ```
 
 Próximo grande marco do projeto.
@@ -805,70 +819,56 @@ worst-case intrabar
 A implementação deverá ocorrer em etapas.
 
 ```text
-F5.1 Core Models
+F5.1 Core Models             ✅ COMPLETE
 
-F5.2 Simulation Clock
+F5.2 Simulation Clock        ✅ COMPLETE
 
-F5.3 Signal / Order / Fill
+F5.3 Signal / Order / Fill   ✅ COMPLETE
 
-F5.4 Position / Portfolio
+F5.4 Position / Portfolio    ✅ COMPLETE
 
-F5.5 CostModel
+F5.5 CostModel               ✅ COMPLETE
 
-F5.6 Stops / Targets
+F5.6 Stops / Targets         ✅ COMPLETE
 
-F5.7 Trade Ledger
+F5.7 Trade Ledger            ✅ COMPLETE
 
-F5.8 Performance
+F5.8 Performance             ✅ COMPLETE
 
-F5.9 Regression Tests
+F5.9 Regression Tests        ✅ COMPLETE
 ```
 
 ---
 
 # 41. F5.1 — Core Models
 
-Implementar estruturas básicas:
+
+Status:
 
 ```text
-Signal
+COMPLETE
 
-Order
-
-Fill
-
-Position
-
-Trade
-
-InstrumentSpecification
-
-BacktestConfig
 ```
 
 ---
 
 # 42. F5.2 — Simulation Clock
 
-Implementar:
+
+Status:
 
 ```text
-simulation_time
-
-bar start
-
-bar close
-
-next bar
-
-availability time
+COMPLETE
 ```
-
-O Engine deverá controlar completamente o relógio.
-
 ---
 
 # 43. F5.3 — Signal / Order / Fill
+
+Status:
+
+```text
+COMPLETE
+```
 
 Fluxo:
 
@@ -1065,39 +1065,39 @@ final forced close
 # 51. Definition of Done — F5
 
 ```text
-[ ] Clock implementado
+[x] Clock implementado
 
-[ ] No look-ahead protegido
+[x] No look-ahead protegido
 
-[ ] Signal implementado
+[x] Signal implementado
 
-[ ] Order implementado
+[x] Order implementado
 
-[ ] Fill implementado
+[x] Fill implementado
 
-[ ] Position implementado
+[x] Position implementado
 
-[ ] Portfolio implementado
+[x] Portfolio implementado
 
-[ ] CostModel implementado
+[x] CostModel implementado
 
-[ ] Stop Loss implementado
+[x] Stop Loss implementado
 
-[ ] Take Profit implementado
+[x] Take Profit implementado
 
-[ ] Worst-case intrabar implementado
+[x] Worst-case intrabar implementado
 
-[ ] Trade Ledger implementado
+[x] Trade Ledger implementado
 
-[ ] Equity Curve implementada
+[x] Equity Curve implementada
 
-[ ] Métricas básicas implementadas
+[x] Métricas básicas implementadas
 
-[ ] Regression tests
+[x] Regression tests
 
-[ ] Resultado determinístico
+[x] Resultado determinístico
 
-[ ] Documentação atualizada
+[x] Documentação atualizada
 ```
 
 ---
@@ -1107,10 +1107,10 @@ final forced close
 Status:
 
 ```text
-NOT STARTED
+COMPLETE BASELINE
 ```
 
-Só deve começar depois da F5.
+Iniciada após o fechamento da F5 baseline.
 
 ---
 
@@ -1124,6 +1124,12 @@ Só deve começar depois da F5.
 
 ```text
 Simple EMA Trend Following
+```
+
+Status:
+
+```text
+IMPLEMENTED BASELINE
 ```
 
 Objetivo:
@@ -1223,19 +1229,19 @@ cost calculation
 Após EMA baseline:
 
 ```text
-Volatility Breakout
+Volatility Breakout      ✅ BASELINE TESTED
 
-Time-Series Momentum
+Time-Series Momentum     ✅ BASELINE TESTED
 
-Mean Reversion
+Mean Reversion           ✅ BASELINE TESTED
 
-Asian Range Breakout
+Asian Range Breakout     ✅ BASELINE TESTED
 
-Carry
+Carry                    ✅ BASELINE TESTED
 
-Regime Detection
+Regime Detection         ✅ BASELINE TESTED
 
-Multi-Timeframe
+Multi-Timeframe          ✅ BASELINE TESTED
 ```
 
 ---
@@ -1245,25 +1251,27 @@ Multi-Timeframe
 Para cada Strategy:
 
 ```text
-[ ] hipótese registrada
+[x] hipótese registrada
 
-[ ] racional registrado
+[x] racional registrado
 
-[ ] parâmetros primários definidos
+[x] parâmetros primários definidos
 
-[ ] código implementado
+[x] código implementado
 
-[ ] unit tests
+[x] unit tests
 
-[ ] backtest base
+[x] backtest base
 
-[ ] custos
+[x] custos
 
-[ ] trade log analisável
+[x] trade log analisável
 
-[ ] sem look-ahead
+[x] sem look-ahead
 
-[ ] resultado reproduzível
+[x] resultado histórico analisado
+
+[x] resultado reproduzível
 ```
 
 ---
@@ -1273,7 +1281,7 @@ Para cada Strategy:
 Status:
 
 ```text
-NOT STARTED
+COMPLETE
 ```
 
 ---
@@ -1342,6 +1350,44 @@ produzem:
 position size
 ```
 
+Implementado no primeiro bloco F7:
+
+```text
+[x] implementation of RiskGate protocol
+
+[x] VolumeRules
+
+[x] FixedSizeRiskGate com validação de volume_step
+
+[x] StopBasedRiskGate
+
+[x] ExposureLimitRiskGate
+
+[x] DailyLossRiskGate
+
+[x] DrawdownRiskGate
+
+[x] KillSwitchRiskGate
+
+[x] entry_price + stop_loss metadata
+
+risk_fraction
+
+max_quantity opcional
+
+max_notional opcional
+
+max_daily_loss opcional
+
+max_daily_loss_fraction opcional
+
+[x] max_drawdown opcional
+
+[x] max_drawdown_pct opcional
+
+[x] kill()/reset() latch
+```
+
 ---
 
 # 66. Risk Invariants
@@ -1367,25 +1413,25 @@ kill switch bloqueia execução
 # 67. Definition of Done — F7
 
 ```text
-[ ] Risk Engine separado
+[x] Risk Engine separado
 
-[ ] Fixed Size
+[x] Fixed Size
 
-[ ] Risk %
+[x] Risk %
 
-[ ] Stop-Based Sizing
+[x] Stop-Based Sizing
 
-[ ] volume constraints
+[x] volume constraints
 
-[ ] exposure limits
+[x] exposure limits
 
-[ ] daily loss
+[x] daily loss
 
-[ ] drawdown protection
+[x] drawdown protection
 
-[ ] kill switch
+[x] kill switch
 
-[ ] testes automatizados
+[x] testes automatizados
 ```
 
 ---
@@ -1395,10 +1441,35 @@ kill switch bloqueia execução
 Status:
 
 ```text
-NOT STARTED
+COMPLETE
 ```
 
 Essa fase é quantitativa, não apenas de engenharia.
+
+Blocos implementados:
+
+```text
+cost stress no research runner
+(--cost-multiplier 1.5 / 2.0)
+
+sensibilidade local estruturada
+(research/sweep.py --range/--values, um parametro por vez)
+
+subperiod analysis padrao
+(research/sweep.py --subperiods, 2015-17/2018-20/2021-23/2024-26)
+
+periodos formais Dev/Val/OOS pre-registrados
+(research/periods.py; dev 2015-20, val 2021-23, oos lockbox 2024-26)
+
+lockbox guard mecanico
+(--period oos exige --allow-oos explicito, roadmap 74)
+
+stability analysis dev vs val
+(--stability: deltas + consistencia de sinal)
+
+resultados documentados
+(docs/15_ROBUSTNESS.md: sweep + subperiods + stability + cost stress)
+```
 
 ---
 
@@ -1531,7 +1602,9 @@ repeat
 Status:
 
 ```text
-PLANNED
+DONE — hipotese WF-01 testada e rejeitada (docs/18):
+nenhum edge transferivel no tempo sob custos explicitos;
+lockbox OOS permanece selado (nada passou no criterio).
 ```
 
 ---
@@ -1571,21 +1644,21 @@ Somente após a infraestrutura básica estar estabilizada.
 # 78. Definition of Done — F8
 
 ```text
-[ ] development period definido
+[x] development period definido
 
-[ ] validation period definido
+[x] validation period definido
 
-[ ] OOS protegido
+[x] OOS protegido
 
-[ ] sensitivity tests
+[x] sensitivity tests
 
-[ ] cost stress
+[x] cost stress
 
-[ ] subperiod analysis
+[x] subperiod analysis
 
-[ ] stability analysis
+[x] stability analysis
 
-[ ] resultados documentados
+[x] resultados documentados
 ```
 
 ---
@@ -1595,7 +1668,22 @@ Somente após a infraestrutura básica estar estabilizada.
 Status:
 
 ```text
-NOT STARTED
+COMPLETE
+```
+
+Blocos implementados:
+
+```text
+Execution Interface (execution/interface.py)
+MT5Execution (execution/mt5_execution.py, ativado e validado em demo)
+Order/Fill Validation | Broker State | Reconciliation
+Logs (audit_log.py) | Monitoring (monitoring.py)
+Broker/Demo Validation (broker_validation.py)
+Execution Comparison (comparison.py)
+
+Ativacao demo: 2026-08-10 (autorizacao explicita)
+periodo de validacao: 5/5 round-trips, 100% within tolerance,
+latencia media 231 ms, slippage 0.00 pips, 0 rejeicoes
 ```
 
 ---
@@ -1647,23 +1735,16 @@ MetaTrader 5 Demo
 Antes de Demo:
 
 ```text
-Execution Interface
-
-MT5Execution
-
-Order Validation
-
-Fill Validation
-
-Position Reconciliation
-
-Broker State
-
-Logs
-
-Monitoring
-
-Kill Switch
+Execution Interface      IMPLEMENTED
+MT5Execution             IMPLEMENTED (adapter, nao ativado)
+Order Validation         IMPLEMENTED
+Fill Validation          IMPLEMENTED
+Position Reconciliation  IMPLEMENTED
+Broker State             IMPLEMENTED
+Logs                     IMPLEMENTED
+Monitoring               IMPLEMENTED
+Broker/Demo Validation   IMPLEMENTED (engineering)
+Kill Switch              IMPLEMENTED (F7)
 ```
 
 ---
@@ -1763,27 +1844,27 @@ rejection
 # 88. Definition of Done — F9
 
 ```text
-[ ] Execution Layer
+[x] Execution Layer
 
-[ ] Demo-only validation
+[x] Demo-only validation
 
-[ ] trading flag
+[x] trading flag
 
-[ ] kill switch
+[x] kill switch
 
-[ ] broker validation
+[x] broker validation
 
-[ ] order validation
+[x] order validation
 
-[ ] reconciliation
+[x] reconciliation
 
-[ ] monitoring
+[x] monitoring
 
-[ ] logs
+[x] logs
 
-[ ] execution comparison
+[x] execution comparison
 
-[ ] período de validação Demo concluído
+[x] período de validação Demo concluído
 ```
 
 ---
@@ -1793,7 +1874,19 @@ rejection
 Status:
 
 ```text
-NOT STARTED
+INFRA READY / OPERATOR DECISION
+```
+
+Blocos implementados:
+
+```text
+readiness review programatica (readiness/review.py)
+risk limits (readiness/risk_limits.py)
+safety helpers (readiness/safety.py)
+operational procedures documentadas (docs/17_LIVE_READINESS.md)
+
+demo validation concluida; trading flag permanece decisao explicita
+do operador
 ```
 
 Essa fase não significa automaticamente:
@@ -2097,22 +2190,19 @@ broker convention
 Após EURUSD estar estabilizado:
 
 ```text
-GBPUSD
-
-USDJPY
-
-USDCHF
-
-AUDUSD
-
-USDCAD
-
-NZDUSD
-
-crosses
+GBPUSD   [x] 288k M15 + H1/H4 + backtest
+USDJPY   [x] coleta ok; conversao de moeda RESOLVIDA (docs/22)
+USDCHF   [x] coleta ok + backtest
+AUDUSD   [x] coleta ok + backtest
+USDCAD   [x] coleta ok + backtest
+NZDUSD   [x] coleta ok + backtest
+crosses  [ ] fase posterior
 ```
 
-podem ser investigados.
+Status: dados completos; primeira leitura dev (docs/21): TODOS os
+19 backtests (6 pares x 3 estrategias + USDJPY) negativos — nenhum
+par tem edge com custos; sem motivacao para val/OOS multi-par por
+enquanto. Conversao de moeda quote→USD implementada (docs/22).
 
 ---
 
@@ -2134,19 +2224,12 @@ multi-symbol.
 
 # 106. Multi-Timeframe Runtime
 
-Os datasets H1/H4 já existem.
-
-Mas sincronização runtime:
-
-```text
-M15
-
-H1
-
-H4
-```
-
-ainda será responsabilidade do BacktestEngine futuro.
+DONE — auditoria 2026-08-10 (docs/20): a sincronizacao runtime
+M15/H1/H4 ja esta implementada no BacktestEngine
+(BacktestContextBuilder, por timestamp apos fechamento, nunca por
+indice). Evidencia: tests/test_backtest_multitimeframe.py + as
+strategies MULTI-TIMEFRAME-MOMENTUM e o filtro RF-01 (H4) que a
+usam em producao. Nenhuma mudanca necessaria.
 
 ---
 
@@ -2459,9 +2542,9 @@ Regressões precisam ser investigadas antes de adicionar novas funcionalidades.
 Estado atual:
 
 ```text
-25 tests
+1170 tests collected
 
-25 passed
+1161 passed, 9 deselected
 
 0 failed
 ```
@@ -2582,66 +2665,66 @@ Velocidade de execução não deve ser priorizada sobre correção.
             │
             ▼
       BACKTEST ENGINE
-           ⬜
+           ✅
             │
             ▼
        STRATEGIES
-           ⬜
+           ✅
             │
             ▼
        RISK ENGINE
-           ⬜
+           ✅
             │
             ▼
  ROBUSTNESS / OOS
-           ⬜
+           ✅
             │
             ▼
       DEMO EXECUTION
-           ⬜
+           ✅
             │
             ▼
      LIVE READINESS
-           ⬜
+           🟡
 ```
 
 ---
 
 # 129. Próxima Ação Técnica
 
-Depois de concluir a documentação do marco atual:
+Estado tecnico atual:
 
 ```text
-BacktestEngine
+F0-F9 completos.
+F10 com infraestrutura pronta.
+Busca de edge encerrada nas hipoteses atuais.
 ```
 
-será a próxima implementação.
-
-A primeira tarefa técnica da F5 deverá ser:
+A proxima acao tecnica deve ser escolhida explicitamente entre:
 
 ```text
-definir e implementar os modelos
-Signal / Order / Fill / Position / Trade
+CI/CD
+dataset versioning
+experiment tracking
+nova hipotese pre-registrada
+melhoria operacional de demo
+nenhuma acao, manter research/demo
 ```
-
-antes de criar uma Strategy real.
 
 ---
 
 # 130. Próxima Ação de Documentação
 
-Antes de voltar ao código ainda faltam:
+Qualquer nova hipotese ou evolucao estrutural deve atualizar:
 
 ```text
-DECISIONS.md
+README.md
+
+docs/12_STRATEGY_RESEARCH.md ou documento dedicado
+
+docs/11_ROADMAP.md
 
 CHANGELOG.md
-```
-
-Esses dois arquivos encerram formalmente o marco:
-
-```text
-FOREX v0.1
 ```
 
 ---
@@ -2651,47 +2734,114 @@ FOREX v0.1
 Marco atual:
 
 ```text
-FOREX v0.1
+FOREX v0.6
 
-Data & Infrastructure Foundation
+MT5Execution / Demo Trading / Monitoring / Reconciliation
 ```
 
 Status:
 
 ```text
-F0  ✅
-
-F1  ✅
-
-F2  ✅
-
-F3  ✅
-
-F4  ✅
-
-F5  NEXT
-
-F6  PLANNED
-
-F7  PLANNED
-
-F8  PLANNED
-
-F9  PLANNED
-
-F10 PLANNED
+F0  ✅  F1  ✅  F2  ✅  F3  ✅
+F4  ✅  F5  ✅  F6  ✅  F7  ✅
+F8  ✅  F9  ✅  F10 🟡 INFRA READY
 ```
 
+Pendencias F10 (nao bloqueiam pesquisa; decisao de capital real e
+separada, secao 92):
+
+```text
+Live Readiness Review formal (secao 91) — DONE, docs/17 secao 10
+Decisao de capital real — operador, nunca automatica
+```
+
+Itens futuros:
+
+```text
+Walk-Forward (75) — DONE (docs/18): 3 baselines REJECT
+Multiple Symbols (104) — dados 6 majors + 19 backtests (docs/21)
+Multi-Timeframe Runtime (106) — DONE (docs/20)
+Conversao de moeda quote->USD — DONE (docs/22)
+Busca de edge — ENCERRADA (docs/24, roadmap §93: research/demo)
+Monte Carlo (76) | DSR/PBO/CSCV (77) | D1 (103)
+Feature Engineering (107) | ML (108) | HMM (109)
+Banco de Dados (110) | Experiment Tracking (112)
+Dataset Versioning (113) | CI/CD (114)
+```
+
+Conversao de moeda quote->USD —
+   DONE (docs/22 + hardening MC-01..05, docs/25)
+Hardening pos-auditoria (docs/25) — DONE 2026-08-12:
+   v0.6.1 Execution Safety (ES-01..05)
+   v0.6.2 Risk Composition (RC-01..02)
+   v0.6.3 Multi-Currency Financial Integrity (MC-01..05)
+   v0.6.4 Readiness & Audit (RA-01..07)
+CI (RA-07) — GitHub Actions pytest non-integration
+Novo programa de pesquisa ABERTO (docs/26, 2026-08-12):
+   hipoteses H01-H07 registradas
+H03 (volatility surprise) — ESTAGIO 1 REJECTED (docs/26 §11):
+   retorno condicional nulo nas janelas 40/60/80; slot 00:00
+   (~1.98 pips brutos) abaixo do custo round-trip 3.7 pips
+H05/H06 (choques eficientes/ineficientes) — ESTAGIO 1 REJECTED
+   (docs/26 §13): DE nao adiciona poder vs controles; H05 ~0 com 3
+   inversoes de sinal por ano; H06 negativo (oposto da hipotese)
+H01 (falso rompimento da faixa asiatica) — ESTAGIO 1 REJECTED
+   (docs/26 §15): signed ~0 em h1-8 e buffers 0.10/0.15/0.20; h8
+   levemente positivo (continuacao, nao reversao); sinal inverte 4x
+   por ano; midpoint sempre tocado em 8 barras (nao discrimina)
+H02 (handoff Asia-Londres condicionado ao formato) — ESTAGIO 1
+   REJECTED (docs/26 §17): continuation_up negativo em todos os
+   cenarios de fronteira e 10/12 anos (OPOSTO da hipotese); demais
+   grupos instaveis entre horizontes e anos; amostras 5-31/ano
+H04 (compressao + choque + atividade) — ESTAGIO 1 REJECTED
+   (docs/26 §20): A4 nao supera controle de breakout simples; pos
+   < 50% com media positiva = cauda (eventos extremos); instavel
+   por ano (6 pos / 6 neg)
+H07 (gap semanal) — ESTAGIO 1 REJECTED (docs/26 §21): sinal real
+   no h1 (66.78% pos, robusto a leave-one-year-out e sem top-5),
+   mas ~3.1 pips brutos < 3.7 pips de custo; efeito se dissipa no
+   h16 — candidato a reavaliacao se custos menores
+PROGRAMA DE HIPOTESES FECHADO (docs/26 §22): 7/7 REFUTADAS,
+   0 confirmadas — base de registros research/hypotheses_log.json,
+   relatorio docs/27
+H07 reavaliado com custos REAIS (docs/26 §23): spread EURUSD geral
+   ~0.2-0.4 pips, open semanal mediana 1.20/p90 3.25 pips -> custo
+   real round-trip 3.30-5.75 pips vs edge h1 3.11 pips -> H07
+   MANTIDA REFUTADA; ferramenta research/cost_measurement.py
+   incorporada para calibrar futuras hipoteses
+Infra de eventos raros generalizada (docs/26 §24):
+   research/rare_events.py (bootstrap CI, leave-one-year-out,
+   sem top-N) com 12 testes; h07 refatorado com resultados
+   identicos; modulo obrigatorio para hipoteses de baixa frequencia
+Custos calibrados multi-simbolo (docs/26 §25): spreads reais medidos
+   (EURUSD 0.20 a NZDUSD 0.90 pips; round-trip 1.9-2.6 vs 3.7);
+   bateria docs/21 re-rodada -> 21/21 negativos, conclusao mantida;
+   runner corrigido (bug RA-04) e agora aceita --spread-pips
+   calibrado por instrumento
+PROGRAMA DE HIPOTESES: **18 execucoes, 0 CONFIRMADAS / 17 REFUTADAS
+   / 1 INCONCLUSIVA** (docs/26 §38-§44): ciclos 1-3 + runner 21/21;
+   H12 (liquidity premium) INCONCLUSIVA — net +0.104%, CI contem
+   zero; H13 (voting) e H14 (MLM semanal) REFUTADAS; H07-MP stage-1
+   robusto ao WRC (p=0.0004) mas refutado no stage-2 pelo custo
+PADRAO CONSOLIDADO (3 ciclos, 4 horizontes M15/H1/D1/W1): edge bruto
+   marginal < custo calibrado; Aronson (6.402 regras S&P 500) previu
+   o desfecho — mercados liquidos nao pagam edge a regras simples ou
+   combinadas apos correcao de data-mining
+WRC/MCP INCORPORADOS ao funil (research/data_mining_tests.py)
+NENHUM SINAL ELEGIVEL PARA DEMO/CAPITAL REAL. Decisao de capital
+   (§92) permanece sob o operador, sem candidato do programa.
+Proximas opcoes: (a) aceitar o veredito e encerrar a busca de edge
+   no varejo FX (recomendado pela evidencia); (b) buscar dados de
+   custo institucional (spread liquido real via ECN/API) onde o
+   custo de 2-8 pips cai para fracoes — o unico caminho que a
+   evidencia nao refutou; (c) redirecionar para
+   infraestrutura/risco/demo da operacao.
 ---
 
 # 132. Regra Final
 
 > O projeto só avança quando a fase anterior possui base suficiente para que os resultados da próxima sejam interpretáveis e reproduzíveis.
 
-O próximo arquivo é:
-
-```text
-DECISIONS.md
-```
+O próximo arquivo é `DECISIONS.md`.
 
 Nele serão registradas as decisões arquiteturais que devem sobreviver ao contexto de uma única sessão de desenvolvimento.

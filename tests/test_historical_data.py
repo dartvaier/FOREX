@@ -1,11 +1,18 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 
 FILE = Path(
     "data/raw/EURUSD/M15.parquet"
 )
+
+if not FILE.exists():
+    pytest.skip(
+        "dataset historico local nao disponivel",
+        allow_module_level=True,
+    )
 
 
 def load_data():

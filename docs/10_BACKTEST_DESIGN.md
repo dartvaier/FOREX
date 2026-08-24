@@ -1,5 +1,7 @@
 # Backtest Design
 
+> Status: baseline implementado em `backtest/engine.py`.
+
 ## 1. Objetivo
 
 Este documento define o design do futuro:
@@ -14,9 +16,9 @@ da plataforma:
 FOREX Algorithmic Trading Research Platform
 ```
 
-O BacktestEngine ainda não está implementado.
+O BacktestEngine baseline foi implementado após este contrato de design.
 
-Este documento existe antes da implementação para estabelecer o comportamento esperado do sistema e impedir que decisões importantes sejam tomadas implicitamente durante a programação.
+Este documento continua servindo como contrato arquitetural para preservar o comportamento esperado do sistema e impedir que decisões importantes sejam tomadas implicitamente durante a programação.
 
 O princípio central é:
 
@@ -29,13 +31,13 @@ O princípio central é:
 Estado atual:
 
 ```text
-DESIGN
+IMPLEMENTED BASELINE
 ```
 
 Implementação:
 
 ```text
-NOT STARTED
+COMPLETE FOR F5 BASELINE
 ```
 
 Este documento define o contrato inicial da fase:
@@ -348,7 +350,24 @@ fill_time = abertura da próxima barra disponível
 Portanto:
 
 ```text
-fill_time > signal_time
+fill_time >= signal_time
+```
+
+A igualdade de timestamps é permitida porque o fechamento da barra `t`
+e a abertura da barra `t+1` podem compartilhar a mesma fronteira temporal.
+
+Nesse caso, a proteção contra look-ahead depende da ordem dos eventos:
+
+```text
+BAR t CLOSE
+    ↓
+Signal
+    ↓
+Order
+    ↓
+BAR t+1 OPEN
+    ↓
+Fill
 ```
 
 na implementação baseline.
@@ -830,6 +849,33 @@ Exemplo:
 cada operação = tamanho fixo
 ```
 
+Implementação atual:
+
+```text
+RiskGate protocol
+
+FixedSizeRiskGate
+
+StopBasedRiskGate
+
+VolumeRules
+
+ExposureLimitRiskGate
+
+DailyLossRiskGate
+```
+
+O RiskGate pode aprovar ou rejeitar um Signal antes da criação da Order.
+Em entradas baseadas em stop, a Strategy fornece `entry_price` e
+`stop_loss` em metadata; o RiskGate calcula a quantidade final.
+
+`ExposureLimitRiskGate` pode envolver outro gate para bloquear entradas
+que excedam `max_quantity` ou `max_notional`.
+
+`DailyLossRiskGate` pode envolver outro gate e observar a equity curve
+registrada pelo BacktestEngine para bloquear novas entradas quando a perda
+diaria atingir `max_daily_loss` ou `max_daily_loss_fraction`.
+
 ---
 
 # 39. Strategy Não Define Lote Final
@@ -846,6 +892,28 @@ mas o tamanho financeiro final pertence ao:
 
 ```text
 Risk Engine
+```
+
+Na implementação atual:
+
+```text
+StopBasedRiskGate
+```
+
+calcula:
+
+```text
+account_equity * risk_fraction
+/
+abs(entry_price - stop_loss) * contract_size
+```
+
+e normaliza o resultado para:
+
+```text
+volume_min
+volume_max
+volume_step
 ```
 
 ---
@@ -2310,7 +2378,7 @@ Mas resultados deverão informar que existe posição não realizada.
 
 # 114. Multi-Timeframe
 
-A arquitetura deverá futuramente permitir:
+A arquitetura baseline agora permite:
 
 ```text
 H4 → regime
@@ -2321,6 +2389,25 @@ M15 → execution
 ```
 
 sem look-ahead.
+
+Implementação atual:
+
+```text
+BacktestEngine.run(..., higher_timeframe_dataframes={...})
+
+BacktestContext.timeframe_bars
+```
+
+Estratégias antigas continuam recebendo apenas `closed_bars` do timeframe
+base. Estratégias multi-timeframe podem declarar:
+
+```text
+higher_timeframes
+higher_timeframe_bar_limits
+```
+
+para que o runner e o engine carreguem apenas o contexto superior
+necessário.
 
 ---
 
@@ -2472,7 +2559,7 @@ sem registrar a metodologia.
 
 # 123. Performance
 
-O BacktestEngine produzirá dados brutos.
+O BacktestEngine produz dados brutos e um resumo de performance.
 
 Um componente separado:
 
@@ -2480,7 +2567,13 @@ Um componente separado:
 Performance
 ```
 
-calculará métricas.
+calcula as métricas a partir dos ledgers de trades e equity.
+
+Implementado em:
+
+```text
+backtest/performance.py
+```
 
 ---
 

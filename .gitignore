@@ -15,12 +15,34 @@ __pycache__/
 
 # Tests
 .pytest_cache/
+.pytest-tmp*/
 
 # Logs
 logs/
 *.log
 
+# Research outputs
+research/reports/
+
 # Market datasets
 data/raw/
 data/processed/
 data/cache/
+data/import/
+data/scalping/
+data/external/
+# Agent Cluster workspace
+.cluster/
+
+# Local agent / research workspace artifacts
+.agents/
+.autoclaw/
+.openclaw/
+.openclaw-attachments/
+.opencode/
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+config/mcporter.json

@@ -1,4 +1,409 @@
+## LITERATURA WEST + AFML INCORPORADA AO FUNIL (2026-08-12)
+
+- **Thomas West**: registrado como contraexemplo operacional do tipo
+  de backtest popular que Aronson critica (TradingView, PF alto,
+  custos/OOS/trials insuficientes). Ideias anotadas apenas como
+  candidatas menores futuras: oscillator re-entry, divergencia por
+  pivots, squeeze + EMA200 + SAR flip. Nenhuma vira Strategy sem
+  pre-registro.
+- **Lopez de Prado / AFML**: reforca a regra "backtest descarta, nao
+  melhora". A partir de agora, quando Sharpe for reportado, PSR/DSR
+  deve ser metrica complementar; se houver modelos com parametros
+  aprendidos/ML, usar CPCV com purging/embargo em vez de re-ajuste
+  repetido por walk-forward.
+- **Roteiro condicional**: meta-labeling/triple-barrier so faz sentido
+  se antes existir um sinal com edge bruto real e uma tese de custo
+  executavel. Sem edge liquido, ML permanece prematuro.
+- **Fila de literatura**: Harris (microestrutura/custos) e Lien
+  (sessoes/intermercado) seguem como proximas fontes candidatas.
+
+## CICLO 3 EXECUTADO — H12 INCONCLUSIVA, H13/H14 REFUTADAS (2026-08-12)
+
+- **H12** (liquidity premium Cooper): net +0.1035% (n=315), CI
+  contem zero, LOYO>0 → INCONCLUSIVA; nao elevado a stage-2 (edge
+  marginal, perfil H09).
+- **H13** (voting 8 regras): net -0.00005%/barra (n=279k) →
+  REFUTADA; combinar regras refutadas nao cria edge no M15 EURUSD.
+- **H14** (MLM semanal): net -0.0845%/semana, CI NEGATIVO
+  significativo → REFUTADA; hedge risk premium de commodities nao
+  existe no EURUSD spot varejo.
+- **Programa: 18 execucoes, 0 confirmadas / 17 refutadas / 1
+  inconclusiva.** Padrao inalterado apos 3 ciclos e 4 horizontes
+  (M15/H1/W1): edge bruto marginal < custo calibrado. Aronson
+  (6.402 regras S&P 500) previu o desfecho.
+- Sem candidato a demo/capital real. Decisao de capital (§92)
+  permanece sob o operador.
+
+## WRC INCORPORADO + RE-AUDITORIA H07-MP (2026-08-12)
+
+- **White's Reality Check / Monte Carlo Permutation implementados**
+  (research/data_mining_tests.py, 9 testes): correcao de
+  data-mining bias para "melhor de N regras" — padrao obrigatorio
+  para avaliar qualquer resultado selecionado entre variacoes/pares
+  (Aronson cap. 6; case study: 6.402 regras S&P, nenhuma
+  significativa apos correcao).
+- **Re-auditoria H07-MP**: WRC sobre as series exatas do stage-1
+  (7 pares): melhor = NZDUSD +0.0323%, p = 0.0002 (7 pares) /
+  0.0004 (6 pares) — o stage-1 nao era artefato de selecao do
+  melhor de N. Refutacao do stage-2 permanece valida (custo).
+- **Funil atualizado**: a partir de agora, resultados que envolvam
+  qualquer selecao (pares, parametros, variacoes) sao avaliados com
+  WRC/MCP alem dos criterios pre-registrados.
+- **Ciclo 3**: candidatas derivadas de Aronson cap. 7 (liquidity
+  premium tipo Cooper, regras complexas tipo Hsu-Kuan, horizonte
+  semanal/mensal) — pre-registro imutavel antes de rodar.
+
+## H07 ESTAGIO 2 REJECTED — PROGRAMA ENCERRADO SEM CANDIDATO (2026-08-12)
+
+- **H07 estagio 2 (AUDUSD/NZDUSD)**: REFUTADA — trade completo
+  (TP 0.5|gap|, SL |gap|, timeout 8h): net -2.26/-2.49 pips; hit TP
+  54-59% e stop 7.4% (edge bruto real) consumidos pelo custo do
+  open semanal (4.5-6.2 pips) + 33-38% de timeouts.
+- **Programa fechado**: 15 execucoes registradas, 0 confirmadas /
+  15 refutadas sob custos calibrados. Padrao consolidado: edge
+  bruto marginal (0.1-3.7 pips) < custo round-trip calibrado
+  (1.9-7.9 pips).
+- **Nenhum sinal elegivel para demo/capital real.** Decisao de
+  capital (§92) permanece sob o operador, sem candidato do
+  programa. Recomendacao: nao operar o que foi testado; a evidencia
+  acumulada indica ausencia de edge liquido no universo estudado
+  (EURUSD intraday + 6 pares em gap semanal).
+
+## H07 MULTI-PAR PROMISSORA (2026-08-12)
+
+- **H07-MP estagio 1**: 5/6 pares com net h1 > 0 (LOYO > 0 em 5) —
+  criterio pre-registrado atingido. **Auditoria**: apenas AUDUSD
+  (+1.82 pips, CI [+0.2,+3.5], 10/12 anos) e NZDUSD (+3.23 pips, CI
+  [+1.4,+5.0], 11/12 anos) excluem zero; GBPUSD/USDJPY/USDCHF =
+  ruido, USDCAD = negativo. Fenomeno dos pares do Pacifico.
+- **H09-MP**: 0/6 pares positivos — refutada fora do EURUSD; H09
+  encerrada.
+- **Proximo passo**: estagio 2 AUDUSD/NZDUSD (trade completo,
+  pre-registro imutavel antes de rodar), depois walk-forward. So
+  entao qualquer conclusao de exploracao — nao ha edge liquido
+  comprovado em trade completo ainda (0 confirmadas no estagio 2).
+
+## H09 ESTAGIO 2 REJECTED — PROGRAMA DE HIPOTESES FECHADO (2026-08-12)
+
+- **H09 estagio 2**: REFUTADA — trade completo (TP midpoint, SL
+  high+0.10r, timeout 4h, SL-first) com n=168: net -0.81 pips;
+  edge bruto real +1.73 pips < custo calibrado ~2.5 pips.
+  Hit TP 43.5%, payoff ~1.03, saida media ~1h; negativo em 8/12 anos.
+- **Programa fechado**: 12 execucoes registradas
+  (research/hypotheses_log.json), 0 confirmadas / 12 refutadas.
+- **Padrao consolidado**: edge bruto marginal (0.1-1.7 pips)
+  sistematicamente menor que o custo round-trip calibrado
+  (1.9-3.7 pips). Nenhuma hipotese produziu valor esperado liquido
+  positivo.
+- **Nenhum sinal elegivel para demo/capital real** — a decisao de
+  capital (§92) permanece sob o operador, sem candidato do programa.
+
 # Architecture & Engineering Decisions
+
+## H10 E H11 ESTAGIO 1 REJECTED (2026-08-12, ciclo 2)
+
+- **H10** (momentum 1a hora Londres): REJEITADA — net -0.023%, 9 de
+  12 anos negativos; retorno pos-janela indiferente ao sinal.
+- **H11** (DE + volume em H1): REJEITADA — filtro pior que o controle
+  em todas as variacoes (DE 0.60/0.80, TV p40/p60); continuacao
+  H1-a-H1 inexistente.
+- **Ciclo 2 fechado**: 3 refutadas (H08/H10/H11) + 1 inconclusiva
+  (H09 — estagio 2 condicionado ao operador). Base de registros
+  `research/hypotheses_log.json` atualizada (11 hipoteses no total).
+
+# Architecture & Engineering Decisions
+
+## H08 REJECTED + H09 INCONCLUSIVA (2026-08-12, ciclo 2)
+
+- **H08** (gap semanal + filtro de liquidez): REJEITADA — net ~0.2
+  pips com CI contendo zero; o filtro removeu sinal (reversao do gap
+  concentra-se nos opens caros, racional invertido).
+- **H09** (reversao apos comprimida + fechamento no extremo):
+  INCONCLUSIVA — primeiro sinal com net positivo em todas as
+  variacoes de fronteira (+0.003% a +0.012% no h4, leave-one-year-out
+  sempre > 0), mas net marginal, concentrado em 2015 e so no grupo
+  high/h4.
+- **Proximos passos**: estagio 2 focado do H09 (condicionado ao
+  operador); H10 (momentum 1a hora Londres) e H11 (DE em H1, custo
+  relativo menor) seguem pre-registradas (docs/26 §29-§30).
+
+# Architecture & Engineering Decisions
+
+## H08 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H08 (gap semanal com filtro de liquidez no open)
+  REJEITADA — net ~0.2 pips com CI contendo zero em 1.2/1.0/0.8 pips.
+- **Achado**: o filtro removeu sinal (bruto 0.031% -> 0.025%): a
+  reversao do gap concentra-se nos opens caros (noticia), nao nos
+  calmos — racional da hipotese invertido.
+- **Consequencia**: ciclo 2 continua com H09 (reversao apos comprimida
+  + extremo), H10 (momentum 1a hora Londres), H11 (DE em H1).
+
+# Architecture & Engineering Decisions
+
+## BATERIA DOCS/21 REAVALIADA COM CUSTOS CALIBRADOS (2026-08-12)
+
+- **Decisao**: medidos os spreads reais dos 7 pares (EURUSD 0.20 a
+  NZDUSD 0.90 pips de mediana; round-trip real 1.9-2.6 pips vs
+  baseline 3.7) e re-rodada a bateria docs/21 com `--spread-pips`
+  calibrado. **21/21 backtests continuam negativos** — nenhuma
+  conclusao inverte.
+- **Bug fix**: runner quebrava com overrides de custo (NameError
+  `effective_cost_params`, regressao RA-04); corrigido com 2 testes
+  de regressao.
+- **Consequencia**: a ausencia de edge multi-simbolo e robusta a
+  custos medidos, nao apenas ao baseline; runner agora aceita
+  custos calibrados por instrumento (docs/26 §25).
+
+# Architecture & Engineering Decisions
+
+## INFRA DE EVENTOS RAROS GENERALIZADA (2026-08-12)
+
+- **Decisao**: framework de estatistica para amostras pequenas
+  (bootstrap CI, leave-one-year-out, sem top-N) extraido do H07 para
+  `research/rare_events.py`, com 12 testes (TDD) e h07 refatorado.
+- **Verificacao**: resultados H07 re-gerados identicos (CI bootstrap
+  byte-a-byte; valores numericos iguais).
+- **Consequencia**: futuras hipoteses de baixa frequencia usam o
+  modulo; suite 1131 passed.
+
+# Architecture & Engineering Decisions
+
+## H07 REAVALIADO COM CUSTOS REAIS — MANTIDA REFUTADA (2026-08-12)
+
+- **Decisao**: a recomendacao docs/27 §5 (reavaliar H07-h1 sob custos
+  reais) foi executada via medicao direta do spread no dataset
+  (`research/cost_measurement.py`). H07 permanece REFUTADA.
+- **Evidencia**: spread geral EURUSD ~0.2-0.4 pips (baseline 2.0 e
+  conservador), mas open semanal mediana 1.20 / p90 3.25 pips; custo
+  round-trip real 3.30 (mediana) / 3.65 (media) / 5.75 (p90) pips vs
+  edge h1 de ~3.11 pips — liquido -0.19 a -2.64 pips.
+- **Consequencia**: ferramenta de medicao de custos incorporada ao
+  projeto (reutilizavel para calibrar futuras hipoteses); nenhuma
+  hipotese avanca para estagio 2; OOS permanece intocado.
+
+# Architecture & Engineering Decisions
+
+## H04 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H04 (compressao + choque de preco/atividade) REJEITADA
+  no estagio 1, conforme docs/26 §18/§20.
+- **Evidencia**: A4 h8 +0.009% (n=439, pos 48.97%) vs CTRL breakout
+  simples -0.002%; A4 h1 -0.003% pior que CTRL; pos < 50% com media
+  positiva = cauda; por ano 6 pos/6 neg.
+- **Consequencia**: experimento `research/h04_experiment.py` mantido
+  (ablation framework reutilizavel).
+
+## H07 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H07 (reversao parcial do gap semanal) REJEITADA no
+  estagio 1 pelo criterio de custo pre-registrado (docs/26 §19/§21).
+- **Evidencia**: h1 signed +0.031% (66.78% pos, n=301), robusto a
+  leave-one-year-out (+0.009% a +0.019%) e sem top-5 (+0.014%); mas
+  ~3.1 pips brutos < 3.7 pips round-trip; efeito dissipa (h16 pos
+  48%). Sinal real, economicamente inviavel com o custo baseline.
+- **Consequencia**: candidato a reavaliacao se custos de execucao
+  menores; NAO elevado a estrategia (disciplina de custos, AGENTS.md).
+
+## PROGRAMA DE HIPOTESES FECHADO (2026-08-12)
+
+- **Decisao**: as 7 hipoteses (H01-H07) foram executadas no estagio 1
+  com pre-registro imutavel; classificacao final 7 REFUTADAS / 0
+  CONFIRMADAS / 0 INCONCLUSIVAS.
+- **Evidencia**: base de registros `research/hypotheses_log.json`;
+  relatorio consolidado `docs/27_HYPOTHESES_TEST_REPORT.md`; docs/26
+  §10-§22; commits `b615243`, `0b5fd6a`, `99971d0`, `4b8c3ec` e
+  commit do fechamento.
+- **Consequencia**: nenhuma hipotese avanca para estagio 2 /
+  walk-forward / OOS; proximos passos: reavaliar custos de execucao
+  (H07 h1), infra de eventos raros, ou novo ciclo de hipoteses.
+
+# Architecture & Engineering Decisions
+
+## H02 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H02 (handoff Asia-Londres condicionado ao formato da
+  sessao) REJEITADA no estagio 1 (relacao estatistica, sem trade),
+  conforme criterios pre-registrados (docs/26 §16/§17).
+- **Evidencia**: continuation_up (comprimida + close high) negativo
+  em todos os cenarios de fronteira e 10/12 anos — OPOSTO da
+  continuacao compradora esperada; reversal_down so no h4 e
+  instavel (2016 +0.087% vs 2025 -0.045%); demais grupos ~0/mistos.
+- **Consequencia**: experimento `research/h02_experiment.py` mantido
+  (percentil empirico de range por dia + CLV + volume relativo);
+  proxima hipotese ativa = H04 (compressao + atividade), pre-registro
+  antes de backtest. Padrao anti-H02 (reversao apos comprimida+high)
+  NAO elevado a hipotese: sinal nao pre-registrado, risco de multiple
+  testing.
+
+# Architecture & Engineering Decisions
+
+## H01 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H01 (falso rompimento da faixa asiatica) REJEITADA no
+  estagio 1 (previsao condicional, sem trade), conforme criterios
+  pre-registrados (docs/26 §14/§15).
+- **Evidencia**: retorno assinado ~0 em h1-8 e buffers 0.10/0.15/0.20
+  (h8 +0.003% a +0.004%, levemente positivo = continuacao, nao
+  reversao); por ano inverte sinal 4x; por lado upper/lower ambos
+  positivos; midpoint touch rate 1.00 (nao discrimina).
+- **Consequencia**: experimento `research/h01_experiment.py` mantido
+  como ferramenta (sessao Asia London via zoneinfo, ATR H1 causal);
+  proxima hipotese ativa = H02 (handoff Asia-Londres), pre-registro
+  antes de backtest.
+
+# Architecture & Engineering Decisions
+
+## H05/H06 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H05 (reversao apos choque ineficiente) e H06
+  (continuacao apos choque eficiente) REJEITADAS no estagio 1
+  (previsao condicional, sem trade), conforme criterios
+  pre-registrados (docs/26 §12/§13).
+- **Evidencia**: retorno assinado ~0 (H05) e NEGATIVO (H06, pos
+  ~44%) na matriz 6 celulas; controles com DE alta tem o mesmo
+  padrao negativo (DE nao discrimina); p85/p95 idem; por ano H05
+  inverte sinal 3x e H06 e negativo/~0.
+- **Consequencia**: features `directional_efficiency` e
+  `slot_percentile` mantidas como ferramentas reutilizaveis
+  (H01/H02/H04); proxima hipotese ativa = H01 (faixa asiatica),
+  pre-registro antes de backtest.
+
+# Architecture & Engineering Decisions
+
+## H03 ESTAGIO 1 REJECTED (2026-08-12)
+
+- **Decisao**: H03 (volatility surprise intradiaria) REJEITADA no
+  estagio 1 (previsao condicional, sem trade), conforme criterios
+  pre-registrados (docs/26 §10/§11).
+- **Evidencia**: retorno futuro condicional indistinguivel de zero
+  (h1/h8, janelas 40/60/80, ~54-55k eventos); por ano sem direcao
+  estavel; slot 00:00 UTC +0.018% = ~1.98 pips brutos < custo
+  round-trip 3.7 pips; destaque achado por inspecao de 24 slots
+  (multiple testing — nao vira hipotese).
+- **Consequencia**: feature `research/features.py` mantida como
+  ferramenta reutilizavel; proxima hipotese ativa = H05/H06
+  (directional_efficiency), com pre-registro antes de backtest.
+
+# Architecture & Engineering Decisions
+
+## PROGRAMA DE PESQUISA ABERTO — H01..H07 (2026-08-12)
+
+- **Decisao**: abrir novo programa de pesquisa com as hipoteses
+  H01-H07 (branch `agent/document-research-hypotheses`, merge
+  `2a94589`; documento renumerado para docs/26).
+- **Hipotese ativa inicial**: H03 (prioridade 1 do docs/26 §4) —
+  pre-registrada (registro imutavel, docs/26 §10) ANTES de qualquer
+  backtest, conforme protocolo §5.
+- **Periodos**: mantidos os formais pre-registrados (DEV 2015-2021,
+  VAL 2021-2024, OOS 2024-2027).
+- **OOS contaminado**: 2024-2027 ja consultado 1x (2026-08-10).
+  NAO e "OOS intocado" para este programa; validacao primaria =
+  walk-forward; OOS so como confirmacao final com `--allow-oos`.
+- **Direcao estrutural**: features reutilizaveis (volatility
+  surprise, directional efficiency) antes de qualquer trade;
+  ablations obrigatorias (H04/H05/H06); rejeicao honesta permitida.
+
+# Architecture & Engineering Decisions
+
+## HARDENING v0.6.1..v0.6.4 (2026-08-12): plano pos-auditoria executado
+
+- **Decisao**: executar docs/25_HARDENING_PLAN.md em sequencia
+  (v0.6.1 Execution Safety -> v0.6.2 Risk Composition -> v0.6.3
+  Multi-Currency -> v0.6.4 Readiness & Audit), 14 itens.
+- **Racional**: fortalecer invariantes (execucao, composicao de
+  risco, integridade financeira multi-moeda, readiness/auditoria)
+  antes de qualquer novo programa de pesquisa ou decisao de live.
+- **Destaques**:
+  - ES-01: cancel via `order_send(TRADE_ACTION_REMOVE)`; a API
+    `mt5.order_delete()` nao existe (mock escondia a superficie
+    errada).
+  - ES-02: enums de filling do mock alinhados a API real
+    (FOK=0/IOC=1/RETURN=2); `type_filling` asserido contra o enum
+    — retcode 10030 nao retorna em submit real.
+  - ES-03: politica `allowed_trade_modes=("demo",)` + kill switch
+    no caminho obrigatorio de submit/cancel/close; conta real
+    bloqueada por padrao.
+  - ES-04: fill real nunca e rebaixado a REJECTED por validacao
+    local — `requires_reconciliation=True` (OUTSIDE_TOLERANCE).
+  - ES-05: pip size real por instrumento no fill validation.
+  - RC-01: wrappers propagam `observe_equity` para o inner.
+  - RC-02: KillSwitch HARD renomeado `freeze_all_orders`
+    (`block_exits` deprecated), explicito, nunca implicito.
+  - MC-01..03: conversao quote->USD em StopBasedRiskGate,
+    ExposureLimitRiskGate e TradeFactory (account currency).
+  - MC-04: USDCHF/USDCAD reclassificados como USD-base nos testes.
+  - MC-05: matriz dev reexecutada — 19/19 negativos, trades
+    identicos, valores de USDCHF/USDCAD agora em USD; nenhuma
+    conclusao invertida.
+  - RA-01: `risk_per_trade_pct` realmente avaliado (entrada
+    explicita `next_trade_risk_pct`).
+  - RA-02: exposure = notional/equity; leverage = notional/margin
+    (fallback documentado).
+  - RA-03: fracoes (0-1) padronizadas (DrawdownRiskGate inclusive);
+    percentual 0-100 so na serializacao de relatorio.
+  - RA-04: zero-cost report com custos efetivos ZERO (baseline so
+    como referencia).
+  - RA-05: OOS wording consistente (lockbox consultado UMA vez,
+    selado de novo).
+  - RA-06: roadmap/DECISIONS/README sincronizados.
+  - RA-07: CI GitHub Actions (pytest non-integration, py 3.12-3.14).
+- **Consequencia**: suíte 1100 testes verde; 4 commits auditaveis;
+  busca de edge permanece ENCERRADA (docs/24); plataforma segue
+  research/demo; proxima fase sob decisao do operador.
+
+# Architecture & Engineering Decisions
+
+## TF-01 / Encerramento da busca de edge (2026-08-10)
+
+- **Decisao**: TF-01 REJEITADO (H1: exp -0.14 dev / -0.82 val;
+  H4: sem edge bruto). BUSCA DE EDGE ENCERRADA para os baselines.
+- **Racional**: aritmetica estrutural - o TSM ganha 1.4-2.3 pips
+  por trade bruto, abaixo do custo de 3.7 pips; nenhuma variacao
+  de entrada (RF-01), saida (SO-01), par (MS) ou timeframe (TF-01)
+  muda isso.
+- **Consequencia**: plataforma permanece research/demo (roadmap
+  §93); execucao demo validada e infra pronta (§92, decisoes de
+  capital real sob o operador). ML/HMM (§108-109) seria projeto
+  novo, sem promessa de edge.
+
+## SO-01 (2026-08-10): Trailing ATR — piora; turnover e o problema
+
+- **Decisao**: hipotese SO-01 REJEITADA (trailing ATR M15 aumenta
+  turnover e perde mais sob custos; nenhuma config vence baseline).
+- **Racional**: folga de 2x ATR e pequena na escala M15 -> saidas
+  prematuras + reentradas caras. Zero-cost baseline e POSITIVO
+  (+1.9% dev): o edge bruto existe, mas ~517 USD de custos de
+  turnover consomem os +192 USD de lucro bruto.
+- **Consequencia**: a alavanca e TURNOVER, nao entrada nem saida.
+  Proxima hipotese: TSM em H1/H4 (menos trades, custo relativo
+  menor). Se falhar, encerrar busca de edge (roadmap §93).
+
+## RF-01 (2026-08-10): Filtro de regime — reduz perda, nao cria edge
+
+- **Decisao**: hipotese RF-01 REJEITADA (expectancy permanece
+  negativa em dev e val apesar da melhora de net profit).
+- **Racional**: filtro de entrada por vol H4 (h4_vol_high) corta
+  trades ruins e melhora net (-17% dev, -6% val), mas o problema
+  central e payoff/custos: win rate ~26% com round-trip de 3.7 pips
+  nao produz expectancy positiva.
+- **Consequencia**: proxima direcao de pesquisa e gestao de SAIDA
+  (payoff/trailing/exits), nao mais selecao de entrada. Lockbox OOS
+  permanece selado. Implementacao do filtro mantida no codigo
+  (default none, sem impacto em regressao) como ferramenta para
+  combinacoes futuras.
+
+## WF-01 (2026-08-10): Walk-Forward — nenhum edge transferivel
+
+- **Decisao**: hipotese WF-01 REJEITADA para os tres baselines
+  (TSM 2/7, EMA 1/7, MR 0/7 janelas positivas sob custos explicitos).
+- **Racional**: selecao por expectancy em train rolando nao produz
+  val positivo na maioria das janelas; parametros selecionados oscilam
+  (overfitting a ruido por janela); consistente com F8 (grids
+  monotonos negativos).
+- **Consequencia**: lockbox OOS permanece selado; proxima direcao e
+  reconstrucao de edge (regime/turnover/payoff), nao varredura de
+  parametros.
 
 ## 1. Objetivo
 
@@ -542,7 +947,7 @@ separado.
 
 ```text
 ACCEPTED
-IMPLEMENTATION PENDING
+IMPLEMENTED
 ```
 
 ## Contexto
@@ -806,7 +1211,7 @@ sem conhecer o ambiente de execução.
 
 ```text
 ACCEPTED
-IMPLEMENTATION PENDING
+IMPLEMENTED
 ```
 
 ## Contexto
@@ -848,6 +1253,61 @@ Approved Order
 ## Consequências
 
 Risk Engine pode rejeitar um sinal sem alterar a Strategy.
+
+A implementação atual usa um contrato:
+
+```text
+RiskGate
+```
+
+com decisões auditáveis:
+
+```text
+RiskDecision
+```
+
+O `FixedSizeRiskGate` mantém o baseline histórico. O
+`StopBasedRiskGate` permite calcular quantidade a partir de:
+
+```text
+entry_price
+stop_loss
+account_equity
+risk_fraction
+instrument contract_size
+```
+
+A quantidade final respeita:
+
+```text
+volume_min
+volume_max
+volume_step
+```
+
+`ExposureLimitRiskGate` pode envolver outro RiskGate para rejeitar entradas
+que excedam limites de:
+
+```text
+max_quantity
+max_notional
+```
+
+Quando `max_notional` e usado, o Signal precisa informar `entry_price`
+em metadata para que a exposicao nocional seja calculada de forma
+auditavel.
+
+`DailyLossRiskGate` tambem pode envolver outro RiskGate. Ele observa
+`EquityPoint` gerados pelo BacktestEngine e bloqueia novas entradas quando
+a perda do dia UTC atinge:
+
+```text
+max_daily_loss
+max_daily_loss_fraction
+```
+
+Sinais `HOLD` e `EXIT` continuam permitidos mesmo com o limite diario
+atingido, porque nao aumentam exposicao financeira.
 
 ---
 
@@ -1335,6 +1795,22 @@ bar close time
 availability time
 ```
 
+A implementação atual disponibiliza candles superiores via:
+
+```text
+BacktestContext.timeframe_bars
+```
+
+com:
+
+```text
+Timeframe.H1
+Timeframe.H4
+```
+
+O `BacktestEngine` mantém o relógio base em M15 e só entrega candles
+H1/H4 cujo fechamento seja menor ou igual ao `current_time`.
+
 ## Consequências
 
 Um:
@@ -1348,6 +1824,10 @@ não poderá ser usado como fechado antes de:
 ```text
 12:00
 ```
+
+Estratégias multi-timeframe devem declarar os timeframes superiores
+necessários e, quando possível, os limites de janela para evitar carregar
+histórico superior completo em cada passo.
 
 ---
 
@@ -2226,7 +2706,7 @@ capital real
 
 ```text
 ACCEPTED
-IMPLEMENTATION FUTURE
+IMPLEMENTED
 ```
 
 ## Decisão
@@ -2238,6 +2718,12 @@ Kill Switch
 ```
 
 independente da Strategy.
+
+## Implementação
+
+`KillSwitchRiskGate` em `backtest/risk.py`: wrapper composicional com latch
+`kill()`/`reset()`, modos SOFT (bloqueia entradas, permite exits) e HARD
+(`block_exits=True`, bloqueia entradas e exits). HOLD sempre passa.
 
 ## Consequências
 
@@ -2387,29 +2873,29 @@ Data & Infrastructure Foundation
 | 003 | M15 como fonte intraday | ✅ Implementado |
 | 004 | Sem preenchimento artificial de gaps | ✅ Implementado |
 | 005 | Preservar candles incompletos | ✅ Implementado |
-| 006 | Strategy usa completos por padrão | 🟡 Código futuro |
+| 006 | Strategy usa completos por padrão | ✅ Implementado |
 | 007 | Parquet para séries históricas | ✅ Implementado |
 | 008 | Spread MT5 não é CostModel | ✅ Aceito |
-| 009 | CostModel independente | 🟡 Código futuro |
+| 009 | CostModel independente | ✅ Implementado |
 | 010 | Real Volume fora das features | ✅ Aceito |
 | 011 | Tick Volume = atividade relativa | ✅ Aceito |
 | 012 | Read-only atual | ✅ Implementado |
-| 013 | Strategy não envia ordens | 🟡 Código futuro |
-| 014 | Signal != Order | 🟡 Código futuro |
-| 015 | Order != Fill | 🟡 Código futuro |
-| 016 | Signal Close → Next Open | 🟡 Backtest futuro |
-| 017 | Gap → próxima barra disponível | 🟡 Backtest futuro |
-| 018 | Intrabar ambiguity = worst-case | 🟡 Backtest futuro |
-| 019 | Gap through stop usa preço pior | 🟡 Backtest futuro |
-| 020 | Uma posição por vez | 🟡 Baseline futuro |
-| 021 | Sem reversão automática | 🟡 Baseline futuro |
-| 022 | Engine controla simulation time | 🟡 Backtest futuro |
+| 013 | Strategy não envia ordens | ✅ Implementado |
+| 014 | Signal != Order | ✅ Implementado |
+| 015 | Order != Fill | ✅ Implementado |
+| 016 | Signal Close → Next Open | ✅ Implementado |
+| 017 | Gap → próxima barra disponível | ✅ Implementado |
+| 018 | Intrabar ambiguity = worst-case | ✅ Implementado |
+| 019 | Gap through stop usa preço pior | ✅ Implementado |
+| 020 | Uma posição por vez | ✅ Implementado |
+| 021 | Sem reversão automática | ✅ Implementado |
+| 022 | Engine controla simulation time | ✅ Implementado |
 | 023 | Timestamp = início da barra | ✅ Implementado |
-| 024 | Multi-TF por tempo/disponibilidade | 🟡 Futuro |
+| 024 | Multi-TF por tempo/disponibilidade | ✅ Implementado |
 | 025 | H4 alinhado em UTC | ✅ Implementado |
 | 026 | D1 adiado | ✅ Decisão aceita |
 | 027 | Raw sem features | ✅ Política atual |
-| 028 | Backtest não modifica Raw | 🟡 Futuro |
+| 028 | Backtest não modifica Raw | ✅ Implementado |
 | 029 | Fail Fast estrutural | ✅ Parcial |
 | 030 | Hard Fail != Warning | ✅ Política atual |
 | 031 | Reprodutibilidade obrigatória | 🟡 Parcial |
@@ -2417,17 +2903,17 @@ Data & Infrastructure Foundation
 | 033 | Parquet + SQLite futuro | 🟡 Parcial |
 | 034 | Estratégias simples primeiro | ✅ Aceito |
 | 035 | Pesquisa ≠ Engenharia | ✅ Aceito |
-| 036 | Zero-cost só para engenharia | 🟡 Futuro |
-| 037 | Custos auditáveis | 🟡 Futuro |
-| 038 | Não duplicar spread | 🟡 Futuro |
-| 039 | Backtester bar-by-bar | 🟡 Futuro |
+| 036 | Zero-cost só para engenharia | ✅ Implementado |
+| 037 | Custos auditáveis | ✅ Parcial |
+| 038 | Não duplicar spread | ✅ Implementado |
+| 039 | Backtester bar-by-bar | ✅ Implementado |
 | 040 | Correção antes de performance | ✅ Aceito |
 | 041 | Bug crítico → regression test | ✅ Aceito |
 | 042 | Backtest lucrativo não basta | ✅ Aceito |
-| 043 | OOS como lockbox | 🟡 Futuro |
+| 043 | OOS como lockbox | ✅ Implementado |
 | 044 | Demo antes de Live | ✅ Aceito |
-| 045 | Kill Switch obrigatório | 🟡 Futuro |
-| 046 | Trading flag não basta | 🟡 Futuro |
+| 045 | Kill Switch obrigatório | ✅ Implementado |
+| 046 | Trading flag não basta | ✅ Implementado |
 | 047 | Estado = Research/Development | ✅ Atual |
 | 048 | v0.1 = Data Foundation | ✅ Atual |
 

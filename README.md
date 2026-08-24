@@ -1,46 +1,70 @@
 # FOREX Algorithmic Trading Research Platform
 
-Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para o mercado Forex, construída em Python e integrada ao MetaTrader 5.
+Plataforma de pesquisa e desenvolvimento de estratégias algorítmicas para Forex, construída em Python e integrada ao MetaTrader 5.
 
-O objetivo do projeto é desenvolver uma infraestrutura confiável para:
+O projeto prioriza integridade de dados, reprodutibilidade, controle temporal e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
 
-- coleta de dados de mercado;
-- armazenamento de histórico;
-- validação da qualidade dos dados;
-- construção de múltiplos timeframes;
-- backtesting;
-- análise estatística;
-- gerenciamento de risco;
-- execução em conta demo;
-- monitoramento de estratégias.
-
-O projeto é desenvolvido de forma incremental, priorizando integridade dos dados, reprodutibilidade e prevenção de erros como look-ahead bias, uso de candles ainda em formação e modelagem incorreta de custos de execução.
-
-> **Status atual:** infraestrutura de mercado e dados concluída.  
-> O Backtest Engine ainda não foi implementado.
+> Status atual: F0-F9 completos; F10 pronto (aguarda decisão de
+> capital real, sob o operador). Busca de edge encerrada (docs/24,
+> roadmap §93): nenhuma hipótese baseline sobrevive a custos
+> explícitos — plataforma permanece research/demo.
 
 ---
 
-# Status do Projeto
+## Status Do Projeto
 
 | Fase | Descrição | Status |
 |---|---|---|
-| F0 | Pesquisa e metodologia | ✅ Concluída |
-| F1 | Ambiente de desenvolvimento | ✅ Concluída |
-| F2 | Market Data Layer | ✅ Concluída |
-| F3 | Historical Data Layer | ✅ Concluída |
-| F4 | Data Transformation | ✅ Concluída |
-| F5 | Backtest Engine | ⬜ Não iniciada |
-| F6 | Strategy Engine | ⬜ Não iniciada |
-| F7 | Risk Engine | ⬜ Não iniciada |
-| F8 | Execution Engine | ⬜ Não iniciada |
-| F9 | Validação em conta Demo | ⬜ Não iniciada |
+| F0 | Pesquisa e metodologia | Concluída |
+| F1 | Ambiente de desenvolvimento | Concluída |
+| F2 | Market Data Layer | Concluída |
+| F3 | Historical Data Layer | Concluída |
+| F4 | Data Transformation | Concluída |
+| F5 | Backtest Engine | Concluída |
+| F6 | Strategy Research | Concluída |
+| F7 | Risk Engine | Concluída |
+| F8 | Robustness & Validation | Concluída |
+| F9 | Demo Execution | Concluída (10 ordens demo reais) |
+| F10 | Live Readiness | Infra pronta; decisão de capital sob o operador |
 
 ---
 
-# Stack
+## O Que Já Existe
 
-O projeto atualmente utiliza:
+- Integração read-only com MetaTrader 5.
+- Coleta e persistência de histórico em Parquet.
+- Dataset principal `EURUSD M15` auditado.
+- Construção de timeframes derivados `H1` e `H4`.
+- BacktestEngine determinístico, bar-by-bar e sem look-ahead.
+- Modelos de `Signal`, `Order`, `Fill`, `Position` e `Trade`.
+- Ledgers de sinais, ordens, fills, trades e equity.
+- CostModel explícito com spread, slippage e comissão.
+- RiskGate com fixed size, validação de volume, sizing baseado em stop, limites de exposição e daily loss guard.
+- Risk Gates de drawdown e kill switch (F7).
+- Stop Loss, Take Profit, gap-through-stop e política worst-case intrabar.
+- Métricas básicas de performance.
+- Primeira estratégia baseline: `SimpleEmaTrendStrategy`.
+- Segunda hipótese simples: `VolatilityBreakoutStrategy`.
+- Terceira hipótese simples: `TimeSeriesMomentumStrategy`.
+- Quarta hipótese simples: `SimpleMeanReversionStrategy`.
+- Quinta hipótese simples: `AsianRangeBreakoutStrategy`.
+- Sexta hipótese simples: `SimpleCarryStrategy`.
+- Sétima hipótese simples: `SimpleRegimeDetectionStrategy`.
+- Oitava hipótese simples: `MultiTimeframeMomentumStrategy`.
+- Harness de robustez: sweep local, subperiods, Dev/Val/OOS com
+  lockbox, stability, walk-forward (F8).
+- Camada de execução: `execution/` (validação de ordem/fill,
+  reconciliação, audit log JSONL, monitoramento, comparação
+  expected-vs-observed, adapter MT5 com guard de trading).
+- Readiness: `readiness/` (review, risk limits, safety, CLI).
+- Multi-symbol: registry de 7 majors, coleta/build parametrizados,
+  conversão de moeda quote→USD (docs/20-22).
+- Documentação: docs/01..24 (metodologia, robustez, execução,
+  readiness, pesquisa multi-par e encerramento da busca de edge).
+
+---
+
+## Stack
 
 - Windows
 - Python 3.14.5
@@ -54,396 +78,460 @@ O projeto atualmente utiliza:
 - pytest
 - Git
 
-Versão validada do pacote MetaTrader5 durante o desenvolvimento:
+Versão validada do pacote MetaTrader5:
 
 ```text
 MetaTrader5 5.0.6090
-Mercado Inicial
+```
+
+---
+
+## Mercado Inicial
+
 O primeiro mercado utilizado no desenvolvimento é:
-Mercado: Forex
-Símbolo: EURUSD
-Fonte inicial: MetaQuotes-Demo
-Especificações observadas para o EURUSD:
-Digits:        5
-Point:         0.00001
-Pip:           0.00010
-Points / Pip:  10
 
-Contract Size: 100000
+| Item | Valor |
+|---|---|
+| Mercado | Forex |
+| Símbolo | EURUSD |
+| Fonte | MetaQuotes-Demo |
+| Digits | 5 |
+| Point | 0.00001 |
+| Pip | 0.00010 |
+| Points / Pip | 10 |
+| Contract Size | 100000 |
+| Volume mínimo | 0.01 |
+| Volume step | 0.01 |
 
-Volume mínimo: 0.01
-Volume step:   0.01
 Esses valores são obtidos dinamicamente através do MetaTrader 5 e não devem ser tratados como universais para todos os símbolos.
-Arquitetura Atual
-A arquitetura implementada até o momento é:
-                    MetaTrader 5
-                         │
-                         ▼
-                     MT5Client
-                         │
-              ┌──────────┴──────────┐
-              │                     │
-              ▼                     ▼
-         MarketData           HistoricalData
-              │                     │
-              │                     ▼
-              │                  Parquet
-              │                     │
-              └──────────┬──────────┘
-                         │
-                         ▼
-                 TimeframeBuilder
-                         │
-                 ┌───────┴───────┐
-                 ▼               ▼
-                H1              H4
-Componentes ainda planejados:
+
+---
+
+## Arquitetura
+
+```text
+MetaTrader 5
+    |
+    v
+MT5Client
+    |
+    +--> MarketData
+    |
+    +--> HistoricalData --> Parquet
+                             |
+                             v
+                       TimeframeBuilder
+                             |
+                             +--> H1
+                             +--> H4
+
+Validated Historical Data
+    |
+    v
 BacktestEngine
-Strategy Engine
-CostModel
-Risk Engine
-Execution Engine
-Monitoring
-Estrutura do Projeto
-Estrutura principal:
+    |
+    +--> Strategy
+    +--> Risk Gate
+    +--> CostModel
+    +--> Execution
+    +--> Portfolio
+    +--> Ledgers
+    +--> Performance
+```
+
+---
+
+## Estrutura Principal
+
+```text
 FOREX/
-│
-├── broker/
-│   ├── __init__.py
-│   └── mt5_client.py
-│
-├── data/
-│   ├── __init__.py
-│   ├── market_data.py
-│   ├── historical_data.py
-│   ├── timeframe_builder.py
-│   │
-│   ├── raw/
-│   │   └── EURUSD/
-│   │       └── M15.parquet
-│   │
-│   ├── processed/
-│   │   └── EURUSD/
-│   │       ├── H1.parquet
-│   │       └── H4.parquet
-│   │
-│   └── metadata/
-│       └── EURUSD_M15.json
-│
-├── strategy/
-├── risk/
-├── execution/
 ├── backtest/
-├── monitoring/
+├── broker/
 ├── config/
-│
-├── tests/
-│   ├── test_market_data.py
-│   ├── test_historical_data.py
-│   └── test_timeframe_builder.py
-│
+├── data/
+│   ├── raw/EURUSD/M15.parquet
+│   ├── processed/EURUSD/H1.parquet
+│   ├── processed/EURUSD/H4.parquet
+│   └── metadata/
 ├── docs/
-│
-├── main.py
-├── collect_history.py
-├── analyze_history.py
-├── build_timeframes.py
-├── generate_metadata.py
-│
-├── pytest.ini
-├── requirements.txt
-├── .env
-├── .gitignore
-│
-├── DECISIONS.md
+├── execution/
+├── monitoring/
+├── research/
+├── risk/
+├── strategy/
+├── tests/
 ├── CHANGELOG.md
-└── README.md
-Timezone
-Todo o sistema utiliza:
-UTC
-como timezone interno.
+├── DECISIONS.md
+├── README.md
+├── requirements.txt
+└── pytest.ini
+```
+
+---
+
+## Regras Temporais
+
+Todo o sistema utiliza UTC como timezone interno.
+
 Isso inclui:
-candles;
-ticks;
-histórico;
-datasets processados;
-timestamps utilizados pelo backtester.
-Conversões para sessões específicas só devem ocorrer quando uma estratégia realmente precisar delas.
-Exemplos:
-Europe/London
-America/New_York
-Essa decisão reduz problemas relacionados a timezone local e horário de verão.
-Candles Fechados
-A estratégia nunca deve receber deliberadamente um candle ainda em formação.
+
+- candles;
+- ticks;
+- histórico;
+- datasets processados;
+- timestamps utilizados pelo backtester.
+
+Estratégias recebem apenas dados historicamente disponíveis no momento da decisão.
+
 No MetaTrader 5:
+
+```text
 posição 0 = barra mais recente/corrente
 posição 1 = barra anterior
-A camada MarketData utiliza somente candles fechados para os dados destinados às estratégias.
-Existe um teste automatizado específico para garantir esse comportamento:
-test_closed_bars_do_not_include_current_bar
-Isso é uma proteção contra look-ahead e contra alterações futuras acidentais na camada de mercado.
-Dataset Histórico Principal
+```
+
+A camada `MarketData` usa somente candles fechados para dados destinados às estratégias.
+
+---
+
+## Dataset Histórico Principal
+
 Dataset bruto atual:
-Símbolo:    EURUSD
-Timeframe:  M15
-Fonte:      MetaQuotes-Demo
-Formato:    Parquet
-Timezone:   UTC
-Período disponível:
-Primeiro candle:
-2015-01-02 09:00:00 UTC
 
-Último candle:
-2026-08-07 23:45:00 UTC
-Quantidade:
-288223 candles M15
-Arquivo:
-data/raw/EURUSD/M15.parquet
-Qualidade do Dataset M15
-A auditoria atual encontrou:
-Duplicados:       0
-Valores nulos:    0
-OHLC inválidos:   0
+| Item | Valor |
+|---|---|
+| Símbolo | EURUSD |
+| Timeframe | M15 |
+| Fonte | MetaQuotes-Demo |
+| Formato | Parquet |
+| Timezone | UTC |
+| Primeiro candle | 2015-01-02 09:00:00 UTC |
+| Último candle | 2026-08-07 23:45:00 UTC |
+| Quantidade | 288223 candles |
+| Arquivo | `data/raw/EURUSD/M15.parquet` |
 
-Gaps totais:      659
-Weekend gaps:     605
-Intraweek gaps:    54
-A maior parte dos gaps está relacionada ao fechamento semanal ou a períodos especiais como Natal e Ano Novo.
-Alguns gaps intraweek não possuem classificação definitiva e são preservados no dataset.
-Regra importante
-Gaps não são preenchidos artificialmente.
-Não são utilizados métodos como:
-ffill()
-para fabricar candles inexistentes.
-A descontinuidade original dos dados é preservada.
-Spread Histórico
-O campo spread presente nos candles do MetaTrader 5 foi considerado inconsistente para modelagem direta de custos.
-Foi observada uma quantidade significativa de:
-spread = 0
-e mudanças relevantes na distribuição do campo entre diferentes anos.
-Portanto:
-spread dos candles != CostModel oficial
-O futuro Backtest Engine deverá possuir um modelo de custos independente.
-Exemplos planejados:
-FixedSpreadModel
-ConservativeSpreadModel
-TickBidAskModel
-BrokerHistoricalCostModel
-Isso permitirá também realizar stress tests de custos.
-Tick Volume e Real Volume
-Tick Volume
-O campo:
-tick_volume
-é preservado e pode ser utilizado futuramente como medida de atividade relativa.
-Ele não deve ser interpretado como o volume global negociado no mercado Forex.
-Real Volume
-O campo:
-real_volume
-apresentou inconsistência estrutural ao longo do histórico.
-Percentual de candles com real_volume > 0:
-2015  ~44%
-2016 ~100%
-2017  ~43%
-2018+   0%
-Por esse motivo:
-real_volume não será utilizado como feature
-O campo continua preservado no dataset bruto apenas para rastreabilidade.
-Timeframes Derivados
+Qualidade do dataset M15:
+
+| Checagem | Resultado |
+|---|---:|
+| Duplicados | 0 |
+| Valores nulos | 0 |
+| OHLC inválidos | 0 |
+| Gaps totais | 659 |
+| Weekend gaps | 605 |
+| Intraweek gaps | 54 |
+
+Gaps não são preenchidos artificialmente. A descontinuidade original dos dados é preservada.
+
+---
+
+## Timeframes Derivados
+
 Os timeframes superiores são construídos a partir do M15.
+
+```text
 M15
- │
- ├── H1
- │
- └── H4
-Não são tratados como fontes independentes nesta etapa.
-H1
-Arquivo:
-data/processed/EURUSD/H1.parquet
-Resultado:
-Candles:       72080
-Completos:     72018
-Incompletos:      62
+├── H1
+└── H4
+```
 
-Primeiro:
-2015-01-02 09:00 UTC
+Resumo atual:
 
-Último:
-2026-08-07 23:00 UTC
-Cada H1 completo deve possuir:
-4 candles M15
-H4
-Arquivo:
-data/processed/EURUSD/H4.parquet
-Resultado:
-Candles:       18046
-Completos:     17929
-Incompletos:     117
+| Timeframe | Arquivo | Candles | Completos | Incompletos |
+|---|---|---:|---:|---:|
+| H1 | `data/processed/EURUSD/H1.parquet` | 72080 | 72018 | 62 |
+| H4 | `data/processed/EURUSD/H4.parquet` | 18046 | 17929 | 117 |
 
-Primeiro:
-2015-01-02 08:00 UTC
+Candles incompletos são preservados para rastreabilidade, mas estratégias e backtests devem usar apenas candles completos salvo quando houver motivo explícito para outra política.
 
-Último:
-2026-08-07 20:00 UTC
-Cada H4 completo deve possuir:
-16 candles M15
-Candles Incompletos
-Candles incompletos não são apagados durante a transformação.
-São armazenados com informações como:
-source_bar_count
-expected_bar_count
-complete
-Exemplo:
-H1
+---
 
-source_bar_count   = 3
-expected_bar_count = 4
-complete           = False
-A intenção é preservar informações sobre defeitos e gaps do dataset.
-Entretanto, estratégias e backtests deverão trabalhar apenas com:
-complete == True
-salvo quando houver motivo explícito para comportamento diferente.
-Testes Automatizados
-O projeto atualmente possui:
-25 testes
-25 passed
-0 failed
-Executados com:
-pytest -v
-As principais áreas testadas são:
-Market Data
-conexão lógica com os dados do MT5;
-Bid e Ask válidos;
-candles fechados;
-ordenação temporal;
-timestamps únicos;
-UTC;
-integridade OHLC;
-preços positivos;
-tick volume não negativo;
-proteção contra candle corrente.
-Historical Data
-existência do dataset;
-dataset não vazio;
-timestamps únicos;
-ordenação;
-UTC;
-ausência de valores nulos;
-integridade OHLC;
-preços positivos.
-Timeframe Builder
-criação de H1;
-criação de H4;
-H1 completo possui 4 candles M15;
-H4 completo possui 16 candles M15;
-alinhamento temporal H1;
-alinhamento temporal H4;
-UTC preservado;
-integridade OHLC após resample.
-Ambiente
-Criação do ambiente virtual:
+## Backtesting
+
+O BacktestEngine baseline implementa:
+
+- simulação bar-by-bar;
+- signal on close;
+- execution on next open;
+- market orders;
+- uma posição por vez;
+- sem pyramiding;
+- sem reversal automático;
+- custos explícitos;
+- gaps preservados;
+- stops e targets protetivos;
+- worst-case intrabar;
+- fechamento forçado no fim do backtest;
+- resultado consolidado em `BacktestResult`.
+
+Métricas básicas:
+
+- net profit;
+- total return;
+- max drawdown;
+- trade count;
+- win rate;
+- average win;
+- average loss;
+- profit factor;
+- expectancy.
+
+---
+
+## Strategy Research
+
+A F6 começou com:
+
+```text
+Simple EMA Trend Following
+```
+
+Regra inicial:
+
+- EMA rápida cruza acima da EMA lenta: `ENTER_LONG`;
+- EMA rápida cruza abaixo da EMA lenta: `EXIT`;
+- sem cruzamento ou warm-up: `HOLD`.
+
+Parâmetros baseline:
+
+```text
+fast_period = 20
+slow_period = 50
+symbol = EURUSD
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2715 | -81.94 | 232.05 | 0.976041 | 9918.06 |
+| Custos explícitos | 2715 | -1086.49 | 1115.19 | 0.738059 | 8913.51 |
+
+Esse resultado não descarta trend following como família. Ele apenas indica que esta especificação simples, nesses parâmetros e nesse dataset, não mostrou edge suficiente.
+
+Segunda hipótese testada:
+
+```text
+Volatility Breakout
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 4336 | -541.31 | 594.00 | 0.873042 | 9458.69 |
+| Custos explícitos | 4336 | -2145.63 | 2159.55 | 0.599219 | 7854.37 |
+
+Essa especificação primária também não mostrou edge.
+
+Terceira hipótese testada:
+
+```text
+Time-Series Momentum
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2674 | 175.01 | 183.73 | 1.063166 | 10175.01 |
+| Custos explícitos | 2674 | -814.37 | 845.84 | 0.765704 | 9185.63 |
+
+Essa hipótese mostrou sinal bruto em zero-cost, mas ainda não sobreviveu aos custos explícitos baseline.
+
+Quarta hipótese testada:
+
+```text
+Simple Mean Reversion
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 6568 | 128.39 | 131.39 | 1.027958 | 10128.39 |
+| Custos explícitos | 6568 | -2301.77 | 2306.19 | 0.590060 | 7698.23 |
+
+Essa hipótese também mostrou sinal bruto em zero-cost, mas o número alto de trades tornou o resultado muito sensível aos custos.
+
+Quinta hipótese testada:
+
+```text
+Asian Range Breakout
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2972 | -259.80 | 382.75 | 0.949656 | 9740.20 |
+| Custos explícitos | 2972 | -1359.44 | 1446.21 | 0.762751 | 8640.56 |
+
+Essa configuração baseline não mostrou edge bruto suficiente nem em zero-cost. Com custos explícitos, a perda aumentou de forma relevante.
+
+Sexta hipótese testada:
+
+```text
+Simple Carry
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 1 | 48.38 | 251.03 | inf | 10048.38 |
+| Custos explícitos | 1 | 48.01 | 251.03 | inf | 10048.01 |
+
+Esse teste usa apenas um proxy direcional estático de carry. Ele não inclui accrual de swap ou curva histórica de juros, então ainda não representa uma estratégia de carry completa.
+
+Sétima hipótese testada:
+
+```text
+Simple Regime Detection
+```
+
+Resultado histórico inicial em `EURUSD M15`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 2681 | -100.64 | 126.20 | 0.967062 | 9899.36 |
+| Custos explícitos | 2681 | -1092.61 | 1096.87 | 0.704169 | 8907.39 |
+
+Esse filtro simples de regime ficou próximo do zero sem custos, mas não sobreviveu aos custos explícitos.
+
+Oitava hipótese testada:
+
+```text
+Multi-Timeframe Momentum
+```
+
+Resultado histórico inicial em `EURUSD M15` com contexto `H1/H4`:
+
+| Configuração | Trades | Net Profit | Max Drawdown | Profit Factor | Final Equity |
+|---|---:|---:|---:|---:|---:|
+| Zero-cost | 6838 | -289.52 | 422.58 | 0.935529 | 9710.48 |
+| Custos explícitos | 6838 | -2819.58 | 2847.70 | 0.554227 | 7180.42 |
+
+Esse baseline validou a infraestrutura multi-timeframe sem look-ahead, mas a regra inicial operou demais e não mostrou edge.
+
+---
+
+## Testes
+
+Suíte atual:
+
+```text
+1161 passed, 9 deselected
+```
+
+Comando:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -m "not integration" -q --tb=short --basetemp .pytest-tmp
+```
+
+Áreas cobertas:
+
+- market data;
+- historical data;
+- timeframe builder;
+- backtest models;
+- clock e context;
+- signal/order/fill pipeline;
+- portfolio e custos;
+- protective exits;
+- ledgers;
+- performance;
+- regression tests;
+- strategy research baselines;
+- multi-timeframe context availability;
+- risk gates: stop-based sizing, exposure, daily loss, drawdown and kill switch;
+- F8 robustness helpers;
+- F9 execution, monitoring and demo comparison;
+- F10 readiness review.
+
+---
+
+## Ambiente
+
+Criar ambiente virtual:
+
+```powershell
 python -m venv .venv
-Ativação no Windows PowerShell:
-.venv\Scripts\activate
-Instalação das principais dependências:
-pip install MetaTrader5 pandas numpy python-dotenv matplotlib pytest pyarrow
-Atualização do arquivo de dependências:
-pip freeze > requirements.txt
-MetaTrader 5
-O MetaTrader 5 precisa estar instalado e disponível no Windows.
-A integração atualmente utiliza o terminal já autenticado.
-Não é necessário armazenar login e senha dentro do código nesta etapa.
-O MT5Client é responsável pelo ciclo:
-initialize
-    ↓
-operações read-only
-    ↓
-shutdown
-Segurança
-O projeto ainda não possui execução de ordens.
+```
+
+Ativar no PowerShell:
+
+```powershell
+.\.venv\Scripts\activate
+```
+
+Instalar dependências:
+
+```powershell
+pip install -r requirements.txt
+```
+
+---
+
+## Segurança
+
+O projeto ainda não executa ordens reais.
+
 Nesta fase:
+
+```text
 TRADING_ENABLED=false
-A infraestrutura atual é destinada a:
-coleta
-análise
-pesquisa
-backtest futuro
-Nenhuma estratégia deve operar capital real durante as fases atuais do projeto.
-Antes de qualquer execução futura deverão existir, no mínimo:
-validação em backtest;
-validação out-of-sample;
-testes de custos;
-gerenciamento de risco;
-limites de perda;
-kill switch;
-validação em conta demo.
-Metodologia
-O desenvolvimento das estratégias é separado da infraestrutura.
-A metodologia quantitativa do projeto está documentada separadamente no material de pesquisa do projeto.
-O princípio central é:
-Hipótese
-   ↓
-Especificação prévia
-   ↓
-Backtest
-   ↓
-Robustez
-   ↓
-Out-of-sample
-   ↓
-Demo
-   ↓
-Execução futura
-Não será considerada válida uma estratégia apenas por apresentar bom resultado em um único backtest.
-Próxima Fase
-A próxima fase do projeto será:
-F5 — Backtest Engine
-O Backtest Engine deverá ser projetado antes da implementação das estratégias.
-Entre suas responsabilidades futuras estarão:
-controle temporal
-execução bar-by-bar
-posição
-entradas e saídas
-PnL
-custos
-spread
-slippage
-equity
-trades
-métricas
-logs
-A estratégia não deverá controlar diretamente execução ou gerenciamento de risco.
-Arquitetura pretendida:
-                  Market Data
-                       │
-                       ▼
-                  BacktestEngine
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-       Strategy       Risk       CostModel
-          │            │            │
-          └────────────┼────────────┘
-                       ▼
-                     Trade
-                       │
-                       ▼
-                  Performance
-Documentação
-A documentação detalhada está disponível em:
-docs/
-Arquivos planejados:
-01_PROJECT_OVERVIEW.md
-02_ARCHITECTURE.md
-03_ENVIRONMENT_SETUP.md
-04_MT5_INTEGRATION.md
-05_MARKET_DATA.md
-06_HISTORICAL_DATA.md
-07_DATA_QUALITY.md
-08_TESTING.md
-09_DATA_TRANSFORMATION.md
-10_BACKTEST_DESIGN.md
-11_ROADMAP.md
-Decisões arquiteturais importantes são registradas em:
-DECISIONS.md
-O histórico de mudanças é mantido em:
-CHANGELOG.md
+```
+
+Antes de qualquer execução futura deverão existir:
+
+- validação em backtest;
+- validação out-of-sample;
+- testes de custos;
+- gerenciamento de risco;
+- limites de perda;
+- kill switch;
+- validação em conta demo.
+
+---
+
+## Documentação
+
+Documentos principais:
+
+- `docs/01_PROJECT_OVERVIEW.md`
+- `docs/02_ARCHITECTURE.md`
+- `docs/03_ENVIRONMENT_SETUP.md`
+- `docs/04_MT5_INTEGRATION.md`
+- `docs/05_MARKET_DATA.md`
+- `docs/06_HISTORICAL_DATA.md`
+- `docs/07_DATA_QUALITY.md`
+- `docs/08_TESTING.md`
+- `docs/09_DATA_TRANSFORMATION.md`
+- `docs/10_BACKTEST_DESIGN.md`
+- `docs/11_ROADMAP.md`
+- `docs/12_STRATEGY_RESEARCH.md`
+- `docs/13_RESEARCH_RUNNER.md`
+- `docs/14_RISK_MANAGEMENT.md`
+- `docs/15_ROBUSTNESS.md`
+- `docs/16_EXECUTION_LAYER.md`
+- `docs/17_LIVE_READINESS.md`
+- `docs/18_walk_forward.md`
+- `docs/19_rf01_regime_filter.md`
+- `docs/20_multi_symbol_mtf.md`
+- `docs/21_multi_symbol_research.md`
+- `docs/22_currency_conversion.md`
+- `docs/23_so01_trailing_exit.md`
+- `docs/24_tf01_timeframe.md`
+- `DECISIONS.md`
+- `CHANGELOG.md`
+
+---
+
+## Próximos Passos
+
+1. Manter a plataforma como research/demo enquanto nenhuma hipótese tiver edge com custos explícitos.
+2. Tratar decisão de capital real como decisão manual do operador, nunca automática.
+3. Evoluir itens futuros somente quando houver necessidade clara: CI/CD, dataset versioning, experiment tracking, D1, Monte Carlo, DSR/PBO/CSCV ou nova hipótese pré-registrada.
+4. Manter todos os testes e documentos sincronizados antes de qualquer novo marco.
