@@ -18,6 +18,7 @@ def test_proposal_and_assessment_canaries_preserve_boundaries(tmp_path):
  assert c.proposal_only("p").passed and c.assessment_only("a",{"return":1,"gate_status":"PASS"}).passed
  assert json.loads((tmp_path/"out"/"p"/"proposal.json").read_text())["strategy"]["strategy"]=="EMA_CROSSOVER"
  assert json.loads((tmp_path/"out"/"p"/"validation.json").read_text())["status"]=="ACCEPTED"
+ assert json.loads((tmp_path/"out"/"p"/"human_review.json").read_text())["research_authorization"]=="NOT_AUTHORIZED"
 def test_provider_failure_is_audited_and_fails_closed(tmp_path):
  r=StrategyRegistry(tmp_path/"registry");result=ProviderCanaryRunner(FailedProvider(),r,HypothesisProposalValidator(r),tmp_path/"out").proposal_only("failed")
  assert not result.passed and json.loads((tmp_path/"out"/"failed"/"error.json").read_text())["code"]=="TIMEOUT"
