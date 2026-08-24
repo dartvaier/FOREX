@@ -74,6 +74,8 @@ Backtesting Infrastructure
   reconstruction, drawdown and explicitly annualized Sharpe.
 - F5.9 deterministic EURUSD/H1 EMA crossover Strategy and a minimal Parquet
   experiment runner without parameter optimization.
+- F5.10 immutable ExperimentSpec, strict temporal splits and independent
+  in-sample/out-of-sample PerformanceReports.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
