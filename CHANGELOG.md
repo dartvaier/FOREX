@@ -76,6 +76,7 @@ Backtesting Infrastructure
   experiment runner without parameter optimization.
 - F5.10 immutable ExperimentSpec, strict temporal splits and independent
   in-sample/out-of-sample PerformanceReports.
+- F5.11 pre-declared development-only EMA parameter sensitivity analysis.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions

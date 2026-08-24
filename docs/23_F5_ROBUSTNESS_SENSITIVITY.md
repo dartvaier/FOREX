@@ -1,0 +1,3 @@
+# F5.11 — Robustness & Parameter Sensitivity
+
+Sensitivity uses a pre-declared, immutable grid of EMA parameters and reuses `ExperimentRunner.run_development`; it never runs or selects from OOS. Each combination retains parameter and result fingerprints. The summary reports median return, Sharpe, profit factor, drawdown, profitable-run proportion, return dispersion and adjacent-grid sign stability. It measures regional stability, not a maximum isolated metric. No adaptive search or optimization is implemented. OOS remains validation only, and a final holdout must remain untouched until research is frozen.
