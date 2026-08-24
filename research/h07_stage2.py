@@ -27,11 +27,17 @@ EXIT_SPREAD_PIPS = 0.40
 SLIPPAGE_PIPS = 1.0
 COMMISSION_PIPS = 0.7
 PIP_SIZE = 0.0001
+PIP_SIZE_BY_SYMBOL = {"USDJPY": 0.01}
 TIMEOUT_BARS = 8 * CANDLES_PER_HOUR  # 32
 TP_FRACTION = 0.50
 SL_FRACTION = 1.00
 THRESHOLD = 0.50
 MIN_TRADES = 100
+
+
+def pip_size_for_symbol(symbol: str) -> float:
+    """Return the conventional FX pip size for the supported symbol."""
+    return PIP_SIZE_BY_SYMBOL.get(symbol.upper(), PIP_SIZE)
 
 
 def simulate_trade(
@@ -69,7 +75,16 @@ def simulate_trade(
     raise ValueError("no exit reached (bars exhausted before timeout)")
 
 
-def build_trades(m15_path: Path, h1_path: Path, *, threshold: float = THRESHOLD) -> list[dict]:
+def build_trades(
+    m15_path: Path,
+    h1_path: Path,
+    *,
+    threshold: float = THRESHOLD,
+    pip_size: float | None = None,
+) -> list[dict]:
+    if pip_size is None:
+        pip_size = pip_size_for_symbol(m15_path.parent.name)
+
     m15 = pd.read_parquet(m15_path)
     h1 = pd.read_parquet(h1_path)
     events = detect_gaps(m15, h1, threshold=threshold)
@@ -101,7 +116,12 @@ def build_trades(m15_path: Path, h1_path: Path, *, threshold: float = THRESHOLD)
             for j in range(i + 1, i + 1 + TIMEOUT_BARS)
         ]
         sim = simulate_trade(entry, tp, sl, bars, int(direction))
-        cost = (float(spreads.iloc[i]) + EXIT_SPREAD_PIPS + SLIPPAGE_PIPS + COMMISSION_PIPS) * PIP_SIZE
+        cost = (
+            float(spreads.iloc[i])
+            + EXIT_SPREAD_PIPS
+            + SLIPPAGE_PIPS
+            + COMMISSION_PIPS
+        ) * pip_size
         trades.append(
             {
                 "week": ev["week"],
@@ -112,8 +132,9 @@ def build_trades(m15_path: Path, h1_path: Path, *, threshold: float = THRESHOLD)
                 "gap": float(ev["gap"]),
                 "entry_spread": float(spreads.iloc[i]),
                 **sim,
+                "gross_pips": sim["pnl"] / pip_size,
                 "net": sim["pnl"] - cost,
-                "net_pips": (sim["pnl"] - cost) / PIP_SIZE,
+                "net_pips": (sim["pnl"] - cost) / pip_size,
             }
         )
     return trades
@@ -132,7 +153,7 @@ def aggregate(trades: list[dict]) -> dict:
     return {
         "n": n,
         "net_mean_pips": sum(net) / n,
-        "gross_mean_pips": sum(t["pnl"] for t in trades) / n / PIP_SIZE,
+        "gross_mean_pips": sum(t["gross_pips"] for t in trades) / n,
         "hit_rate": by_reason.get("tp", 0) / n,
         "stop_rate": by_reason.get("sl", 0) / n,
         "timeout_rate": by_reason.get("timeout", 0) / n,
@@ -149,7 +170,8 @@ def aggregate(trades: list[dict]) -> dict:
 
 
 def run(m15_path: Path, h1_path: Path, *, out_path: Path) -> dict:
-    trades = build_trades(m15_path, h1_path)
+    pip_size = pip_size_for_symbol(m15_path.parent.name)
+    trades = build_trades(m15_path, h1_path, pip_size=pip_size)
 
     by_year: dict[str, list[float]] = {}
     for t in trades:
@@ -175,6 +197,7 @@ def run(m15_path: Path, h1_path: Path, *, out_path: Path) -> dict:
             "tp": "entry +/- 0.50*|gap|",
             "sl": "entry -/+ |gap|",
             "timeout_bars": TIMEOUT_BARS,
+            "pip_size": pip_size,
         },
         "aggregate": aggregate(trades),
         "by_year": {y: mean_of(v) for y, v in sorted(by_year.items())},
@@ -189,13 +212,21 @@ def run(m15_path: Path, h1_path: Path, *, out_path: Path) -> dict:
     a = report["aggregate"]
     if a["n"] >= MIN_TRADES:
         annual_means = [mean_of(v) for v in by_year.values()]
-        loyo_all = report["leave_one_year_out"].get("all_years", {}).get("metric", 0)
+        loyo_metrics = [
+            float(item["metric"])
+            for key, item in report["leave_one_year_out"].items()
+            if key.startswith("without_") and item.get("metric") is not None
+        ]
+        loyo_ok = bool(loyo_metrics) and all(value > 0 for value in loyo_metrics)
         pos_blocks = sum(1 for v in report["blocks_2y"].values() if v > 0)
         block_frac = pos_blocks / len(report["blocks_2y"]) if report["blocks_2y"] else 0
         report["passes"] = {
             "n_ok": a["n"] >= MIN_TRADES,
             "net_ok": a["net_mean_pips"] > 0,
-            "loyo_ok": loyo_all > 0,
+            "loyo_ok": loyo_ok,
+            "loyo_min_net_mean_pips": (
+                min(loyo_metrics) if loyo_metrics else None
+            ),
             "median_year_ok": (sorted(annual_means)[len(annual_means) // 2] > 0),
             "blocks_ok": block_frac >= 0.60,
             "hit_ok": a["hit_rate"] >= 0.20,

@@ -1,8 +1,8 @@
 {
- "program": "FOREX Research Program — Hypotheses H01-H07 (docs/26)",
+ "program": "FOREX Research Program — Hypotheses H01-H16",
  "repository": "C:\\Users\\Gabriel\\Desktop\\FOREX",
  "branch": "feature/backtest-core-models",
- "dataset": "EURUSD M15 2015-01-02..2026-08-10 (288,223 candles) + H1 processed (ATR)",
+ "dataset": "Seven FX majors M15/H1/H4 + OECD/FRED monthly call-money rates; see per-hypothesis evidence",
  "methodology": "Pre-registro imutavel (docs/26 §5) -> estagio 1 (previsao condicional, sem trade) -> criterios de rejeicao pre-registrados -> classificacao",
  "periods": {
   "development": "2015-01-01..2021-01-01",
@@ -422,6 +422,60 @@
    },
    "classification": "REFUTADA",
    "justification": "net < 0 com CI95 negativo significativo; risk premium de commodities nao existe no EURUSD spot varejo"
+  },
+  {
+   "id": "H15",
+   "name": "Momentum cambial cross-sectional mensal spot-only",
+   "priority": 10,
+   "cycle": "4",
+   "acceptance_criteria": "3/4 lookbacks positivos; Sharpe primario > 0.50; stress 1.5x positivo; estabilidade anual",
+   "status_initial": "PRE-REGISTERED",
+   "execution_date": "2026-08-22",
+   "stage": "development",
+   "steps": "sete majors; moeda estrangeira normalizada contra USD; top/bottom 2; lookbacks 1/3/6/12m; custos 3.7 pips",
+   "evidence": [
+    "docs/32_H15_CROSS_SECTIONAL_FX_MOMENTUM.md",
+    "docs/33_RESEARCH_AUDIT_2026_08_22.md",
+    "research/cross_sectional_momentum.py"
+   ],
+   "metrics": {
+    "net_annualized_1m": -0.0093,
+    "net_annualized_3m": -0.0273,
+    "net_annualized_6m": -0.0303,
+    "net_annualized_12m": -0.0193
+   },
+   "classification": "REFUTADA",
+   "justification": "todos os quatro horizontes foram negativos no development; validation nao consultada"
+  },
+  {
+   "id": "H16",
+   "name": "Carry cambial cross-sectional mensal com proxy call-money",
+   "priority": 11,
+   "cycle": "4",
+   "acceptance_criteria": "liquido e Sharpe > 0.50; stress 1.5x positivo; 4 anos positivos; concentracao <= 50%; sensibilidades positivas",
+   "status_initial": "PRE-REGISTERED",
+   "execution_date": "2026-08-22",
+   "stage": "development",
+   "steps": "sete majors; diferencial de taxas OECD/FRED t-2; top/bottom 1/2/3; accrual mensal; custos 3.7 pips",
+   "evidence": [
+    "docs/34_H16_CROSS_SECTIONAL_CARRY_PROXY.md",
+    "docs/35_H16_CROSS_SECTIONAL_CARRY_RESULT.md",
+    "research/cross_sectional_carry.py",
+    "research/reports/h16_cross_sectional_carry_dev.json",
+    "research/reports/h16_leak_check_dev/leak_check_summary.json",
+    "research/reports/h16_overfit_dev/overfit_report.json"
+   ],
+   "metrics": {
+    "months": 71,
+    "primary_net_annualized": 0.00833,
+    "primary_sharpe": 0.2345,
+    "primary_max_drawdown": -0.0632,
+    "dsr": 0.5903,
+    "mintrl_months": 587.9,
+    "leak_checks": "138/138 PASS"
+   },
+   "classification": "REFUTADA",
+   "justification": "retorno liquido positivo, mas Sharpe 0.23 falhou o gate 0.50; DSR e MinTRL insuficientes; validation e lockbox nao consultadas"
   }
  ],
  "summary": {
@@ -429,11 +483,37 @@
   "confirmed": 0,
   "refuted": 17,
   "inconclusive": 1,
-  "note": "18 execucoes: 17 refutadas + H12 INCONCLUSIVA (liquidity premium, net +0.104% CI contem zero). Ciclos 1-3 + runner 21/21: edge bruto marginal < custo calibrado em todos os horizontes (M15-H1-W1). Aronson previu o desfecho: mercados liquidos nao pagam edge a regras simples/combinadas apos correcao de data-mining. Sem candidato a demo/capital real"
+  "note": "18 hipoteses registradas: 17 refutadas + H12 INCONCLUSIVA. H15 momentum spot foi negativo; H16 carry proxy teve retorno positivo, mas Sharpe/DSR/MinTRL insuficientes. Sem candidato a demo/capital real"
  },
  "cycle2": {
   "opened": "2026-08-12 (docs/26 §26)",
   "results": "3 REFUTADAS (H08/H10/H11) + 1 INCONCLUSIVA (H09)",
   "note": "H09 candidata a estagio 2 focado, condicionado ao operador"
- }
+ },
+ "audits": [
+  {
+   "id": "H07-DUKA",
+   "name": "H07 GBPUSD com custo Dukascopy tick",
+   "type": "exploratory_cost_audit_and_prereg",
+   "execution_date": "2026-08-12",
+   "status": "NAO CONFIRMADA",
+   "prereg": "docs/26 §45",
+   "result": "docs/26 §46",
+   "evidence": [
+    "research/h07_dukascopy_tick_audit.py",
+    "research/reports/h07_dukascopy_tick_audit_current.json",
+    "research/reports/h07_dukascopy_tick_audit_current.csv"
+   ],
+   "metrics": {
+    "n_h07_events": 15,
+    "positive_events": "12/15",
+    "mean_first_spread_pips": 1.04,
+    "mean_dukascopy_tick_net_pips": 5.53,
+    "median_dukascopy_tick_net_pips": 9.9,
+    "blocks_positive_fraction": 0.75,
+    "weakness": "2016 mean -11.47 pips in challenge sample"
+   },
+   "justification": "Amostra manual sugere que custo Dukascopy tick pode reabrir H07 GBPUSD, mas n=15 e exploratorio. Confirmacao exige expansao completa pre-registrada e depois simulador tick-complete."
+  }
+ ]
 }

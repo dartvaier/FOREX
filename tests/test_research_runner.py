@@ -7,19 +7,52 @@ without requiring the EURUSD dataset or MetaTrader 5.
 """
 
 import math
+from dataclasses import dataclass
 
 import pytest
 
 from research.runner import (
+    apply_instrument_strategy_defaults,
     scale_cost_params,
     validate_cost_multiplier,
 )
+from backtest.instruments import instrument_specification
 
 BASE_COSTS = {
     "spread_pips": 2.0,
     "slippage_pips": 0.5,
     "commission_per_lot_per_side": 3.50,
 }
+
+
+@dataclass
+class StrategyWithPipSize:
+    symbol: str
+    pip_size: float = 0.0001
+
+
+def test_instrument_defaults_inject_jpy_pip_size():
+    instrument = instrument_specification("USDJPY")
+
+    params = apply_instrument_strategy_defaults(
+        StrategyWithPipSize,
+        {},
+        instrument,
+    )
+
+    assert params == {"pip_size": 0.01}
+
+
+def test_instrument_defaults_preserve_explicit_pip_size():
+    instrument = instrument_specification("USDJPY")
+
+    params = apply_instrument_strategy_defaults(
+        StrategyWithPipSize,
+        {"pip_size": 0.02},
+        instrument,
+    )
+
+    assert params == {"pip_size": 0.02}
 
 
 def test_validate_cost_multiplier_accepts_one():

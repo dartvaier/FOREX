@@ -38,7 +38,13 @@ THRESHOLD = 0.50
 
 
 def _atr_h1_14_before(h1: pd.DataFrame, before_ts) -> float | None:
-    prior = h1[h1["time"] < before_ts].tail(14)
+    # H1 timestamps label the start of each interval.  A bar is usable
+    # only after its entire hour has closed, not merely because its start
+    # timestamp precedes the decision time.
+    closed_before_decision = (
+        h1["time"] + pd.Timedelta(hours=1) <= before_ts
+    )
+    prior = h1[closed_before_decision].tail(14)
     if len(prior) < 14:
         return None
     highs = prior["high"].tolist()
@@ -68,16 +74,25 @@ def detect_gaps(
     """Detect weekly gaps. Returns event dicts (no forward fills)."""
     m15 = m15.sort_values("time").reset_index(drop=True)
     iso = m15["time"].dt.isocalendar()
-    week_key = iso["year"].astype(str) + "-W" + iso["week"].astype(str)
+    # Keep numeric ISO components and preserve the order of the already
+    # sorted bars.  String keys such as W9/W10 sort lexicographically as
+    # W10, W11, ..., W9 and can fabricate gaps between non-consecutive
+    # weeks.
+    week_key = pd.Series(
+        list(zip(iso["year"].astype(int), iso["week"].astype(int))),
+        index=m15.index,
+    )
 
     events: list[dict] = []
     prev_week_close: float | None = None
-    prev_week_key: str | None = None
+    prev_week_key: tuple[int, int] | None = None
 
-    for wk, group in m15.groupby(week_key, sort=True):
+    for week_components, group in m15.groupby(week_key, sort=False):
+        iso_year, iso_week = week_components
+        wk = f"{iso_year}-W{iso_week:02d}"
         first = group.iloc[0]
         last = group.iloc[-1]
-        if prev_week_close is not None and wk != prev_week_key:
+        if prev_week_close is not None and week_components != prev_week_key:
             gap = float(first["open"]) - prev_week_close
             atr = _atr_h1_14_before(h1, first["time"])
             if atr is not None and atr > 0:
@@ -94,7 +109,7 @@ def detect_gaps(
                         }
                     )
         prev_week_close = float(last["close"])
-        prev_week_key = wk
+        prev_week_key = week_components
 
     return events
 

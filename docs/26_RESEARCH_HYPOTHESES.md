@@ -2481,3 +2481,141 @@ desfecho: em mercados liquidos e eficientes, regras simples e mesmo
 combinacoes nao produzem retornos estatisticamente significativos
 apos correcao de data-mining. Nosso funil (pre-registro + custos
 calibrados + WRC + estagio 2) e a operacionalizacao disso no FX.
+
+
+---
+
+# 45. Registro de Auditoria e Pre-registro H07-DUKA (2026-08-12)
+
+## Contexto
+
+H07-MP foi refutada no estagio 2 porque o custo do open semanal e os
+timeouts consumiram o edge bruto. A revisao operacional com conta demo
+Dukascopy/JForex mostrou que o spread de abertura do GBPUSD pode ser
+substancialmente menor do que o custo semanal medio usado em alguns
+eventos MT5. Isso cria uma nova pergunta, restrita a custo/executabilidade:
+
+> O H07 GBPUSD, mantendo a regra de trade original, continua refutado
+> quando o spread de entrada e medido por ticks Ask/Bid Dukascopy?
+
+Importante: os CSVs baixados manualmente antes deste registro sao uma
+**auditoria exploratoria**, nao confirmacao. Este registro congela a
+proxima fase: expansao completa dos eventos H07 GBPUSD com dados
+Dukascopy tick, sem redefinir regra depois de ver resultados adicionais.
+
+## Hipotese H07-DUKA
+
+Sinal herdado do H07:
+
+- Instrumento: GBPUSD.
+- Evento: primeiro candle real da semana, sem criar candles de fim de
+  semana.
+- Gap semanal: `first_open_new_week - last_close_previous_week`.
+- Filtro: `abs(gap) / ATR(H1,14) >= 0.50`, ATR causal antes do primeiro
+  candle da semana.
+- Direcao: contra o gap (`gap > 0 -> SHORT`, `gap < 0 -> LONG`).
+
+Trade herdado do estagio 2 H07:
+
+- Entrada: open do primeiro candle M15 da semana.
+- TP: `entry +/- 0.50 * abs(gap)`.
+- SL: `entry -/+ 1.00 * abs(gap)`.
+- Timeout: 32 candles M15 (8 horas), saida a mercado no close.
+- Sem look-ahead; SL-first quando TP e SL tocam no mesmo candle.
+
+Custo H07-DUKA:
+
+- Spread de entrada: primeiro spread Ask-Bid do arquivo tick Dukascopy
+  na janela de abertura exportada pelo JForex.
+- Spread de saida: `0.40` pip, mantido conservadoramente ate termos
+  simulador tick de saida.
+- Slippage: `1.0` pip round-trip.
+- Comissao: `0.7` pip round-trip.
+- Custo total por evento: `first_tick_spread + 0.40 + 1.0 + 0.7`.
+
+## Fonte de dados
+
+- CSVs JForex/Dukascopy tick em `data/external/dukascopy/raw/`.
+- Formato esperado: `Time (EET),Ask,Bid,AskVolume,BidVolume`.
+- O importador aceita tanto arquivos diarios
+  (`GBPUSD_Ticks_2025.01.06_2025.01.06.csv`) quanto arquivos de
+  intervalo, por mes ou ano
+  (`GBPUSD_Ticks_2025.01.01_2025.12.31.csv`), filtrando apenas as datas
+  H07 dentro do arquivo.
+- Dados externos sao locais e ignorados pelo Git (`data/external/`).
+- Gerador de janelas para download: `research/h07_dukascopy_windows.py`.
+- Auditoria reprodutivel: `research/h07_dukascopy_tick_audit.py`.
+- Relatorios gerados em `research/reports/`:
+  `h07_dukascopy_tick_audit_GBPUSD.{json,csv}`.
+
+## Criterios congelados para expansao completa
+
+A fase completa deve incluir todos os eventos H07 GBPUSD que puderem ser
+exportados com ticks Dukascopy dentro do periodo historico disponivel.
+Arquivos fora de segunda-feira/evento H07 sao excluidos automaticamente
+e reportados como `excluded_files`.
+
+H07-DUKA so pode ser classificada como PROMISSORA se TODOS os criterios
+abaixo forem satisfeitos:
+
+1. `n >= 100` eventos H07 com tick Dukascopy valido.
+2. Net medio em pips > 0.
+3. Mediana do net em pips > 0.
+4. Taxa de eventos positivos >= 55%.
+5. Media por ano > 0 em pelo menos 70% dos anos com `n >= 5`.
+6. Blocos de 2 anos positivos em pelo menos 60% dos blocos.
+7. Sensibilidade de custo ainda positiva com +0.5 pip extra por evento.
+
+Classificacao:
+
+- 7/7 criterios -> PROMISSORA PARA ESTAGIO 2 TICK-COMPLETE.
+- 5-6/7 criterios -> INCONCLUSIVA; baixar mais dados ou auditar saida.
+- <= 4/7 criterios -> REFUTADA.
+
+Mesmo se PROMISSORA, H07-DUKA nao autoriza conta real. A proxima etapa
+seria um simulador de saida tick-complete e depois demo controlada.
+
+
+---
+
+# 46. Auditoria Exploratoria H07-DUKA Local (2026-08-12)
+
+## Execucao
+
+- Arquivos importados: `data/external/dukascopy/raw/GBPUSD_Ticks_*.csv`.
+- Runner: `python -m research.h07_dukascopy_tick_audit --symbol GBPUSD`.
+- Resultado local: `research/reports/h07_dukascopy_tick_audit_current.json`
+  e `research/reports/h07_dukascopy_tick_audit_current.csv`.
+
+## Resultado atual da amostra manual
+
+Estado da amostra local apos baixar janelas recentes e janelas de desafio
+dos anos ruins (2016, 2021, 2025):
+
+- Arquivos tick lidos: 17.
+- Eventos H07 validos: 15.
+- Arquivos excluidos: 2 (`2025-04-25` sexta-feira e `2026-07-22`
+  quarta-feira).
+- Spread medio no primeiro tick: 1.04 pip.
+- Spread mediano no primeiro tick: 1.00 pip.
+- Net medio com custo Dukascopy tick: +5.53 pips.
+- Mediana do net: +9.90 pips.
+- Eventos positivos: 12/15 (80%).
+- Blocos positivos: 3/4 (75%).
+
+Por ano:
+
+| ano | n | net medio Dukascopy tick |
+|---|---:|---:|
+| 2016 | 4 | -11.47 pips |
+| 2021 | 4 | +5.61 pips |
+| 2025 | 3 | +19.68 pips |
+| 2026 | 4 | +11.84 pips |
+
+## Interpretacao
+
+A amostra exploratoria mostra que o custo Dukascopy tick e baixo o
+suficiente para reabrir o H07 GBPUSD como investigacao operacional.
+Porem 2016 permanece negativo na amostra de desafio, e `n=15` e pequeno.
+Portanto a classificacao oficial continua **NAO CONFIRMADA** ate a
+expansao completa pre-registrada na secao 45.

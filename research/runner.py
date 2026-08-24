@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib
+import inspect
 import json
 import math
 from dataclasses import fields
@@ -93,6 +94,25 @@ STRATEGY_REGISTRY = {
 # ---------------------------------------------------------------------------
 # Strategy discovery and parameter coercion
 # ---------------------------------------------------------------------------
+
+
+def apply_instrument_strategy_defaults(
+    strategy_class: type,
+    strategy_params: dict[str, Any],
+    instrument: InstrumentSpecification,
+) -> dict[str, Any]:
+    """Apply instrument-specific constructor defaults causally.
+
+    Several strategies express thresholds or expected moves in pips.  Their
+    class-level default of ``0.0001`` is valid for most majors but is wrong for
+    JPY pairs.  The runner owns the instrument registry, so it must supply the
+    actual pip size unless the experiment explicitly overrides it.
+    """
+    resolved = dict(strategy_params)
+    constructor_params = inspect.signature(strategy_class).parameters
+    if "pip_size" in constructor_params and "pip_size" not in resolved:
+        resolved["pip_size"] = instrument.pip_size
+    return resolved
 
 
 def discover_strategy_class(module_name: str) -> type:
@@ -685,9 +705,15 @@ def run_single(
         risk_gate=risk_gate,
     )
 
+    effective_strategy_params = apply_instrument_strategy_defaults(
+        strategy_class,
+        strategy_params,
+        instrument,
+    )
+
     strategy_instance = strategy_class(
         symbol=symbol,
-        **strategy_params,
+        **effective_strategy_params,
     )
 
     higher_timeframe_dataframes = load_higher_timeframe_dataframes(
@@ -737,7 +763,7 @@ def run_single(
         cost_params=cost_params,
         effective_cost_params=effective_cost_params,
         cost_multiplier=cost_multiplier,
-        strategy_params=strategy_params,
+        strategy_params=effective_strategy_params,
         strategy_module=strategy_module,
         tag=tag,
         dataset_path=path,

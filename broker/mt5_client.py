@@ -188,3 +188,34 @@ class MT5Client:
             )
 
         return rates
+
+    def ticks_range(
+        self,
+        symbol: str,
+        date_from,
+        date_to,
+        flags,
+    ):
+        """Return broker ticks for a timezone-aware half-open request window."""
+
+        self._ensure_connected()
+        self.symbol_info(symbol)
+
+        if date_from.tzinfo is None:
+            raise ValueError("date_from precisa possuir timezone.")
+        if date_to.tzinfo is None:
+            raise ValueError("date_to precisa possuir timezone.")
+        if date_from >= date_to:
+            raise ValueError("date_from precisa ser anterior a date_to.")
+
+        ticks = mt5.copy_ticks_range(
+            symbol,
+            int(date_from.timestamp()),
+            int(date_to.timestamp()),
+            flags,
+        )
+        if ticks is None:
+            raise RuntimeError(
+                f"Erro ao obter ticks de {symbol}: {mt5.last_error()}"
+            )
+        return ticks

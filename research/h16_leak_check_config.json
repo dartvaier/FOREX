@@ -1,0 +1,8 @@
+{
+  "manifest": "data/external/carry/fred_call_money/manifest.json",
+  "date_from": "2015-01-01",
+  "date_to": "2021-01-01",
+  "atol": 1e-12,
+  "warn_atol": 1e-10,
+  "seed": 20260822
+}

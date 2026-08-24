@@ -30,6 +30,7 @@ data/processed/
 data/cache/
 data/import/
 data/scalping/
+data/external/
 # Agent Cluster workspace
 .cluster/
 

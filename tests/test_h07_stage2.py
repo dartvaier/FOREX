@@ -1,7 +1,49 @@
 """Tests for H07 stage-2 trade simulator (synthetic fixtures)."""
+from pathlib import Path
+
 import pytest
 
-from research.h07_stage2 import simulate_trade, TIMEOUT_BARS
+import research.h07_stage2 as h07_stage2
+
+from research.h07_stage2 import (
+    TIMEOUT_BARS,
+    pip_size_for_symbol,
+    simulate_trade,
+)
+
+
+def test_pip_size_for_symbol_handles_jpy_quote_pairs():
+    assert pip_size_for_symbol("USDJPY") == 0.01
+    assert pip_size_for_symbol("EURUSD") == 0.0001
+
+
+def test_stage2_loyo_requires_every_excluded_year_to_remain_positive(
+    monkeypatch,
+    tmp_path,
+):
+    def trade(week, net_pips):
+        return {
+            "week": week,
+            "net_pips": net_pips,
+            "gross_pips": net_pips + 3.0,
+            "exit_reason": "tp",
+            "direction": 1,
+            "bars_held": 1,
+            "entry_spread": 1.0,
+        }
+
+    trades = [trade("2015-W01", 10.0) for _ in range(60)]
+    trades += [trade("2016-W01", -1.0) for _ in range(40)]
+    monkeypatch.setattr(h07_stage2, "build_trades", lambda *args, **kwargs: trades)
+
+    report = h07_stage2.run(
+        Path("data/raw/EURUSD/M15.parquet"),
+        Path("data/processed/EURUSD/H1.parquet"),
+        out_path=tmp_path / "report.json",
+    )
+
+    assert report["passes"]["net_ok"] is True
+    assert report["passes"]["loyo_ok"] is False
 
 
 def bar(open_, high, low, close):
