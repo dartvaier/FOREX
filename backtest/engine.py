@@ -31,14 +31,16 @@ class BacktestResult:
 
 
 class BacktestEngine:
-    def __init__(self, *, feed: HistoricalBarFeed, strategy: Strategy, risk_model: RiskModel, execution: SimulatedExecution, portfolio: Portfolio) -> None:
+    def __init__(self, *, feed: HistoricalBarFeed, strategy: Strategy, risk_model: RiskModel, execution: SimulatedExecution, portfolio: Portfolio, context_closed_bar_limit: int | None = None) -> None:
         if not isinstance(feed, HistoricalBarFeed): raise TypeError("feed must be a HistoricalBarFeed")
         if not isinstance(strategy, Strategy): raise TypeError("strategy must be a Strategy")
         if not isinstance(risk_model, RiskModel): raise TypeError("risk_model must be a RiskModel")
         if not isinstance(execution, SimulatedExecution): raise TypeError("execution must be a SimulatedExecution")
         if not isinstance(portfolio, Portfolio): raise TypeError("portfolio must be a Portfolio")
+        if context_closed_bar_limit is not None and (not isinstance(context_closed_bar_limit, int) or isinstance(context_closed_bar_limit, bool) or context_closed_bar_limit <= 0): raise ValueError("context_closed_bar_limit must be a positive integer or None")
         if portfolio.symbol != feed.config.symbol: raise ValueError("portfolio symbol must match feed symbol")
         self.feed, self.strategy, self.risk_model, self.execution, self.portfolio = feed, strategy, risk_model, execution, portfolio
+        self.context_closed_bar_limit = context_closed_bar_limit
 
     def run(self) -> BacktestResult:
         clock = SimulationClock(self.feed.bar_starts, self.feed.config.timeframe)
@@ -46,7 +48,7 @@ class BacktestEngine:
         signals, decisions, orders, executions, fills, contexts = [], [], [], [], [], []
         pending = None
         for event in clock.events():
-            context = builder.build(event)
+            context = builder.build(event, closed_bar_limit=self.context_closed_bar_limit)
             contexts.append(context)
             if event.phase.value == "BAR_OPEN":
                 if pending is not None:

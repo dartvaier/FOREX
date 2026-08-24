@@ -72,6 +72,8 @@ Backtesting Infrastructure
 - F5.7 deterministic BacktestEngine orchestration and raw event history.
 - F5.8 read-only PerformanceAnalytics, structured reports, closed-trade
   reconstruction, drawdown and explicitly annualized Sharpe.
+- F5.9 deterministic EURUSD/H1 EMA crossover Strategy and a minimal Parquet
+  experiment runner without parameter optimization.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
