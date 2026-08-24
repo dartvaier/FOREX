@@ -11,7 +11,7 @@ de avanço; não registra resultados científicos que ainda não existem.
 | F0–F4 | Metodologia, ambiente e dados | ✅ Concluído |
 | F5 | Quantitative Research Core | ✅ Concluído |
 | F6.1–F6.7 | Research Automation & Agent Tool Layer | ✅ Concluído |
-| F6.8a–F6.8e | Proposal Quality / catálogo e validação | ✅ F6.8e concluído; acceptance ainda pendente |
+| F6.8–F6.8e | Proposal Quality / catálogo e validação | ✅ F6.8e concluído; acceptance ainda pendente |
 | F7 | Paper & Demo Trading | ⬜ Não iniciado |
 | F8 | Monitoring & Operations | ⬜ Não iniciado |
 | F9 | Live-readiness Gate | ⬜ Não iniciado |
