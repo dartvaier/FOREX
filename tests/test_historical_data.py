@@ -1,6 +1,10 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
+
+
+pytestmark = pytest.mark.integration
 
 
 FILE = Path(

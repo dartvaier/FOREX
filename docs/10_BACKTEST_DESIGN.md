@@ -29,13 +29,13 @@ O princípio central é:
 Estado atual:
 
 ```text
-DESIGN
+PARTIALLY IMPLEMENTED
 ```
 
 Implementação:
 
 ```text
-NOT STARTED
+F5.1 AND F5.2 IMPLEMENTED
 ```
 
 Este documento define o contrato inicial da fase:
