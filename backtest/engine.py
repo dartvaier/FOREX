@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import isfinite
 
 from backtest.clock import SimulationClock
 from backtest.context import BacktestContext, BacktestContextBuilder
@@ -22,6 +23,11 @@ class BacktestResult:
     fills: tuple[Fill, ...]
     portfolio_snapshots: tuple[PortfolioSnapshot, ...]
     contexts: tuple[BacktestContext, ...]
+    initial_equity: float
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.initial_equity, (int, float)) or isinstance(self.initial_equity, bool) or not isfinite(self.initial_equity) or self.initial_equity <= 0:
+            raise ValueError("initial_equity must be a positive finite number")
 
 
 class BacktestEngine:
@@ -64,4 +70,4 @@ class BacktestEngine:
                 orders.append(pending)
         if pending is not None:
             executions.append(self.execution.execute(pending, feed=self.feed))
-        return BacktestResult(tuple(signals), tuple(decisions), tuple(orders), tuple(executions), tuple(fills), self.portfolio.snapshots, tuple(contexts))
+        return BacktestResult(tuple(signals), tuple(decisions), tuple(orders), tuple(executions), tuple(fills), self.portfolio.snapshots, tuple(contexts), self.portfolio.initial_cash)

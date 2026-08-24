@@ -70,6 +70,8 @@ Backtesting Infrastructure
 - F5.5 fixed-size RiskModel with one-position baseline RiskLimits and decisions.
 - F5.6 deterministic next-available-open simulated execution and explicit outcomes.
 - F5.7 deterministic BacktestEngine orchestration and raw event history.
+- F5.8 read-only PerformanceAnalytics, structured reports, closed-trade
+  reconstruction, drawdown and explicitly annualized Sharpe.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
