@@ -76,6 +76,8 @@ class ProviderCanaryRunner:
 
     def assessment_only(self, canary_id: str, facts: Mapping[str, object]) -> CanaryResult:
         self._id(canary_id)
+        facts_snapshot = self._json_value(facts)
+        facts_fingerprint = self._fingerprint(facts_snapshot)
         try:
             interpretation = self.provider.assess(facts)
         except OllamaProviderError as error:
@@ -88,12 +90,15 @@ class ProviderCanaryRunner:
                     "capability_boundaries_preserved": True,
                     "research_not_started": True,
                     "holdout_not_used": True,
-                    "gate_status": facts.get("gate_status"),
+                    "gate_status": facts_snapshot.get("gate_status"),
+                    "gate_status_preserved": False,
+                    "facts_fingerprint": facts_fingerprint,
                 },
                 {"error": {"code": error.code.value, "message": str(error)}},
             )
-        assessment = ResearchAssessment(facts, interpretation)
-        preserved = dict(assessment.facts) == dict(facts)
+        preserved = self._json_value(facts) == facts_snapshot
+        assessment = ResearchAssessment(facts_snapshot, interpretation)
+        gate_preserved = assessment.facts.get("gate_status") == facts_snapshot.get("gate_status")
         return self._write(
             canary_id,
             "assessment_only",
@@ -103,9 +108,11 @@ class ProviderCanaryRunner:
                 "capability_boundaries_preserved": True,
                 "research_not_started": True,
                 "holdout_not_used": True,
-                "gate_status": facts.get("gate_status"),
+                "gate_status": facts_snapshot.get("gate_status"),
+                "gate_status_preserved": gate_preserved,
+                "facts_fingerprint": facts_fingerprint,
             },
-            {"assessment": assessment},
+            {"facts": facts_snapshot, "assessment": assessment},
         )
 
     def _write(self, canary_id: str, kind: str, summary: dict, items: Mapping[str, object]) -> CanaryResult:
@@ -125,8 +132,9 @@ class ProviderCanaryRunner:
         passed = (summary.get("provider_status") == "SUCCESS" and all(summary.get(key) is True for key in required)) \
             if kind == "proposal_only" else (
                 summary.get("provider_status") == "SUCCESS" and all(
-                    summary.get(key) is True for key in ("factual_preservation", "capability_boundaries_preserved",
-                                                          "research_not_started", "holdout_not_used")
+            summary.get(key) is True for key in ("factual_preservation", "gate_status_preserved",
+                                                  "capability_boundaries_preserved", "research_not_started",
+                                                  "holdout_not_used")
                 )
             )
         return CanaryResult(canary_id, kind, passed, sha256(text.encode()).hexdigest(), summary)
@@ -144,23 +152,37 @@ class ProviderCanaryRunner:
         return value
 
     @staticmethod
+    def _fingerprint(value) -> str:
+        return sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    @staticmethod
     def _id(value: str) -> None:
         if not value or not value.replace("-", "").replace("_", "").isalnum():
             raise ValueError("invalid canary id")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run an opt-in, proposal-only local Ollama canary.")
+    parser = argparse.ArgumentParser(description="Run an opt-in local Ollama canary.")
+    parser.add_argument("kind", nargs="?", choices=("proposal-only", "assessment-only"), default="proposal-only")
     parser.add_argument("--canary-id", required=True)
     parser.add_argument("--output-root", default="outputs/agent_canary")
     parser.add_argument("--registry-root", default="research/registry")
+    parser.add_argument("--facts-file")
     parser.add_argument("--timeout", type=float, default=120)
     args = parser.parse_args()
     registry = StrategyRegistry(args.registry_root)
     runner = ProviderCanaryRunner(
         OllamaProvider(timeout=args.timeout), registry, HypothesisProposalValidator(registry), args.output_root
     )
-    result = runner.proposal_only(args.canary_id)
+    if args.kind == "proposal-only":
+        result = runner.proposal_only(args.canary_id)
+    else:
+        if not args.facts_file:
+            parser.error("--facts-file is required for assessment-only")
+        facts = json.loads(Path(args.facts_file).read_text(encoding="utf-8"))
+        if not isinstance(facts, dict):
+            parser.error("--facts-file must contain a JSON object")
+        result = runner.assessment_only(args.canary_id, facts)
     print(json.dumps({"passed": result.passed, "fingerprint": result.fingerprint, "summary": result.summary}, sort_keys=True))
     return 0 if result.passed else 1
 
