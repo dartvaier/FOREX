@@ -3,9 +3,10 @@ from research.ollama_provider import OllamaErrorCode,OllamaProviderError
 from research.registry import StrategyRegistry
 from research.proposal import HypothesisProposalValidator,HypothesisProposal
 from research.service import StrategySpec,RegisteredStrategy
+from research.falsification import FalsificationCriterion,FalsificationMetric,FalsificationOperator,FalsificationScope
 import json
 class Mock:
- def propose(self,c):return HypothesisProposal("title","sufficient thesis","sufficient mechanism",StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",{"fast_period":2,"slow_period":3}),("percentage return below -2.0 percent over six months",),("Periods separate short and medium trend horizons",))
+ def propose(self,c):return HypothesisProposal("title","sufficient thesis","sufficient mechanism",StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",{"fast_period":2,"slow_period":3}),(FalsificationCriterion(FalsificationMetric.PERCENTAGE_RETURN,FalsificationOperator.LT,-2.0,FalsificationScope.EXPERIMENT),),("Periods separate short and medium trend horizons",))
  def assess(self,f):return "text only"
 class FailedProvider:
  def propose(self,c):raise OllamaProviderError(OllamaErrorCode.TIMEOUT,"deadline")
