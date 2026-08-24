@@ -4,7 +4,7 @@ from research.registry import HypothesisRecord,StrategyRegistry
 from research.service import RegisteredStrategy,StrategySpec
 def strategy(): return StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",{"fast_period":2,"slow_period":3})
 def proposal(**kw):
-    values={"title":"EMA thesis","thesis":"trend persists","expected_mechanism":"persistent repricing","strategy":strategy(),"falsification_criteria":("net return below 0.0 over six months",),"parameter_rationale":("Fast and slow periods separate short and medium horizons",),"provenance":{"source":"paper"}}; values.update(kw); return HypothesisProposal(**values)
+    values={"title":"EMA thesis","thesis":"trend persists","expected_mechanism":"persistent repricing","strategy":strategy(),"falsification_criteria":("percentage return below -2.0 percent over six months",),"parameter_rationale":("Fast and slow periods separate short and medium horizons",),"provenance":{"source":"paper"}}; values.update(kw); return HypothesisProposal(**values)
 def test_acceptance_fingerprint_metadata_and_immutability(tmp_path):
  v=HypothesisProposalValidator(StrategyRegistry(tmp_path)); a=proposal(); b=proposal(provenance={"source":"other"}); assert v.validate(a).status is ProposalStatus.ACCEPTED and a.fingerprint==b.fingerprint
  with pytest.raises(TypeError): a.provenance["x"]=1
@@ -14,5 +14,8 @@ def test_duplicate_rationale_unsupported_and_lineage(tmp_path):
  assert v.validate(proposal(thesis="bad")).status is ProposalStatus.INSUFFICIENT_RATIONALE
  assert v.validate(proposal(parameter_rationale=())).status is ProposalStatus.INSUFFICIENT_RATIONALE
  assert v.validate(proposal(expected_mechanism="ATR confirms volatility conditions")).status is ProposalStatus.UNSUPPORTED_STRATEGY
+ assert v.validate(proposal(thesis="EMA crossover predicts a reversal")).status is ProposalStatus.SEMANTIC_MISMATCH
+ assert v.validate(proposal(falsification_criteria=("p-value above 0.05 over six months",))).status is ProposalStatus.UNSUPPORTED_METRIC
+ assert v.validate(proposal(falsification_criteria=("percentage return below -2.0 percent over six months","maximum drawdown percent above 20 over six months"))).status is ProposalStatus.DUPLICATE
  assert v.validate(HypothesisProposal("x","enough thesis","enough mechanism",object(),("fail",))).status is ProposalStatus.UNSUPPORTED_STRATEGY
  assert v.validate(proposal(parent_hypothesis_id="missing")).status is ProposalStatus.INVALID
