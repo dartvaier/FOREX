@@ -34,3 +34,7 @@ class FalsificationCriterion:
   if not isinstance(self.metric,FalsificationMetric) or not isinstance(self.operator,FalsificationOperator) or not isinstance(self.scope,FalsificationScope): raise TypeError("falsification metric, operator and scope must be typed enums")
   if not isinstance(self.threshold,(int,float)) or isinstance(self.threshold,bool) or not isfinite(self.threshold): raise ValueError("falsification threshold must be finite")
   if self.scope not in METRIC_SCOPES[self.metric]: raise ValueError("falsification metric is unavailable in this scope")
+ def evaluate(self,value:float)->bool:
+  """Return true exactly when this failure predicate falsifies its hypothesis."""
+  if not isinstance(value,(int,float)) or isinstance(value,bool) or not isfinite(value): raise ValueError("evaluated metric value must be finite")
+  return {FalsificationOperator.LT:value<self.threshold,FalsificationOperator.LTE:value<=self.threshold,FalsificationOperator.GT:value>self.threshold,FalsificationOperator.GTE:value>=self.threshold}[self.operator]

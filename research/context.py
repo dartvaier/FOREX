@@ -25,6 +25,13 @@ def proposal_context(registry: StrategyRegistry) -> dict:
         "allowed_strategy": {"strategy": "EMA_CROSSOVER", "symbol": "EURUSD", "timeframe": "H1"},
         "strategy_semantics": {"version": EMA_CROSSOVER_SEMANTICS_VERSION, **EMA_CROSSOVER_SEMANTICS},
         "measurable_metrics": {"version": METRIC_ALLOWLIST_VERSION, "allowlist": MEASURABLE_METRICS},
+        "falsification_semantics": {
+            "meaning": "A criterion is a failure predicate: when metric operator threshold evaluates true, the hypothesis is falsified.",
+            "examples": (
+                {"metric": "sharpe_ratio", "operator": "LTE", "threshold": 1.2, "scope": "EXPERIMENT"},
+                {"metric": "maximum_drawdown_percent", "operator": "GT", "threshold": 20.0, "scope": "GATE"},
+            ),
+        },
         "market_facts": {
             "eurusd_pip": 0.00010,
             "eurusd_point": 0.00001,
@@ -35,7 +42,7 @@ def proposal_context(registry: StrategyRegistry) -> dict:
             "thesis": "State a specific, testable claim; do not present a generic strategy description.",
             "expected_mechanism": "State a plausible market mechanism, not merely that a crossover occurs.",
             "parameter_rationale": "Justify fast and slow periods in relation to the stated mechanism.",
-            "falsification": "Give at least one pre-specified quantitative threshold and evaluation horizon; state a valid unit or use a dimensionless ratio consistent with market_facts.",
+            "falsification": "Use typed failure predicates: choose the operator so a true comparison falsifies the thesis (for example sharpe_ratio LTE 1.2, not GT 1.2 for a Sharpe-above-1.2 thesis).",
             "executable_semantics": "Use only the registered directional EMA crossover semantics and measurable_metrics allowlist.",
             "novelty": "Do not restate or make a cosmetic variation of a Registry hypothesis.",
         },
