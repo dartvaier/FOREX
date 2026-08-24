@@ -8,6 +8,7 @@ from urllib.error import HTTPError,URLError
 from urllib.request import Request,urlopen
 from research.agent import LLMProvider
 from research.proposal import HypothesisProposal
+from research.falsification import FalsificationCriterion,FalsificationMetric,FalsificationOperator,FalsificationScope
 from research.service import RegisteredStrategy,StrategySpec
 class OllamaErrorCode(StrEnum): CONNECTION_REFUSED="CONNECTION_REFUSED"; TIMEOUT="TIMEOUT"; MODEL_NOT_FOUND="MODEL_NOT_FOUND"; PROVIDER_ERROR="PROVIDER_ERROR"; INVALID_OUTPUT="INVALID_OUTPUT"
 class OllamaProviderError(RuntimeError):
@@ -36,8 +37,9 @@ class OllamaProvider(LLMProvider):
   except OllamaProviderError: raise
   except Exception as e: raise OllamaProviderError(OllamaErrorCode.INVALID_OUTPUT,"invalid structured output") from e
  def propose(self,context):
-  schema={"type":"object","required":["title","thesis","expected_mechanism","falsification_criteria","parameter_rationale","assumptions","tags","parameters"],"properties":{"title":{"type":"string"},"thesis":{"type":"string"},"expected_mechanism":{"type":"string"},"falsification_criteria":{"type":"array","items":{"type":"string"}},"parameter_rationale":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}},"tags":{"type":"array","items":{"type":"string"}},"parameters":{"type":"object","required":["fast_period","slow_period"],"properties":{"fast_period":{"type":"integer"},"slow_period":{"type":"integer"}}}}}
+  criterion={"type":"object","required":["metric","operator","threshold","scope"],"properties":{"metric":{"type":"string","enum":[x.value for x in FalsificationMetric]},"operator":{"type":"string","enum":[x.value for x in FalsificationOperator]},"threshold":{"type":"number"},"scope":{"type":"string","enum":[x.value for x in FalsificationScope]}}}
+  schema={"type":"object","required":["title","thesis","expected_mechanism","falsification_criteria","parameter_rationale","assumptions","tags","parameters"],"properties":{"title":{"type":"string"},"thesis":{"type":"string"},"expected_mechanism":{"type":"string"},"falsification_criteria":{"type":"array","items":criterion},"parameter_rationale":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}},"tags":{"type":"array","items":{"type":"string"}},"parameters":{"type":"object","required":["fast_period","slow_period"],"properties":{"fast_period":{"type":"integer"},"slow_period":{"type":"integer"}}}}}
   x=self._ask(json.dumps(context,default=str),schema)
-  try:return HypothesisProposal(x["title"],x["thesis"],x["expected_mechanism"],StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",x["parameters"]),tuple(x["falsification_criteria"]),tuple(x["parameter_rationale"]),tuple(x["assumptions"]),tuple(x["tags"]))
+  try:return HypothesisProposal(x["title"],x["thesis"],x["expected_mechanism"],StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",x["parameters"]),tuple(FalsificationCriterion(FalsificationMetric(y["metric"]),FalsificationOperator(y["operator"]),y["threshold"],FalsificationScope(y["scope"])) for y in x["falsification_criteria"]),tuple(x["parameter_rationale"]),tuple(x["assumptions"]),tuple(x["tags"]))
   except Exception as e:raise OllamaProviderError(OllamaErrorCode.INVALID_OUTPUT,"proposal conversion failed") from e
  def assess(self,facts):return self._ask(json.dumps(facts,default=str),{"type":"object","required":["interpretation"],"properties":{"interpretation":{"type":"string"}}})["interpretation"]

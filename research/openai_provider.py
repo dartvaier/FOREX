@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from research.agent import LLMProvider
 from research.proposal import HypothesisProposal
+from research.falsification import FalsificationCriterion,FalsificationMetric,FalsificationOperator,FalsificationScope
 from research.service import RegisteredStrategy, StrategySpec
 
 class ProviderErrorCode(StrEnum): AUTH_ERROR="AUTH_ERROR"; RATE_LIMITED="RATE_LIMITED"; TIMEOUT="TIMEOUT"; PROVIDER_ERROR="PROVIDER_ERROR"; INVALID_OUTPUT="INVALID_OUTPUT"
@@ -28,8 +29,9 @@ class OpenAIProvider(LLMProvider):
   try: return json.loads(response.output_text)
   except Exception as exc: raise ProviderError(ProviderErrorCode.INVALID_OUTPUT,"structured output was invalid") from exc
  def propose(self,context):
-  schema={"type":"object","additionalProperties":False,"required":["title","thesis","expected_mechanism","falsification_criteria","parameter_rationale","assumptions","tags","parameters"],"properties":{"title":{"type":"string"},"thesis":{"type":"string"},"expected_mechanism":{"type":"string"},"falsification_criteria":{"type":"array","items":{"type":"string"}},"parameter_rationale":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}},"tags":{"type":"array","items":{"type":"string"}},"parameters":{"type":"object","additionalProperties":False,"required":["fast_period","slow_period"],"properties":{"fast_period":{"type":"integer"},"slow_period":{"type":"integer"}}}}}
+  criterion={"type":"object","additionalProperties":False,"required":["metric","operator","threshold","scope"],"properties":{"metric":{"type":"string","enum":[x.value for x in FalsificationMetric]},"operator":{"type":"string","enum":[x.value for x in FalsificationOperator]},"threshold":{"type":"number"},"scope":{"type":"string","enum":[x.value for x in FalsificationScope]}}}
+  schema={"type":"object","additionalProperties":False,"required":["title","thesis","expected_mechanism","falsification_criteria","parameter_rationale","assumptions","tags","parameters"],"properties":{"title":{"type":"string"},"thesis":{"type":"string"},"expected_mechanism":{"type":"string"},"falsification_criteria":{"type":"array","items":criterion},"parameter_rationale":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}},"tags":{"type":"array","items":{"type":"string"}},"parameters":{"type":"object","additionalProperties":False,"required":["fast_period","slow_period"],"properties":{"fast_period":{"type":"integer"},"slow_period":{"type":"integer"}}}}}
   raw=self._request(json.dumps(context,default=str),schema)
-  try: return HypothesisProposal(raw["title"],raw["thesis"],raw["expected_mechanism"],StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",raw["parameters"]),tuple(raw["falsification_criteria"]),tuple(raw["parameter_rationale"]),tuple(raw["assumptions"]),tuple(raw["tags"]))
+  try: return HypothesisProposal(raw["title"],raw["thesis"],raw["expected_mechanism"],StrategySpec(RegisteredStrategy.EMA_CROSSOVER,"EURUSD","H1",raw["parameters"]),tuple(FalsificationCriterion(FalsificationMetric(y["metric"]),FalsificationOperator(y["operator"]),y["threshold"],FalsificationScope(y["scope"])) for y in raw["falsification_criteria"]),tuple(raw["parameter_rationale"]),tuple(raw["assumptions"]),tuple(raw["tags"]))
   except Exception as exc: raise ProviderError(ProviderErrorCode.INVALID_OUTPUT,"proposal schema conversion failed") from exc
  def assess(self,facts): return self._request(json.dumps(facts,default=str),{"type":"object","additionalProperties":False,"required":["interpretation"],"properties":{"interpretation":{"type":"string"}}})["interpretation"]

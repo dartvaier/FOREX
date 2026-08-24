@@ -9,16 +9,6 @@ EMA_CROSSOVER_SEMANTICS = {
     "forbidden_execution_semantics": ("COUNTERTREND", "REVERSAL", "MEAN_REVERSION"),
 }
 
+from research.falsification import FalsificationMetric
 METRIC_ALLOWLIST_VERSION = "F6_METRICS_V1"
-MEASURABLE_METRICS = (
-    "percentage_return", "trade_count", "win_rate", "profit_factor", "sharpe_ratio",
-    "maximum_drawdown_percent", "positive_fold_proportion", "median_return_percent",
-    "return_dispersion", "worst_return_percent", "median_drawdown_percent",
-    "worst_drawdown_percent", "walk_forward_return_degradation", "gate_status",
-)
-METRIC_TERMS = {
-    "percentage return", "trade count", "win rate", "profit factor", "sharpe ratio",
-    "maximum drawdown percent", "positive fold proportion", "median return percent",
-    "return dispersion", "worst return percent", "median drawdown percent",
-    "worst drawdown percent", "walk-forward return degradation", "gate status",
-}
+MEASURABLE_METRICS = tuple(metric.value for metric in FalsificationMetric)
