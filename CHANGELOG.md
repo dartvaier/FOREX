@@ -65,6 +65,7 @@ Backtesting Infrastructure
 - F5.1 trading domain models (`Signal`, `OrderIntent`, `Fill`).
 - F5.2 strategy-safe `BacktestContext`, deterministic clock, immutable bars,
   historical feed, and explicit no-look-ahead tests.
+- F5.3 single-symbol Portfolio, Position and immutable accounting snapshots.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
