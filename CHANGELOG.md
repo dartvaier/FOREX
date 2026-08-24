@@ -68,6 +68,7 @@ Backtesting Infrastructure
 - F5.3 single-symbol Portfolio, Position and immutable accounting snapshots.
 - F5.4 deterministic ZeroCostModel and FixedCostModel execution-cost estimates.
 - F5.5 fixed-size RiskModel with one-position baseline RiskLimits and decisions.
+- F5.6 deterministic next-available-open simulated execution and explicit outcomes.
 - GitHub Actions unit-test matrix excluding `integration` tests.
 
 ## Baseline Decisions
